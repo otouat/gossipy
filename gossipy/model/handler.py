@@ -226,6 +226,7 @@ class TorchModelHandler(ModelHandler):
         assert (batch_size == 0 and local_epochs > 0) or (batch_size > 0)
         self.local_epochs = local_epochs
         self.batch_size = batch_size
+        GlobalSettings().auto_device()
         self.device = GlobalSettings().get_device()
         #self.model = self.model.to(self.device)
 

@@ -34,7 +34,6 @@ class CIFAR10Net(TorchModel):
         self.conv3 = nn.Conv2d(64, 64, 3)
         self.fc1 = nn.Linear(64 * 2 * 2, 64)
         self.fc2 = nn.Linear(64, 10)
-    
     def init_weights(self, *args, **kwargs) -> None:
         def _init_weights(m: nn.Module):
             if isinstance(m, nn.Linear) or isinstance(m, nn.Conv2d):
@@ -74,6 +73,8 @@ class CustomDataDispatcher(DataDispatcher):
                 self.te_assignments[idx] = list(range(i, min(i + eval_ex_x_user, n_eval_ex)))
 
 # Dataset loading
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
 rotate180 = RandomVerticalFlip(p=1.0)
 train_set, test_set = get_CIFAR10()
@@ -88,11 +89,11 @@ test_set = torch.cat((Xte[:half_te], rotated_Xte[half_te:])), torch.cat((yte[:ha
 data_handler = ClassificationDataHandler(train_set[0], train_set[1],
                                          test_set[0], test_set[1])
 
-data_dispatcher = CustomDataDispatcher(data_handler, n=5, eval_on_user=False, auto_assign=True)
+data_dispatcher = CustomDataDispatcher(data_handler, n=100, eval_on_user=False, auto_assign=True)
 
 nodes = PENSNode.generate(
     data_dispatcher=data_dispatcher,
-    p2p_net=StaticP2PNetwork(5),
+    p2p_net=StaticP2PNetwork(100),
     model_proto=TorchModelHandler(
         net=CIFAR10Net(),
         optimizer= torch.optim.SGD,
@@ -102,7 +103,7 @@ nodes = PENSNode.generate(
         },
         criterion = F.cross_entropy,
         create_model_mode= CreateModelMode.MERGE_UPDATE,
-        batch_size= 8,
+        batch_size= 128,
         local_epochs= 3),
     round_len=100,
     sync=False,
@@ -113,7 +114,7 @@ nodes = PENSNode.generate(
 simulator = GossipSimulator(
     nodes = nodes,
     data_dispatcher=data_dispatcher,
-    delta=100,
+    delta=10,
     protocol=AntiEntropyProtocol.PUSH,
     sampling_eval=0.1
 )

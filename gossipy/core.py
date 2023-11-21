@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union, Dict
 from collections import defaultdict
 from enum import Enum
 import numpy as np
 from scipy.sparse import csr_matrix
+from random import choice, sample, shuffle
+import math
 
 from . import Sizeable
 
@@ -25,7 +27,8 @@ __all__ = ["CreateModelMode",
            "UniformDelay",
            "LinearDelay",
            "P2PNetwork",
-           "StaticP2PNetwork"]
+           "StaticP2PNetwork",
+           "UniformDynamicP2PNetwork"]
 
 
 class CreateModelMode(Enum):
@@ -49,7 +52,7 @@ class AntiEntropyProtocol(Enum):
 
     PUSH = 1
     """Push the local model to the gossip node(s)."""
-    
+
     PULL = 2
     """Pull the gossip model from the gossip node(s)."""
 
@@ -105,7 +108,7 @@ class Message(Sizeable):
         self.receiver: int = receiver
         self.type: MessageType = type
         self.value: Tuple[Any, ...] = value
-    
+
     def get_size(self) -> int:
         """Computes and returns the estimated size of the message.
 
@@ -132,9 +135,12 @@ class Message(Sizeable):
             sz: int = 0
             for t in self.value:
                 if t is None: continue
-                if isinstance(t, (float, int, bool)): sz += 1
-                elif isinstance(t, Sizeable): sz += t.get_size()
-                else: raise TypeError("Cannot compute the size of the payload!")
+                if isinstance(t, (float, int, bool)):
+                    sz += 1
+                elif isinstance(t, Sizeable):
+                    sz += t.get_size()
+                else:
+                    raise TypeError("Cannot compute the size of the payload!")
             return max(sz, 1)
         elif isinstance(self.value, Sizeable):
             return self.value.get_size()
@@ -142,12 +148,12 @@ class Message(Sizeable):
             return 1
         else:
             raise TypeError("Cannot compute the size of the payload!")
-        
+
     def __repr__(self) -> str:
-        s: str = "T%d [%d -> %d] {%s}: " %(self.timestamp,
-                                           self.sender,
-                                           self.receiver,
-                                           self.type.name)
+        s: str = "T%d [%d -> %d] {%s}: " % (self.timestamp,
+                                            self.sender,
+                                            self.receiver,
+                                            self.type.name)
         s += "ACK" if self.value is None else str(self.value)
         return s
 
@@ -179,7 +185,7 @@ class Delay(ABC):
 class ConstantDelay(Delay):
     _delay: int
 
-    def __init__(self, delay: int=0):
+    def __init__(self, delay: int = 0):
         """A class representing a constant delay.
 
         Parameters
@@ -190,7 +196,7 @@ class ConstantDelay(Delay):
 
         assert delay >= 0, "Delay must be non-negative!"
         self._delay = delay
-    
+
     def get(self, msg: Message) -> int:
         """Returns the delay for the specified message.
 
@@ -208,12 +214,12 @@ class ConstantDelay(Delay):
         """
 
         return self._delay
-    
+
     def __repr__(self) -> str:
         return str(self)
-    
+
     def __str__(self) -> str:
-        return "ConstantDelay(%d)" %self._delay
+        return "ConstantDelay(%d)" % self._delay
 
 
 class UniformDelay(Delay):
@@ -235,7 +241,7 @@ class UniformDelay(Delay):
             "The minimum delay must be non-negative and less than or equal to the maximum delay!"
         self._min_delay = min_delay
         self._max_delay = max_delay
-    
+
     def get(self, msg: Message) -> int:
         """Returns the delay for the specified message.
 
@@ -253,16 +259,16 @@ class UniformDelay(Delay):
             The delay in time units.
         """
 
-        return np.random.randint(self._min_delay, self._max_delay+1)
-    
+        return np.random.randint(self._min_delay, self._max_delay + 1)
+
     def __str__(self) -> str:
-        return "UniformDelay(%d, %d)" %(self._min_delay, self._max_delay) 
+        return "UniformDelay(%d, %d)" % (self._min_delay, self._max_delay)
 
 
 class LinearDelay(Delay):
     _overhead: int
     _timexunit: float
-    
+
     def __init__(self, timexunit: float, overhead: int):
         """A class representing a linear delay.
 
@@ -281,7 +287,7 @@ class LinearDelay(Delay):
         assert timexunit >= 0 and overhead >= 0
         self._timexunit = timexunit
         self._overhead = overhead
-    
+
     def get(self, msg: Message) -> int:
         """Returns the delay for the specified message.
 
@@ -302,17 +308,16 @@ class LinearDelay(Delay):
         """
 
         return int(self._timexunit * msg.get_size()) + self._overhead
-    
-    def __str__(self) -> str:
-        return "LinearDelay(time_x_unit=%d, overhead=%d)" %(self._timexunit, self._overhead) 
 
+    def __str__(self) -> str:
+        return "LinearDelay(time_x_unit=%d, overhead=%d)" % (self._timexunit, self._overhead)
 
 
 class P2PNetwork(ABC):
     _topology: Union[None, csr_matrix, np.ndarray]
     _num_nodes: int
 
-    def __init__(self, num_nodes: int, topology: Optional[Union[np.ndarray, csr_matrix]]=None):
+    def __init__(self, num_nodes: int, topology: Optional[Union[np.ndarray, csr_matrix]] = None):
         """Abstract class representing a network topology.
 
         Parameters
@@ -324,10 +329,12 @@ class P2PNetwork(ABC):
             to be a fully connected network.
         """
 
-        if topology is None: assert num_nodes > 0, "The number of nodes must be positive!"
-        else: num_nodes == topology.shape[0], \
-            "The number of nodes must match the number of rows of the topology!"
-        
+        if topology is None:
+            assert num_nodes > 0, "The number of nodes must be positive!"
+        else:
+            num_nodes == topology.shape[0], \
+                "The number of nodes must match the number of rows of the topology!"
+
         self._num_nodes = num_nodes
         self._topology = {}
 
@@ -343,7 +350,7 @@ class P2PNetwork(ABC):
             # self._topology = defaultdict(lambda: range(num_nodes))
 
     # docstr-coverage:inherited
-    def size(self, node: Optional[int]=None) -> int:
+    def size(self, node: Optional[int] = None) -> int:
         if node:
             return len(self._topology[node]) if self._topology[node] else self._num_nodes - 1
         return self._num_nodes
@@ -362,7 +369,7 @@ class P2PNetwork(ABC):
 
 
 class StaticP2PNetwork(P2PNetwork):
-    def __init__(self, num_nodes: int, topology: Optional[Union[np.ndarray, csr_matrix]]=None):
+    def __init__(self, num_nodes: int, topology: Optional[Union[np.ndarray, csr_matrix]] = None):
         """A class representing a static network topology.
 
         A static network topology is a network topology where the adjacency matrix is fixed.
@@ -389,10 +396,107 @@ class StaticP2PNetwork(P2PNetwork):
         return self._topology[node_id]
 
 
+class DynamicP2PNetwork(P2PNetwork):
+
+    def __init__(self, num_nodes: int,
+                 topology: Optional[Union[np.ndarray, csr_matrix]] = None):
+        """A class representing a dynamic network topology.
+
+            A dynamic network topology is a network topology where the adjacency matrix is evolves over time following a
+            random peer-sampling strategy.
+
+            Parameters
+            ----------
+            num_nodes : int
+                The number of nodes in the network.
+            topology : Optional[Union[np.ndarray, csr_matrix]], default=None
+                The adjacency matrix of the network topology. If None, the network is considered
+                to be a fully connected network.
+            """
+        super().__init__(num_nodes, topology)
+
+    def get_peers(self, node_id: int) -> List[int]:
+        """Returns the peers of a node according to the static network topology.
+
+        Parameters
+        ----------
+        node_id : int
+            The node identifier.
+        """
+        assert 0 <= node_id < self._num_nodes
+        return self._topology[node_id]
+
+    @abstractmethod
+    def update_view(self, node_id: int):
+        """Abstract method to update the peers of a node.
+
+                Parameters
+                ----------
+                node_id : int
+                    The node identifier.
+                """
+        pass
+
+
+class UniformDynamicP2PNetwork(DynamicP2PNetwork):
+    """ A dynamic network with symmetric view shuffle based peer-sampling
+    that converges to a uniform sample overtime in regular topologies.
+    """
+
+    def __init__(self, num_nodes: int,
+                 topology: Optional[Union[np.ndarray, csr_matrix]] = None,
+                 shuffle_ratio=0.5):
+
+        super().__init__(num_nodes, topology)
+        self._shuffle_ratio = shuffle_ratio
+
+    def update_view(self, node_id: int):
+        print("*********************************************************")
+        print(self._topology[node_id])
+        print(node_id)
+        degree = len(self._topology[node_id])
+        nb_nodes_to_exchange = math.ceil(self._shuffle_ratio * degree)
+        id_nodes_to_exchange = sample(population=self._topology[node_id],
+                                      k=nb_nodes_to_exchange)
+        node_jd = choice(id_nodes_to_exchange)
+        print(node_jd)
+        print(self._topology[node_jd])
+
+        self._topology[node_id] = [node for node in self._topology[node_id] if
+                                   node not in id_nodes_to_exchange]
+
+        jd_nodes_to_exchange = sample(population=[node for node in self._topology[node_jd] if node != node_id],
+                                      k=nb_nodes_to_exchange)
+
+        self._topology[node_jd] = list(set([node for node in self._topology[node_jd] if
+                                            node not in jd_nodes_to_exchange] + id_nodes_to_exchange + [node_id]))
+        self._topology[node_jd].remove(node_jd)
+
+        self._topology[node_id] = list(set(self._topology[node_id] + jd_nodes_to_exchange))
+
+        while len(self._topology[node_id]) < degree:
+            chosen = choice(id_nodes_to_exchange)
+            while chosen in self._topology[node_id]:
+                chosen = choice(id_nodes_to_exchange)
+            id_nodes_to_exchange.remove(chosen)
+            self._topology[node_id].append(chosen)
+
+        while len(self._topology[node_jd]) < degree:
+            chosen = choice(jd_nodes_to_exchange)
+            while chosen in self._topology[node_jd]:
+                chosen = choice(jd_nodes_to_exchange)
+            jd_nodes_to_exchange.remove(chosen)
+            self._topology[node_jd].append(chosen)
+
+        print(self._topology[node_id])
+        print(self._topology[node_jd])
+        print("*********************************************************")
+
+
 class MixingMatrix:
     def __init__(self, p2p_net: P2PNetwork) -> None:
         self.p2p_net = p2p_net
-    
+
     @abstractmethod
     def get(self, node_id: int) -> np.ndarray:
         """Returns the mixing matrix for the specified node.
@@ -408,12 +512,12 @@ class MixingMatrix:
             The mixing matrix.
         """
         raise NotImplementedError
-    
+
     def __getitem__(self, node_id: int) -> np.ndarray:
         return self.get(node_id)
 
     def __str__(self) -> str:
-        return "MixingMatrix(%s)" %self.p2p_net
+        return "MixingMatrix(%s)" % self.p2p_net
 
 
 class UniformMixing(MixingMatrix):
@@ -450,4 +554,4 @@ class MetropolisHastingsMixing(MixingMatrix):
         """
         size = self.p2p_net.size(node_id)
         peers = self.p2p_net.get_peers(node_id)
-        return np.array([1./size] + [1. / (min(self.p2p_net.size(k), size) + 1) for k in peers])
+        return np.array([1. / size] + [1. / (min(self.p2p_net.size(k), size) + 1) for k in peers])
