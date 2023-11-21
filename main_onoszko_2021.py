@@ -73,7 +73,6 @@ class CustomDataDispatcher(DataDispatcher):
                 self.te_assignments[idx] = list(range(i, min(i + eval_ex_x_user, n_eval_ex)))
 
 # Dataset loading
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
 rotate180 = RandomVerticalFlip(p=1.0)
