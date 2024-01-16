@@ -15,6 +15,7 @@ from .node import GossipNode, All2AllGossipNode
 from .flow_control import TokenAccount
 from .model.handler import ModelHandler
 from .utils import StringEncoder
+from .MIA.mia import mia_for_each_nn, compute_consensus_distance, plot_mia_vulnerability
 
 # AUTHORSHIP
 __version__ = "0.0.1"
@@ -494,6 +495,144 @@ class GossipSimulator(SimulationEventSender):
         return f"{self.__class__.__name__} \
                  {str(json.dumps(attrs, indent=4, sort_keys=True, cls=StringEncoder))}"
 
+class MIAGossipSimulator(GossipSimulator):
+    def start(self, n_rounds: int = 100, attackerNode: int = 0) -> None:
+        assert self.initialized, \
+            "The simulator is not inizialized. Please, call the method 'init_nodes'."
+        LOG.info("Simulation started.")
+        node_ids = np.arange(self.n_nodes)
+
+        pbar = track(range(n_rounds * self.delta), description="Simulating...")
+
+        msg_queues = DefaultDict(list)
+        rep_queues = DefaultDict(list)
+        mia_accuracy = []
+        gen_error = []
+
+        try:
+            for t in pbar:
+                if t % self.delta == 0:
+                    shuffle(node_ids)
+
+                for i in node_ids:
+                    node = self.nodes[i]
+                    if node.timed_out(t):
+                        peer = node.get_peer()
+                        if peer is None:
+                            break
+                        msg = node.send(t, peer, self.protocol)
+                        self.notify_message(False, msg)
+                        if msg:
+                            if random() >= self.drop_prob:
+                                d = self.delay.get(msg)
+                                msg_queues[t + d].append(msg)
+                            else:
+                                self.notify_message(True)
+
+                is_online = random(self.n_nodes) <= self.online_prob
+                for msg in msg_queues[t]:
+                    if is_online[msg.receiver]:
+                        reply = self.nodes[msg.receiver].receive(t, msg)
+                        if reply:
+                            if random() > self.drop_prob:
+                                d = self.delay.get(reply)
+                                rep_queues[t + d].append(reply)
+                            else:
+                                self.notify_message(True)
+                    else:
+                        self.notify_message(True)
+                del msg_queues[t]
+
+                for reply in rep_queues[t]:
+                    if is_online[reply.receiver]:
+                        self.notify_message(False, reply)
+                        self.nodes[reply.receiver].receive(t, reply)
+                    else:
+                        self.notify_message(True)
+
+                del rep_queues[t]
+
+                if (t + 1) % self.delta == 0:
+                    mia_results = mia_for_each_nn(self.nodes, self.nodes[0], self.data_dispatcher)
+                    mia_accuracy.append(np.mean(mia_results[:, 1]))
+
+                    # Aggregate training and test accuracies across all nodes
+                    aggregated_acc_train = []
+                    aggregated_acc_test = []
+
+                    for _, node in self.nodes.items():
+                        if node.has_test():
+                            acc_train = node.evaluate()["accuracy"]
+                            aggregated_acc_train.append(acc_train)
+
+                            if self.data_dispatcher.has_test():
+                                acc_test = node.evaluate(self.data_dispatcher.get_eval_set())["accuracy"]
+                            else:
+                                acc_test = node.evaluate()["accuracy"]
+                            aggregated_acc_test.append(acc_test)
+
+                    # Compute the generalization error based on aggregated accuracies
+                    if aggregated_acc_train and aggregated_acc_test:
+                        avg_acc_train = sum(aggregated_acc_train) / len(aggregated_acc_train)
+                        avg_acc_test = sum(aggregated_acc_test) / len(aggregated_acc_test)
+                        gen_error_value = (avg_acc_train - avg_acc_test) / (avg_acc_test + avg_acc_train)
+                        gen_error.append(gen_error_value)
+                    else:
+                        gen_error.append(0)
+
+                    if self.sampling_eval > 0:
+                        sample = choice(list(self.nodes.keys()),
+                                        max(int(self.n_nodes * self.sampling_eval), 1))
+                        ev = [self.nodes[i].evaluate() for i in sample if self.nodes[i].has_test()]
+                    else:
+                        ev = [n.evaluate() for _, n in self.nodes.items() if n.has_test()]
+                    if ev:
+                        self.notify_evaluation(t, True, ev)
+
+                    if self.data_dispatcher.has_test():
+                        if self.sampling_eval > 0:
+                            ev = [self.nodes[i].evaluate(self.data_dispatcher.get_eval_set())
+                                  for i in sample]
+                        else:
+                            ev = [n.evaluate(self.data_dispatcher.get_eval_set())
+                                  for _, n in self.nodes.items()]
+                        if ev:
+                            self.notify_evaluation(t, False, ev)
+                self.notify_timestep(t)
+
+            print(f"mia accuracy: {mia_accuracy}")
+            print(f"Gen Error: {gen_error}")
+            plot_mia_vulnerability(mia_accuracy, gen_error)
+
+        except KeyboardInterrupt:
+            LOG.warning("Simulation interrupted by user.")
+
+        pbar.close()
+        self.notify_end()
+        return
+    
+class AttackGossipSimulator(GossipSimulator):
+    def start(self, n_rounds: int) -> None:
+        average_mia_accuracy_per_epoch = []
+        average_generalization_error_per_epoch = []
+        consensus_distances_per_epoch = []
+
+        for epoch in range(n_rounds):
+            print(f"Epoch n°{epoch}")
+            super().start(1)
+            mia_results = mia_for_each_nn(self.nodes, self.nodes[0], self.data_dispatcher)
+
+            average_mia_accuracy = np.mean(mia_results[:, 1])
+            average_mia_accuracy_per_epoch.append(average_mia_accuracy)
+
+            average_generalization_error = np.mean(mia_results[:, 2])
+            average_generalization_error_per_epoch.append(average_generalization_error)
+
+            consensus_distance = compute_consensus_distance(self.nodes)
+            consensus_distances_per_epoch.append(consensus_distance)
+
+        epochs = list(range(n_rounds))
+        plot_mia_vulnerability( average_mia_accuracy_per_epoch, average_generalization_error_per_epoch)
 
 class DynamicGossipSimulator(GossipSimulator):
     def __init__(self,
