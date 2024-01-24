@@ -274,7 +274,11 @@ class TorchModelHandler(ModelHandler):
         for key in dict_params1:
             for dict_params2 in dicts_params2:
                 dict_params1[key] += dict_params2[key]
-            dict_params1[key] /= div
+            #print(key)
+            if "num_batches_tracked" in key:
+                pass
+            else :
+                dict_params1[key] /= div
 
         self.model.load_state_dict(dict_params1)
         # Gets the maximum number of updates from the merged models

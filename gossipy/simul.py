@@ -496,18 +496,27 @@ class GossipSimulator(SimulationEventSender):
                  {str(json.dumps(attrs, indent=4, sort_keys=True, cls=StringEncoder))}"
 
 class MIAGossipSimulator(GossipSimulator):
+    def __init__(self, nodes: Dict[int, GossipNode], data_dispatcher: DataDispatcher,
+            delta: int, protocol: AntiEntropyProtocol,
+            drop_prob: float = 0., online_prob: float = 1.,
+            delay: Delay = ConstantDelay(0), sampling_eval: float = 0.):
+            super().__init__(nodes, data_dispatcher, delta, protocol, drop_prob,
+                            online_prob, delay, sampling_eval)
+            self.mia_accuracy = []
+            self.gen_error = []
+            self.n_rounds = 0
+
     def start(self, n_rounds: int = 100, attackerNode: int = 0) -> None:
         assert self.initialized, \
             "The simulator is not inizialized. Please, call the method 'init_nodes'."
         LOG.info("Simulation started.")
         node_ids = np.arange(self.n_nodes)
+        self.n_rounds = n_rounds
 
         pbar = track(range(n_rounds * self.delta), description="Simulating...")
 
         msg_queues = DefaultDict(list)
         rep_queues = DefaultDict(list)
-        mia_accuracy = []
-        gen_error = []
 
         try:
             for t in pbar:
@@ -553,22 +562,22 @@ class MIAGossipSimulator(GossipSimulator):
                 del rep_queues[t]
 
                 if (t + 1) % self.delta == 0:
-                    mia_results = mia_for_each_nn(self.nodes, self.nodes[0], self.data_dispatcher)
-                    mia_accuracy.append(np.mean(mia_results[:, 1]))
+                    mia_results = mia_for_each_nn(self.nodes, self.nodes[0])
+                    self.mia_accuracy.append(np.mean(mia_results[:, 1]))
 
                     # Aggregate training and test accuracies across all nodes
                     aggregated_acc_train = []
                     aggregated_acc_test = []
 
                     for _, node in self.nodes.items():
+                        acc_train = node.evaluate(node.data[0])["accuracy"]
+                        aggregated_acc_train.append(acc_train)
                         if node.has_test():
-                            acc_train = node.evaluate()["accuracy"]
-                            aggregated_acc_train.append(acc_train)
-
                             if self.data_dispatcher.has_test():
-                                acc_test = node.evaluate(self.data_dispatcher.get_eval_set())["accuracy"]
+                                acc_test = node.evaluate(node.data[1])["accuracy"]
+                                #acc_test = node.evaluate(self.data_dispatcher.get_eval_set())["accuracy"]
                             else:
-                                acc_test = node.evaluate()["accuracy"]
+                                acc_test = node.evaluate(node.data[1])["accuracy"]
                             aggregated_acc_test.append(acc_test)
 
                     # Compute the generalization error based on aggregated accuracies
@@ -576,9 +585,9 @@ class MIAGossipSimulator(GossipSimulator):
                         avg_acc_train = sum(aggregated_acc_train) / len(aggregated_acc_train)
                         avg_acc_test = sum(aggregated_acc_test) / len(aggregated_acc_test)
                         gen_error_value = (avg_acc_train - avg_acc_test) / (avg_acc_test + avg_acc_train)
-                        gen_error.append(gen_error_value)
+                        self.gen_error.append(gen_error_value)
                     else:
-                        gen_error.append(0)
+                        self.gen_error.append(0)
 
                     if self.sampling_eval > 0:
                         sample = choice(list(self.nodes.keys()),
@@ -599,10 +608,6 @@ class MIAGossipSimulator(GossipSimulator):
                         if ev:
                             self.notify_evaluation(t, False, ev)
                 self.notify_timestep(t)
-
-            print(f"mia accuracy: {mia_accuracy}")
-            print(f"Gen Error: {gen_error}")
-            plot_mia_vulnerability(mia_accuracy, gen_error)
 
         except KeyboardInterrupt:
             LOG.warning("Simulation interrupted by user.")
