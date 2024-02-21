@@ -1,17 +1,19 @@
+import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision.transforms import Compose, Normalize
+from torchvision.transforms import Compose, Normalize, RandomVerticalFlip
 from gossipy.core import AntiEntropyProtocol, CreateModelMode, StaticP2PNetwork
 from gossipy.data import DataDispatcher
+
 from gossipy.model import TorchModel
 from gossipy.data.handler import ClassificationDataHandler
 from gossipy.model.handler import TorchModelHandler
-from gossipy.node import GossipNode
-from gossipy.simul import MIAGossipSimulator, SimulationReport
+from gossipy.node import FederatedGossipNode
+from gossipy.simul import FederatedSimulator, SimulationReport
 from gossipy.data import get_CIFAR10
-from topology import create_torus_topology, display_topology, CustomP2PNetwork
-from gossipy.MIA.mia import plot_mia_vulnerability, log_results, get_fig_evaluation
+from gossipy.utils import plot_evaluation
+from topology import create_federated_topology, CustomP2PNetwork
 
 class BasicBlock(nn.Module):
     expansion = 1
@@ -113,7 +115,7 @@ class CustomDataDispatcher(DataDispatcher):
 # Dataset loading
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
 train_set, test_set = get_CIFAR10()
-nodes_num = 16
+nodes_num = 15
 
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
@@ -124,10 +126,10 @@ data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte)
 
 data_dispatcher = CustomDataDispatcher(data_handler, n=nodes_num, eval_on_user=True, auto_assign=True)
 
-topology = create_torus_topology(16)
+topology = create_federated_topology(nodes_num)
 network = CustomP2PNetwork(topology)
 
-nodes = GossipNode.generate(
+nodes = FederatedGossipNode.generate(
     data_dispatcher=data_dispatcher,
     p2p_net=network,
     model_proto=TorchModelHandler(
@@ -139,32 +141,23 @@ nodes = GossipNode.generate(
             "weight_decay": 0.001
         },
         criterion = F.cross_entropy,
-        create_model_mode= CreateModelMode.MERGE_UPDATE,
+        create_model_mode = CreateModelMode.UPDATE,
         batch_size= 256,
         local_epochs= 3),
     round_len=100,
     sync=False)
 
-simulator = MIAGossipSimulator(
+simulator = FederatedSimulator(
     nodes = nodes,
     data_dispatcher=data_dispatcher,
     delta=100,
-    protocol=AntiEntropyProtocol.PUSH,
+    protocol=AntiEntropyProtocol.PASS,
     sampling_eval=0.1
 )
 
 report = SimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
-simulator.start(n_rounds=150)
+simulator.start(n_rounds=250)
 
-fig = get_fig_evaluation([[ev for _, ev in report.get_evaluation(False)]], "Overall test results")
-fig2, fig3 = plot_mia_vulnerability(simulator.mia_accuracy, simulator.gen_error)
-fig4 = display_topology(network)
-diagrams = {
-    'Overall test results': fig,
-    'mia_vulnerability over Gen error': fig2,
-    'mia_vulnerability over epoch': fig3,
-    "Topology": fig4,
-}
-log_results(simulator, simulator.n_rounds, diagrams)
+plot_evaluation([[ev for _, ev in report.get_evaluation(False)]], "Overall test results")

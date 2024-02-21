@@ -29,6 +29,7 @@ def mia_for_each_nn(nodes, attackerNode):
     return mias
 
 def mia_best_th(model, train_data, test_data, device, nt=150):
+    
     def search_th(Etrain, Etest):
       thrs = np.linspace(min(min(Etrain.min(), Etest.min()), 0), max(max(Etrain.max(), Etest.max()), 1), 100)
       R = np.zeros_like(thrs)
@@ -187,6 +188,7 @@ def log_results(Simul, n_rounds, diagrams):
     # Log results
     with open(log_file_path, 'w') as log_file:
         log_file.write(f"Experiment Number: {experiment_number}\n")
+        log_file.write(f"Protocol: {type(Simul).__name__}\n")
         log_file.write(f"Timestamp: {datetime.now()}\n")
         log_file.write(f"Total Nodes: {Simul.n_nodes}\n")
         log_file.write(f"Total Rounds: {n_rounds}\n")

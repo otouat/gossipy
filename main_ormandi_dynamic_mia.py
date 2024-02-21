@@ -1,16 +1,22 @@
+from gossipy import set_seed
+from gossipy.core import AntiEntropyProtocol, CreateModelMode, StaticP2PNetwork, ConstantDelay, UniformDynamicP2PNetwork
+from gossipy.node import GossipNode
+from gossipy.model.handler import PegasosHandler
+from gossipy.model.nn import AdaLine
+from gossipy.data import load_classification_dataset, DataDispatcher
+from gossipy.data.handler import ClassificationDataHandler
+from gossipy.simul import GossipSimulator, DynamicGossipSimulator, SimulationReport
+from gossipy.utils import plot_evaluation
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.transforms import Compose, Normalize
-from gossipy.core import AntiEntropyProtocol, CreateModelMode, StaticP2PNetwork
-from gossipy.data import DataDispatcher
 from gossipy.model import TorchModel
-from gossipy.data.handler import ClassificationDataHandler
 from gossipy.model.handler import TorchModelHandler
-from gossipy.node import GossipNode
-from gossipy.simul import MIAGossipSimulator, SimulationReport
+
 from gossipy.data import get_CIFAR10
-from topology import create_torus_topology, display_topology, CustomP2PNetwork
+from gossipy.utils import plot_evaluation
+from topology import create_torus_topology, create_simple_topology, create_circular_topology, display_topology, CustomP2PNetwork
 from gossipy.MIA.mia import plot_mia_vulnerability, log_results, get_fig_evaluation
 
 class BasicBlock(nn.Module):
@@ -145,18 +151,22 @@ nodes = GossipNode.generate(
     round_len=100,
     sync=False)
 
-simulator = MIAGossipSimulator(
-    nodes = nodes,
+simulator = DynamicGossipSimulator(
+    nodes=nodes,
     data_dispatcher=data_dispatcher,
     delta=100,
     protocol=AntiEntropyProtocol.PUSH,
-    sampling_eval=0.1
+    delay=ConstantDelay(0),
+    online_prob=1,  # Approximates the average online rate of the STUNner's smartphone traces
+    drop_prob=0,  # 0.1 Simulate the possibility of message dropping,
+    sampling_eval=.2,
+    peer_sampling_period=10
 )
 
 report = SimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
-simulator.start(n_rounds=150)
+simulator.start(n_rounds=10000)
 
 fig = get_fig_evaluation([[ev for _, ev in report.get_evaluation(False)]], "Overall test results")
 fig2, fig3 = plot_mia_vulnerability(simulator.mia_accuracy, simulator.gen_error)

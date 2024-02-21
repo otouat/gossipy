@@ -48,6 +48,22 @@ def create_circular_topology(size):
         topology[node] = [prev_node, next_node]  # Connect each node to previous and next
     return topology
 
+def create_federated_topology(size):
+    topology = {}
+    all_nodes = list(range(1, size))  # Exclude node 0 from all_nodes
+
+    # Create a hub node that is connected to all other nodes
+    hub_node = 0
+    all_nodes.append(hub_node)
+
+    for node in range(1, size):  # Start from 1 instead of 0
+        topology[node] = [hub_node]  # Each node is connected only to the hub node
+
+    # Connect the hub node to all other nodes
+    topology[hub_node] = list(range(1, size))  # Start from 1 instead of 0
+
+    return topology
+
 class CustomP2PNetwork:
     def __init__(self, topology):
         self.topology = topology
@@ -58,3 +74,27 @@ class CustomP2PNetwork:
 
     def size(self):
         return len(self.topology)
+    
+import networkx as nx
+import matplotlib.pyplot as plt
+
+def display_topology(topology):
+    # Create a directed graph
+    G = nx.DiGraph()
+
+    # Add nodes
+    for node in topology:
+        G.add_node(node)
+
+    # Add edges
+    for node, neighbors in topology.items():
+        for neighbor in neighbors:
+            G.add_edge(node, neighbor)
+
+    # Draw the graph
+    pos = nx.spring_layout(G)
+    nx.draw(G, pos, with_labels=True, node_size=800, node_color="skyblue", font_size=10, font_weight="bold", arrowsize=20)
+
+    plt.title("Topology")
+    fig = plt.gcf()
+    return fig

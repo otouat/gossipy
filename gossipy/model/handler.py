@@ -132,6 +132,8 @@ class ModelHandler(Sizeable, ModelEqualityMixin, ABC):
             self._merge(recv_model)
         elif self.mode == CreateModelMode.PASS:
             self.model = copy.deepcopy(recv_model.model)
+        elif self.mode == CreateModelMode.MERGE:
+            self._merge_received(recv_model)
         else:
             raise ValueError("Unknown create model mode %s" %str(self.mode))
 
@@ -283,6 +285,34 @@ class TorchModelHandler(ModelHandler):
         self.model.load_state_dict(dict_params1)
         # Gets the maximum number of updates from the merged models
         self.n_updates = max(self.n_updates, n_up) 
+
+    def _merge_received(self, other_model_handler: Union[TorchModelHandler, Iterable[TorchModelHandler]]) -> None:
+        print("Merging Sucessfull")
+        dict_params1 = self.model.state_dict()
+
+        if isinstance(other_model_handler, TorchModelHandler):
+            dicts_params2 = [other_model_handler.model.state_dict()]
+            n_up = other_model_handler.n_updates
+        else:
+            dicts_params2 = [omh.model.state_dict() for omh in other_model_handler]
+            n_up = max([omh.n_updates for omh in other_model_handler])
+
+        # Perform the average overall models including its weights
+        # CHECK: whether to allow the merging of the other models before the averaging 
+        div = len(dicts_params2)
+        for key in dict_params1:
+            dict_params1[key] = 0
+            for dict_params2 in dicts_params2:
+                dict_params1[key] += dict_params2[key]
+            #print(key)
+            if "num_batches_tracked" in key:
+                pass
+            else :
+                dict_params1[key] /= div
+
+        self.model.load_state_dict(dict_params1)
+        # Gets the maximum number of updates from the merged models
+        self.n_updates = max(self.n_updates, n_up)
 
     def evaluate(self,
                  data: Tuple[torch.Tensor, torch.Tensor]) -> Dict[str, int]:

@@ -46,6 +46,9 @@ class CreateModelMode(Enum):
     PASS = 4
     """Do nothing."""
 
+    MERGE = 5
+    """Merge the models."""
+
 
 class AntiEntropyProtocol(Enum):
     """The overall protocol of the gossip algorithm."""
@@ -59,6 +62,9 @@ class AntiEntropyProtocol(Enum):
     PUSH_PULL = 3
     """Push the local model to the gossip node(s) and then pull the gossip model from the gossip \
         node(s)."""
+    
+    PASS = 4
+    """Do nothing."""
 
 
 class MessageType(Enum):
