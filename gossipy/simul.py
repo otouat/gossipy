@@ -15,7 +15,7 @@ from .node import GossipNode, All2AllGossipNode
 from .flow_control import TokenAccount
 from .model.handler import ModelHandler
 from .utils import StringEncoder
-from .MIA.mia import mia_for_each_nn, compute_consensus_distance, plot_mia_vulnerability
+from .MIA.mia import mia_for_each_nn, compute_consensus_distance, compute_gen_errors,  plot_mia_vulnerability
 
 # AUTHORSHIP
 __version__ = "0.0.1"
@@ -1138,6 +1138,7 @@ class MIAGossipSimulator(GossipSimulator):
             self.mia_accuracy = []
             self.gen_error = []
             self.n_rounds = 0
+            self.attackerNode = self.nodes[int(random() * len(self.nodes))]
 
     def start(self, n_rounds: int = 100, attackerNode: int = 0) -> None:
         assert self.initialized, \
@@ -1195,32 +1196,8 @@ class MIAGossipSimulator(GossipSimulator):
                 del rep_queues[t]
 
                 if (t + 1) % self.delta == 0:
-                    mia_results = mia_for_each_nn(self.nodes, self.nodes[0])
-                    self.mia_accuracy.append(np.mean(mia_results[:, 1]))
-
-                    # Aggregate training and test accuracies across all nodes
-                    aggregated_acc_train = []
-                    aggregated_acc_test = []
-
-                    for _, node in self.nodes.items():
-                        acc_train = node.evaluate(node.data[0])["accuracy"]
-                        aggregated_acc_train.append(acc_train)
-                        if node.has_test():
-                            if self.data_dispatcher.has_test():
-                                acc_test = node.evaluate(node.data[1])["accuracy"]
-                                #acc_test = node.evaluate(self.data_dispatcher.get_eval_set())["accuracy"]
-                            else:
-                                acc_test = node.evaluate(node.data[1])["accuracy"]
-                            aggregated_acc_test.append(acc_test)
-
-                    # Compute the generalization error based on aggregated accuracies
-                    if aggregated_acc_train and aggregated_acc_test:
-                        avg_acc_train = sum(aggregated_acc_train) / len(aggregated_acc_train)
-                        avg_acc_test = sum(aggregated_acc_test) / len(aggregated_acc_test)
-                        gen_error_value = (avg_acc_train - avg_acc_test) / (avg_acc_test + avg_acc_train)
-                        self.gen_error.append(gen_error_value)
-                    else:
-                        self.gen_error.append(0)
+                    self.mia_accuracy.append(np.mean(mia_for_each_nn(self.nodes, self.attackerNode, class_specific = True)[1]))
+                    self.gen_error.append(compute_gen_errors(self, self.nodes))
 
                     if self.sampling_eval > 0:
                         sample = choice(list(self.nodes.keys()),

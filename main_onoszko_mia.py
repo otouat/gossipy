@@ -113,7 +113,7 @@ class CustomDataDispatcher(DataDispatcher):
 # Dataset loading
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
 train_set, test_set = get_CIFAR10()
-nodes_num = 16
+nodes_num = 4
 
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
@@ -122,9 +122,9 @@ Xte, yte = transform(test_set[0]), test_set[1]
 
 data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte)
 
-data_dispatcher = CustomDataDispatcher(data_handler, n=nodes_num, eval_on_user=True, auto_assign=True)
+data_dispatcher = CustomDataDispatcher(data_handler, n=nodes_num*10, eval_on_user=True, auto_assign=True)
 
-topology = create_torus_topology(16)
+topology = create_torus_topology(nodes_num)
 network = CustomP2PNetwork(topology)
 
 nodes = GossipNode.generate(
@@ -160,11 +160,11 @@ simulator.start(n_rounds=150)
 
 fig = get_fig_evaluation([[ev for _, ev in report.get_evaluation(False)]], "Overall test results")
 fig2, fig3 = plot_mia_vulnerability(simulator.mia_accuracy, simulator.gen_error)
-fig4 = display_topology(network)
+fig4 = display_topology(topology)
 diagrams = {
     'Overall test results': fig,
     'mia_vulnerability over Gen error': fig2,
     'mia_vulnerability over epoch': fig3,
-    "Topology": fig4,
+    "Topology": fig4
 }
-log_results(simulator, simulator.n_rounds, diagrams)
+log_results(simulator, simulator.n_rounds, diagrams, report.get_evaluation(False))

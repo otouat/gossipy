@@ -1,3 +1,4 @@
+from sklearn.utils import resample
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -10,37 +11,98 @@ from sklearn.metrics import accuracy_score, roc_auc_score, recall_score, f1_scor
 from gossipy import LOG
 from typing import List, Dict
 
-def mia_for_each_nn(nodes, attackerNode):
+def mia_for_each_nn(nodes, attackerNode, class_specific: bool = False, num_classes: int = 10):
     idx = attackerNode.idx
     nn = sorted(attackerNode.p2p_net.get_peers(idx), key=lambda x: int(x))
     model = copy.deepcopy(attackerNode.model_handler.model)
-    mias = np.zeros((len(nn), 2))
-    i = 0
+    mia_results = []
+
     for node in nodes.values():
-      #print(f"Is node n°{node.idx} in neigboors: {nn}? {node.idx in nn}")
+
       if node.idx in nn:
         data = node.data
         train_data, test_data = data
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        mias[i] = mia_best_th(model, train_data, test_data, device)
-        #print(f"results: {r}")
-        i = i + 1
+        if class_specific:
+            mia_results.append(mia_best_th_class(model, train_data, test_data, num_classes, device))
+        else: mia_results.append(mia_best_th(model, train_data, test_data, device))
+    
+    for class_idx, (loss_mia, ent_mia) in enumerate(zip(mia_results[0], mia_results[1])):
+        print(f"Class {class_idx} Loss MIA: {np.mean(loss_mia)}")
+        print(f"Class {class_idx} Entropy MIA: {np.mean(ent_mia)}")
 
-    return mias
+    print("-----------------------------")
+    print("Overall MIA Results:")
+    print(f"Mean Loss MIA: {np.mean(mia_results[0])}")
+    print(f"Mean Entropy MIA: {np.mean(mia_results[1])}")
+    print("-----------------------------")
+
+    return mia_results
 
 def mia_best_th(model, train_data, test_data, device, nt=150):
     
-    def search_th(Etrain, Etest):
-      thrs = np.linspace(min(min(Etrain.min(), Etest.min()), 0), max(max(Etrain.max(), Etest.max()), 1), 100)
-      R = np.zeros_like(thrs)
+    def search_th(train, test):
+        thrs = np.linspace(min(train.min(), test.min()), max(train.max(), test.max()), nt)
+        R = np.zeros_like(thrs)
 
-      for i, th in enumerate(thrs):
-          tp = (Etrain < th).sum()
-          tn = (Etest >= th).sum()
-          acc = (tp + tn) / (len(Etrain) + len(Etest))  # Correcting the calculation for accuracy
-          R[i] = acc
+        for i, th in enumerate(thrs):
+            tp = (train < th).sum()
+            tn = (test >= th).sum()
+            acc = (tp + tn) / (len(train) + len(test))  # Correcting the calculation for accuracy
+            R[i] = acc
 
-      return R.max()
+        return R.max()
+
+    model.eval()
+    Ltrain, Ptrain, Ytrain = evaluate(model, device, train_data)
+    Ltest, Ptest, Ytest = evaluate(model, device, test_data)
+    model.train()
+
+    # it takes a subset of results on test set with size equal to the one of the training test 
+    n = Ptest.shape[0]
+    Ptrain = Ptrain[:n]
+    Ytrain = Ytrain[:n]
+    Ltrain = Ltrain[:n]
+    print(f"Train: {Ptrain.shape}, Test: {Ptest.shape}")
+
+    loss_mia = search_th(Ltrain, Ltest)
+
+    Etrain = compute_modified_entropy(Ptrain, Ytrain)
+    Etest = compute_modified_entropy(Ptest, Ytest)
+
+    ent_mia = search_th(Etrain, Etest)
+
+    #print(f" Loss: {loss_mia}, Enthropy: {ent_mia}")
+
+    return loss_mia, ent_mia
+
+def mia_best_th_class(model, train_data, test_data, num_class, device, nt=150):
+    
+    def search_th(train, test, train_label, test_label, num_classes):
+        thrs = np.linspace(min(train.min(), test.min()), max(train.max(), test.max()), nt)
+        R = np.zeros((num_classes, len(thrs)))  # Initialize array for class-specific thresholds
+        train_c = []
+        test_c = []
+
+        for c in range(num_classes):
+            for i in range(min(len(train), len(test))):
+                if train_label[i] == c:
+                    train_c.append(train[i])
+                if test_label[i] == c:
+                    test_c.append(test[i])
+            # Resample the training and testing data to have an equal size in each class
+            train_c = resample(train_c, replace=False, n_samples=min(int(sum(train_label == c)), int(sum(test_label == c))))
+            test_c = resample(test_c, replace=False, n_samples=min(int(sum(train_label == c)), int(sum(test_label == c))))
+
+            for i, th in enumerate(thrs):
+                # Count true positives and true negatives for each class
+                tp = (train_c < th).sum()
+                tn = (test_c >= th).sum()
+                acc = (tp + tn) / (len(train_c) + len(test_c))
+
+                R[c, i] = acc
+
+        return R.max(axis=1)
 
     model.eval()
     Ltrain, Ptrain, Ytrain = evaluate(model, device, train_data)
@@ -53,18 +115,11 @@ def mia_best_th(model, train_data, test_data, device, nt=150):
     Ytrain = Ytrain[:n]
     Ltrain = Ltrain[:n]
 
-    thrs = ths_searching_space(nt, Ltrain, Ltest)
-    loss_mia = search_th(Ltrain, Ltest)
+    num_classes = Ptrain.shape[1]  # Number of classes
+    th_indices_loss = search_th(Ltrain, Ltest, Ytrain, Ytest, num_class,)  # Class-specific thresholds for loss
+    th_indices_ent = search_th(compute_modified_entropy(Ptrain, Ytrain), compute_modified_entropy(Ptest, Ytest), Ytrain, Ytest, num_class,)  # Class-specific thresholds for entropy
 
-    Etrain = compute_modified_entropy(Ptrain, Ytrain)
-    Etest = compute_modified_entropy(Ptest, Ytest)
-
-    thrs = ths_searching_space(nt, Etrain, Etest)
-    ent_mia = search_th(Etrain, Etest)
-
-    #print(f" Loss: {loss_mia}, Enthropy: {ent_mia}")
-
-    return loss_mia, ent_mia
+    return th_indices_loss, th_indices_ent
 
 def compute_modified_entropy(p, y, epsilon=0.00001):
     """ Computes label informed entropy from 'Systematic evaluation of privacy risks of machine learning models' USENIX21 """
@@ -84,11 +139,6 @@ def compute_modified_entropy(p, y, epsilon=0.00001):
                 entropy[i] -= (pij)*np.log(1-pij+epsilon)
 
     return entropy
-
-
-def ths_searching_space(nt, train, test):
-    thrs = np.linspace(min(train.min(), test.min()), max(train.max(), test.max()), nt)
-    return thrs
 
 def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
 
@@ -136,6 +186,33 @@ def compute_consensus_distance(nodes) -> float:
 
     return consensus_distance
 
+def compute_gen_errors(Simul, nodes) -> float:
+    aggregated_acc_train = []
+    aggregated_acc_test = []
+    gen_error = []
+
+    for _, node in nodes.items():
+        acc_train = node.evaluate(node.data[0])["accuracy"]
+        aggregated_acc_train.append(acc_train)
+        if node.has_test():
+            if Simul.data_dispatcher.has_test():
+                acc_test = node.evaluate(node.data[1])["accuracy"]
+                #acc_test = node.evaluate(self.data_dispatcher.get_eval_set())["accuracy"]
+            else:
+                acc_test = node.evaluate(node.data[1])["accuracy"]
+            aggregated_acc_test.append(acc_test)
+
+    # Compute the generalization error based on aggregated accuracies
+    if aggregated_acc_train and aggregated_acc_test:
+        avg_acc_train = sum(aggregated_acc_train) / len(aggregated_acc_train)
+        avg_acc_test = sum(aggregated_acc_test) / len(aggregated_acc_test)
+        gen_error_value = (avg_acc_train - avg_acc_test) / (avg_acc_test + avg_acc_train)
+        gen_error.append(gen_error_value)
+    else:
+        gen_error.append(0)
+
+    return gen_error
+
 def assign_model_params(source_model, target_model):
     device = next(target_model.parameters()).device
     source_state_dict = source_model.state_dict()
@@ -167,7 +244,7 @@ import matplotlib.pyplot as plt
 import json
 from datetime import datetime
 
-def log_results(Simul, n_rounds, diagrams):
+def log_results(Simul, n_rounds, diagrams, global_evaluations):
     base_folder_path = r"C:\Users\jezek\OneDrive\Documents\Python\Djack\gossipy\results"
     exp_tracker_file = f"{base_folder_path}/exp_number.txt"
 
@@ -182,16 +259,34 @@ def log_results(Simul, n_rounds, diagrams):
     new_folder_path = f"{base_folder_path}/Exp n°{experiment_number}"
     os.makedirs(new_folder_path, exist_ok=True)
 
-    # Log file path
+    # Log file path for experiment parameters
+    params_file_path = f"{new_folder_path}/simulation_params.log"
+
+    # Log experiment parameters
+    with open(params_file_path, 'w') as params_file:
+        params_file.write(f"Experiment Number: {experiment_number}\n")
+        params_file.write(f"Protocol: {type(Simul).__name__}\n")
+        params_file.write(f"Timestamp: {datetime.now()}\n")
+        params_file.write(f"Total Nodes: {Simul.n_nodes}\n")
+        params_file.write(f"Total Rounds: {n_rounds}\n")
+
+    # Log file path for simulation results
     log_file_path = f"{new_folder_path}/simulation_results.log"
 
-    # Log results
+    # Log simulation results
     with open(log_file_path, 'w') as log_file:
         log_file.write(f"Experiment Number: {experiment_number}\n")
-        log_file.write(f"Protocol: {type(Simul).__name__}\n")
         log_file.write(f"Timestamp: {datetime.now()}\n")
-        log_file.write(f"Total Nodes: {Simul.n_nodes}\n")
-        log_file.write(f"Total Rounds: {n_rounds}\n")
+
+        log_file.write("\nMIA Evaluations:\n")
+        log_file.write(f"MIA Vulnerability: {Simul.mia_accuracy}\n")
+        log_file.write(f"Gen Error: {Simul.gen_error}\n")
+
+        log_file.write("\nGlobal Evaluations:\n")
+        for round_number, evaluation_dict in global_evaluations:
+            log_file.write(f"Round {round_number}:\n")
+            for key, value in evaluation_dict.items():
+                log_file.write(f"{key}: {value}\n")
 
     # Save diagrams
     for name, fig in diagrams.items():

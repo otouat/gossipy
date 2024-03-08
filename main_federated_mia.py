@@ -163,9 +163,11 @@ simulator.start(n_rounds=250)
 
 fig = get_fig_evaluation([[ev for _, ev in report.get_evaluation(False)]], "Overall test results")
 fig2, fig3 = plot_mia_vulnerability(simulator.mia_accuracy, simulator.gen_error)
+fig4 = display_topology(topology)
 diagrams = {
     'Overall test results': fig,
     'mia_vulnerability over Gen error': fig2,
-    'mia_vulnerability over epoch': fig3
+    'mia_vulnerability over epoch': fig3,
+    "Topology": fig4
 }
-log_results(simulator, simulator.n_rounds, diagrams)
+log_results(simulator, simulator.n_rounds, diagrams, report.get_evaluation(False))
