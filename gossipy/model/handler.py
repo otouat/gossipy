@@ -9,6 +9,7 @@ from typing import Any, Callable, Tuple, Dict, Optional, Union, Iterable
 from sklearn.metrics import accuracy_score, roc_auc_score, recall_score, f1_score, precision_score
 from sklearn.metrics.cluster import normalized_mutual_info_score as nmi
 from scipy.optimize import linear_sum_assignment as hungarian
+from typing import Set
 
 from .. import CACHE, LOG, CacheKey, GlobalSettings, Sizeable
 from ..core import CreateModelMode
@@ -230,6 +231,7 @@ class TorchModelHandler(ModelHandler):
         self.batch_size = batch_size
         GlobalSettings().auto_device()
         self.device = GlobalSettings().get_device()
+        self.training_images = set()
         #self.model = self.model.to(self.device)
 
     def init(self) -> None:
@@ -245,9 +247,11 @@ class TorchModelHandler(ModelHandler):
                 x, y = x[perm], y[perm]
                 for i in range(0, x.size(0), batch_size):
                     self._local_step(x[i : i + batch_size], y[i : i + batch_size])
+                    self.training_images.update(tuple(img) for img in x[i : i + batch_size])
         else:
             perm = torch.randperm(x.size(0))
             self._local_step(x[perm][:batch_size], y[perm][:batch_size])
+            self.training_images.update(tuple(img) for img in x[perm][:batch_size]) 
         self.model = self.model.to("cpu")
     
     def _local_step(self, x:torch.Tensor, y:torch.Tensor) -> None:
@@ -260,6 +264,10 @@ class TorchModelHandler(ModelHandler):
         self.optimizer.step()
         self.n_updates += 1
 
+    def get_training_indices(self) -> Set[torch.Tensor]:
+        """Returns the set of images used in training."""
+        return self.training_images
+    
     def _merge(self, other_model_handler: Union[TorchModelHandler, Iterable[TorchModelHandler]]) -> None:
         dict_params1 = self.model.state_dict()
 

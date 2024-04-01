@@ -22,6 +22,11 @@ def mia_for_each_nn(nodes, attackerNode, class_specific: bool = False, num_class
       if node.idx in nn:
         data = node.data
         train_data, test_data = data
+        # Retrieve images and labels from the model handler
+        training_indices = node.model_handler.get_training_indices()
+        print(f"Training indices: {training_indices}")
+        # Combine images and labels using indices
+        images_labels = [(train_data[0][int(idx)], train_data[1][int(idx)]) for idx in training_indices]
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if class_specific:
             mia_results.append(mia_best_th_class(model, train_data, test_data, num_classes, device))
@@ -59,7 +64,7 @@ def mia_best_th(model, train_data, test_data, device, nt=150):
     model.train()
 
     # it takes a subset of results on test set with size equal to the one of the training test 
-    n = Ptest.shape[0]
+    n = min(Ptest.shape[0], Ptrain.shape[0])
     Ptrain = Ptrain[:n]
     Ytrain = Ytrain[:n]
     Ltrain = Ltrain[:n]
