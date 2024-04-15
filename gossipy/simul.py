@@ -1192,7 +1192,6 @@ class MIAGossipSimulator(GossipSimulator):
         except KeyboardInterrupt:
             LOG.warning("Simulation interrupted by user.")
 
-        self.save("\mia_simulator.pkl")
         pbar.close()
         self.notify_end()
         return
@@ -1316,7 +1315,6 @@ class MIADynamicGossipSimulator(GossipSimulator):
         except KeyboardInterrupt:
             LOG.warning("Simulation interrupted by user.")
 
-        self.save()
         pbar.close()
         self.notify_end()
         return
@@ -1463,7 +1461,7 @@ class MIAFederatedSimulator(GossipSimulator):
 
         except KeyboardInterrupt:
             LOG.warning("Simulation interrupted by user.")
-        self.save()
+
         pbar.close()
         self.notify_end()
         return
