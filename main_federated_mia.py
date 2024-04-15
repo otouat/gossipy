@@ -10,10 +10,9 @@ from gossipy.model import TorchModel
 from gossipy.data.handler import ClassificationDataHandler
 from gossipy.model.handler import TorchModelHandler
 from gossipy.node import FederatedGossipNode
-from gossipy.simul import FederatedSimulator, SimulationReport
+from gossipy.simul import MIAFederatedSimulator, SimulationReport
 from gossipy.data import get_CIFAR10
-from gossipy.utils import plot_evaluation
-from topology import create_federated_topology, CustomP2PNetwork
+from topology import create_federated_topology, display_topology,  CustomP2PNetwork
 from gossipy.MIA.mia import plot_mia_vulnerability, log_results, get_fig_evaluation
 
 class BasicBlock(nn.Module):
@@ -116,7 +115,7 @@ class CustomDataDispatcher(DataDispatcher):
 # Dataset loading
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
 train_set, test_set = get_CIFAR10()
-nodes_num = 15
+nodes_num = 16
 
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
@@ -148,7 +147,7 @@ nodes = FederatedGossipNode.generate(
     round_len=100,
     sync=False)
 
-simulator = FederatedSimulator(
+simulator = MIAFederatedSimulator(
     nodes = nodes,
     data_dispatcher=data_dispatcher,
     delta=100,
@@ -159,7 +158,7 @@ simulator = FederatedSimulator(
 report = SimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
-simulator.start(n_rounds=250)
+simulator.start(n_rounds=100)
 
 fig = get_fig_evaluation([[ev for _, ev in report.get_evaluation(False)]], "Overall test results")
 fig2, fig3 = plot_mia_vulnerability(simulator.mia_accuracy, simulator.gen_error)

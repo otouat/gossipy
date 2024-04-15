@@ -15,29 +15,26 @@ def mia_for_each_nn(nodes, attackerNode, class_specific: bool = False, num_class
     idx = attackerNode.idx
     nn = sorted(attackerNode.p2p_net.get_peers(idx), key=lambda x: int(x))
     model = copy.deepcopy(attackerNode.model_handler.model)
-    mia_results = []
-
+    mia_results = [[], []] if class_specific else []
     for node in nodes.values():
+        if node.idx in nn:
+            data = node.data
+            train_data, test_data = data
+            train_data = node.model_handler.get_trained_data()
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            if class_specific:
+                results= mia_best_th_class(model, train_data, test_data, num_classes, device)
+                mia_results[0].append(results[0])
+                mia_results[1].append(results[1])
+                #for class_idx, (loss_mia, ent_mia) in mia_results.items():
+                    #print(f"Class {class_idx} Loss MIA: {np.mean(loss_mia)}")
+                    #print(f"Class {class_idx} Entropy MIA: {np.mean(ent_mia)}")
 
-      if node.idx in nn:
-        data = node.data
-        train_data, test_data = data
-        # Retrieve images and labels from the model handler
-        training_indices = node.model_handler.get_training_indices()
-        print(f"Training indices: {training_indices}")
-        # Combine images and labels using indices
-        images_labels = [(train_data[0][int(idx)], train_data[1][int(idx)]) for idx in training_indices]
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        if class_specific:
-            mia_results.append(mia_best_th_class(model, train_data, test_data, num_classes, device))
-        else: mia_results.append(mia_best_th(model, train_data, test_data, device))
-    
-    for class_idx, (loss_mia, ent_mia) in enumerate(zip(mia_results[0], mia_results[1])):
-        print(f"Class {class_idx} Loss MIA: {np.mean(loss_mia)}")
-        print(f"Class {class_idx} Entropy MIA: {np.mean(ent_mia)}")
+            else: 
+                mia_results.append(mia_best_th(model, train_data, test_data, device))
 
     print("-----------------------------")
-    print("Overall MIA Results:")
+    print("Round MIA Results:")
     print(f"Mean Loss MIA: {np.mean(mia_results[0])}")
     print(f"Mean Entropy MIA: {np.mean(mia_results[1])}")
     print("-----------------------------")
@@ -114,13 +111,13 @@ def mia_best_th_class(model, train_data, test_data, num_class, device, nt=150):
     Ltest, Ptest, Ytest = evaluate(model, device, test_data)
     model.train()
 
-    # it takes a subset of results on test set with size equal to the one of the training test 
-    n = Ptest.shape[0]
+    # it takes a subset of results on test set with size equal to the one of the training test
+    n = min(Ptest.shape[0], Ptrain.shape[0])
+    
     Ptrain = Ptrain[:n]
     Ytrain = Ytrain[:n]
     Ltrain = Ltrain[:n]
 
-    num_classes = Ptrain.shape[1]  # Number of classes
     th_indices_loss = search_th(Ltrain, Ltest, Ytrain, Ytest, num_class,)  # Class-specific thresholds for loss
     th_indices_ent = search_th(compute_modified_entropy(Ptrain, Ytrain), compute_modified_entropy(Ptest, Ytest), Ytrain, Ytest, num_class,)  # Class-specific thresholds for entropy
 
@@ -217,6 +214,8 @@ def compute_gen_errors(Simul, nodes) -> float:
         gen_error.append(0)
 
     return gen_error
+def get_gen_errors(Simul, acc_train, acc_test) -> float:
+    return (acc_train - acc_test) / (acc_test + acc_train)
 
 def assign_model_params(source_model, target_model):
     device = next(target_model.parameters()).device
@@ -250,8 +249,8 @@ import json
 from datetime import datetime
 
 def log_results(Simul, n_rounds, diagrams, global_evaluations):
-    base_folder_path = r"C:\Users\jezek\OneDrive\Documents\Python\Djack\gossipy\results"
-    exp_tracker_file = f"{base_folder_path}/exp_number.txt"
+    base_folder_path = os.path.join(os.getcwd(), "results")
+    exp_tracker_file = os.path.join(base_folder_path, "exp_number.txt")
 
     # Read the last experiment number and increment it
     if os.path.exists(exp_tracker_file):

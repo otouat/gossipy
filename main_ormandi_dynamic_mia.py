@@ -5,7 +5,7 @@ from gossipy.model.handler import PegasosHandler
 from gossipy.model.nn import AdaLine
 from gossipy.data import load_classification_dataset, DataDispatcher
 from gossipy.data.handler import ClassificationDataHandler
-from gossipy.simul import GossipSimulator, DynamicGossipSimulator, SimulationReport
+from gossipy.simul import GossipSimulator, DynamicGossipSimulator, MIADynamicGossipSimulator, SimulationReport
 from gossipy.utils import plot_evaluation
 import torch
 import torch.nn as nn
@@ -151,7 +151,7 @@ nodes = GossipNode.generate(
     round_len=100,
     sync=False)
 
-simulator = DynamicGossipSimulator(
+simulator = MIADynamicGossipSimulator(
     nodes=nodes,
     data_dispatcher=data_dispatcher,
     delta=100,
@@ -166,7 +166,7 @@ simulator = DynamicGossipSimulator(
 report = SimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
-simulator.start(n_rounds=10000)
+simulator.start(n_rounds=100)
 
 fig = get_fig_evaluation([[ev for _, ev in report.get_evaluation(False)]], "Overall test results")
 fig2, fig3 = plot_mia_vulnerability(simulator.mia_accuracy, simulator.gen_error)

@@ -113,7 +113,7 @@ class CustomDataDispatcher(DataDispatcher):
 # Dataset loading
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
 train_set, test_set = get_CIFAR10()
-nodes_num = 4
+nodes_num = 16
 
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
@@ -122,7 +122,7 @@ Xte, yte = transform(test_set[0]), test_set[1]
 
 data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte)
 
-data_dispatcher = CustomDataDispatcher(data_handler, n=nodes_num*10, eval_on_user=True, auto_assign=True)
+data_dispatcher = CustomDataDispatcher(data_handler, n=nodes_num, eval_on_user=True, auto_assign=True)
 
 topology = create_torus_topology(nodes_num)
 network = CustomP2PNetwork(topology)

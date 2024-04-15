@@ -15,7 +15,7 @@ from .node import GossipNode, All2AllGossipNode
 from .flow_control import TokenAccount
 from .model.handler import ModelHandler
 from .utils import StringEncoder
-from .MIA.mia import mia_for_each_nn, compute_consensus_distance, compute_gen_errors,  plot_mia_vulnerability
+from .MIA.mia import mia_for_each_nn, compute_consensus_distance, compute_gen_errors, get_gen_errors, plot_mia_vulnerability
 
 # AUTHORSHIP
 __version__ = "0.0.1"
@@ -502,9 +502,6 @@ class FederatedSimulator(GossipSimulator):
             delay: Delay = ConstantDelay(0), sampling_eval: float = 0.):
             super().__init__(nodes, data_dispatcher, delta, protocol, drop_prob,
                             online_prob, delay, sampling_eval)
-            self.mia_accuracy = []
-            self.gen_error = []
-            self.n_rounds = 0
 
     def init_nodes(self, seed:int=98765) -> None:
         """Initializes the nodes.
@@ -569,11 +566,9 @@ class FederatedSimulator(GossipSimulator):
                                 protocol = AntiEntropyProtocol.PUSH_PULL
                                 for peer in peers:
                                     node.node_selected.append(peer)
-                                print("Nodes Selected: ", peers)
                             else:
                                 peers = node.node_selected
                                 protocol = AntiEntropyProtocol.PULL
-                                print("Nodes Missing: ", peers)
                                   
                             for peer in peers:
                                 msg = node.send(t, peer, protocol)
@@ -609,32 +604,7 @@ class FederatedSimulator(GossipSimulator):
                 del rep_queues[t]
 
                 if (t+1) % self.delta == 0:
-                    mia_results = mia_for_each_nn(self.nodes, self.nodes[0])
-                    self.mia_accuracy.append(np.mean(mia_results[:, 1]))
 
-                    # Aggregate training and test accuracies across all nodes
-                    aggregated_acc_train = []
-                    aggregated_acc_test = []
-
-                    for _, node in self.nodes.items():
-                        acc_train = node.evaluate(node.data[0])["accuracy"]
-                        aggregated_acc_train.append(acc_train)
-                        if node.has_test():
-                            if self.data_dispatcher.has_test():
-                                acc_test = node.evaluate(node.data[1])["accuracy"]
-                                #acc_test = node.evaluate(self.data_dispatcher.get_eval_set())["accuracy"]
-                            else:
-                                acc_test = node.evaluate(node.data[1])["accuracy"]
-                            aggregated_acc_test.append(acc_test)
-
-                    # Compute the generalization error based on aggregated accuracies
-                    if aggregated_acc_train and aggregated_acc_test:
-                        avg_acc_train = sum(aggregated_acc_train) / len(aggregated_acc_train)
-                        avg_acc_test = sum(aggregated_acc_test) / len(aggregated_acc_test)
-                        gen_error_value = (avg_acc_train - avg_acc_test) / (avg_acc_test + avg_acc_train)
-                        self.gen_error.append(gen_error_value)
-                    else:
-                        self.gen_error.append(0)
                     if self.sampling_eval > 0:
                         node_ids = [node_id for node_id in self.nodes.keys() if node_id != "server_state"]
                         # sample = choice(list(self.nodes.keys()), max(int(self.n_nodes * self.sampling_eval), 1))
@@ -1226,31 +1196,6 @@ class MIAGossipSimulator(GossipSimulator):
         self.notify_end()
         return
     
-class AttackGossipSimulator(GossipSimulator):
-
-
-    def start(self, n_rounds: int) -> None:
-        average_mia_accuracy_per_epoch = []
-        average_generalization_error_per_epoch = []
-        consensus_distances_per_epoch = []
-
-        for epoch in range(n_rounds):
-            print(f"Epoch n°{epoch}")
-            super().start(1)
-            mia_results = mia_for_each_nn(self.nodes, self.nodes[0], self.data_dispatcher)
-
-            average_mia_accuracy = np.mean(mia_results[:, 1])
-            average_mia_accuracy_per_epoch.append(average_mia_accuracy)
-
-            average_generalization_error = np.mean(mia_results[:, 2])
-            average_generalization_error_per_epoch.append(average_generalization_error)
-
-            consensus_distance = compute_consensus_distance(self.nodes)
-            consensus_distances_per_epoch.append(consensus_distance)
-
-        epochs = list(range(n_rounds))
-        plot_mia_vulnerability( average_mia_accuracy_per_epoch, average_generalization_error_per_epoch)
-
 class MIADynamicGossipSimulator(GossipSimulator):
     def __init__(self,
                  nodes: Dict[int, GossipNode],
@@ -1269,7 +1214,9 @@ class MIADynamicGossipSimulator(GossipSimulator):
                          sampling_eval)
         self.mia_accuracy = []
         self.gen_error = []
+        self.n_rounds = 0
         self.peer_sampling_period = peer_sampling_period
+        self.attackerNode = self.nodes[int(random() * len(self.nodes))]
 
     def start(self, n_rounds: int = 100) -> None:
         """Starts the simulation.
@@ -1342,32 +1289,8 @@ class MIADynamicGossipSimulator(GossipSimulator):
                 del rep_queues[t]
 
                 if (t + 1) % self.delta == 0:
-                    mia_results = mia_for_each_nn(self.nodes, self.nodes[0])
-                    self.mia_accuracy.append(np.mean(mia_results[:, 1]))
-
-                    # Aggregate training and test accuracies across all nodes
-                    aggregated_acc_train = []
-                    aggregated_acc_test = []
-
-                    for _, node in self.nodes.items():
-                        acc_train = node.evaluate(node.data[0])["accuracy"]
-                        aggregated_acc_train.append(acc_train)
-                        if node.has_test():
-                            if self.data_dispatcher.has_test():
-                                acc_test = node.evaluate(node.data[1])["accuracy"]
-                                #acc_test = node.evaluate(self.data_dispatcher.get_eval_set())["accuracy"]
-                            else:
-                                acc_test = node.evaluate(node.data[1])["accuracy"]
-                            aggregated_acc_test.append(acc_test)
-
-                    # Compute the generalization error based on aggregated accuracies
-                    if aggregated_acc_train and aggregated_acc_test:
-                        avg_acc_train = sum(aggregated_acc_train) / len(aggregated_acc_train)
-                        avg_acc_test = sum(aggregated_acc_test) / len(aggregated_acc_test)
-                        gen_error_value = (avg_acc_train - avg_acc_test) / (avg_acc_test + avg_acc_train)
-                        self.gen_error.append(gen_error_value)
-                    else:
-                        self.gen_error.append(0)
+                    self.mia_accuracy.append(np.mean(mia_for_each_nn(self.nodes, self.attackerNode, class_specific = True)[1]))
+                    self.gen_error.append(compute_gen_errors(self, self.nodes))
 
                     if self.sampling_eval > 0:
                         sample = choice(list(self.nodes.keys()),
@@ -1396,3 +1319,149 @@ class MIADynamicGossipSimulator(GossipSimulator):
         self.notify_end()
         return
 
+class MIAFederatedSimulator(GossipSimulator):
+    def __init__(self, nodes: Dict[int, GossipNode], data_dispatcher: DataDispatcher,
+            delta: int, protocol: AntiEntropyProtocol,
+            drop_prob: float = 0., online_prob: float = 1.,
+            delay: Delay = ConstantDelay(0), sampling_eval: float = 0.):
+            super().__init__(nodes, data_dispatcher, delta, protocol, drop_prob,
+                            online_prob, delay, sampling_eval)
+            self.mia_accuracy = []
+            self.gen_error = []
+            self.n_rounds = 0
+            self.attackerNode = self.nodes[0]
+
+    def init_nodes(self, seed:int=98765) -> None:
+        """Initializes the nodes.
+
+        The initialization of the nodes usually involves the initialization of the local model
+        (see :meth:`GossipNode.init_model`).
+
+        Parameters
+        ----------
+        seed : int, default=98765
+            The seed for the random number generator.
+        """
+
+        self.initialized = True
+        for _, node in self.nodes.items():
+            node.init_model()
+    
+    # def add_nodes(self, nodes: List[GossipNode]) -> None:
+    #     assert not self.initialized, "'init_nodes' must be called before adding new nodes."
+    #     for node in nodes:
+    #         node.idx = self.n_nodes
+    #         node.init_model()
+    #         self.nodes[node.idx] = node
+    #         self.n_nodes += 1
+
+
+    def start(self, n_rounds: int=100) -> None:
+        """Starts the simulation.
+
+        The simulation handles the messages exchange between the nodes for ``n_rounds`` rounds.
+        If attached to a :class:`SimulationReport`, the report is updated at each time step, 
+        sent/fail message and evaluation.
+
+        Parameters
+        ----------
+        n_rounds : int, default=100
+            The number of rounds of the simulation.
+        """
+
+        assert self.initialized, \
+               "The simulator is not inizialized. Please, call the method 'init_nodes'."
+        LOG.info("Simulation started.")
+        node_ids = np.arange(self.n_nodes)
+        self.n_rounds = n_rounds
+        
+        pbar = track(range(n_rounds * self.delta), description="Simulating...")
+        msg_queues = DefaultDict(list)
+        rep_queues = DefaultDict(list)
+
+        try:
+            for t in pbar:
+                if t % self.delta == 0: 
+                    shuffle(node_ids)
+                    
+                for i in node_ids:
+                    node = self.nodes[i]
+                    if node.timed_out(t):
+                        if node.server_state:
+                            if (len(node.node_selected)==0):
+                                neighbors = node.p2p_net.get_peers(node.idx)
+                                peers = choice(neighbors,  max(int((len(neighbors) - 1) * 1), 1), replace=False)
+                                protocol = AntiEntropyProtocol.PUSH_PULL
+                                for peer in peers:
+                                    node.node_selected.append(peer)
+                            else:
+                                peers = node.node_selected
+                                protocol = AntiEntropyProtocol.PULL
+                                  
+                            for peer in peers:
+                                msg = node.send(t, peer, protocol)
+                                self.notify_message(False, msg)
+                                if msg:
+                                    if random() >= self.drop_prob:
+                                        d = self.delay.get(msg)
+                                        msg_queues[t + d].append(msg)
+                                    else:
+                                        self.notify_message(True)
+                
+                is_online = random(self.n_nodes) <= self.online_prob
+                for msg in msg_queues[t]:
+                    if is_online[msg.receiver]:
+                        reply = self.nodes[msg.receiver].receive(t, msg)
+                        if reply:
+                            if random() > self.drop_prob:
+                                d = self.delay.get(reply)
+                                rep_queues[t + d].append(reply)
+                            else:
+                                self.notify_message(True)
+                    else:
+                        self.notify_message(True)
+                del msg_queues[t]
+
+                for reply in rep_queues[t]:
+                    if is_online[reply.receiver]:
+                        self.notify_message(False, reply)
+                        self.nodes[reply.receiver].receive(t, reply)
+                    else:
+                        self.notify_message(True)
+                    
+                del rep_queues[t]
+
+                if (t+1) % self.delta == 0:
+                    self.mia_accuracy.append(np.mean(mia_for_each_nn(self.nodes, self.attackerNode, class_specific = True)[1]))
+                    self.gen_error.append(compute_gen_errors(self, self.nodes))
+
+                    if self.sampling_eval > 0:
+                        node_ids = [node_id for node_id in self.nodes.keys() if node_id != "server_state"]
+                        # sample = choice(list(self.nodes.keys()), max(int(self.n_nodes * self.sampling_eval), 1))
+                        sample = choice(node_ids, max(int((self.n_nodes - 1) * self.sampling_eval), 1))
+                        ev = [self.nodes[i].evaluate() for i in sample if self.nodes[i].has_test()]
+                        ev_train = [self.nodes[i].evaluate(self.nodes[i].data[1]) for i in sample if self.nodes[i].has_test()]
+                    else:
+                        ev = [n.evaluate() for _, n in self.nodes.items() if n.has_test()]
+                        ev_train = [n.evaluate(n.dat[1]) for _, n in self.nodes.items() if n.has_test()]
+                    if ev:
+                        self.notify_evaluation(t, True, ev)
+                        self.gen_error.append(get_gen_errors(ev_train["accuracy"], ev["accuracy"]))
+                    
+                    if self.data_dispatcher.has_test():
+                        if self.sampling_eval > 0:
+                            ev = [self.nodes[i].evaluate(self.data_dispatcher.get_eval_set())
+                                for i in sample]
+                        else:
+                            ev = [n.evaluate(self.data_dispatcher.get_eval_set())
+                                for _, n in self.nodes.items()]
+                        if ev:
+                            self.notify_evaluation(t, False, ev)
+                self.notify_timestep(t)
+
+        except KeyboardInterrupt:
+            LOG.warning("Simulation interrupted by user.")
+        
+        pbar.close()
+        self.notify_end()
+        return
