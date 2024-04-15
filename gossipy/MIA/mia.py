@@ -11,19 +11,18 @@ from sklearn.metrics import accuracy_score, roc_auc_score, recall_score, f1_scor
 from gossipy import LOG
 from typing import List, Dict
 
-def mia_for_each_nn(nodes, attackerNode, class_specific: bool = False, num_classes: int = 10):
-    idx = attackerNode.idx
-    nn = sorted(attackerNode.p2p_net.get_peers(idx), key=lambda x: int(x))
-    model = copy.deepcopy(attackerNode.model_handler.model)
+def mia_for_each_nn(simulation, class_specific: bool = False, num_classes: int = 10):
+    idx = simulation.attackerNode.idx
+    nn = sorted(simulation.attackerNode.p2p_net.get_peers(idx), key=lambda x: int(x))
+    model = copy.deepcopy(simulation.attackerNode.model_handler.model)
     mia_results = [[], []] if class_specific else []
-    for node in nodes.values():
+    for node in simulation.nodes.values():
         if node.idx in nn:
             data = node.data
             train_data, test_data = data
             train_data = node.model_handler.get_trained_data()
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             if class_specific:
-                results= mia_best_th_class(model, train_data, test_data, num_classes, device)
+                results= mia_best_th_class(model, train_data, test_data, num_classes, simulation.device)
                 mia_results[0].append(results[0])
                 mia_results[1].append(results[1])
                 #for class_idx, (loss_mia, ent_mia) in mia_results.items():
@@ -31,13 +30,12 @@ def mia_for_each_nn(nodes, attackerNode, class_specific: bool = False, num_class
                     #print(f"Class {class_idx} Entropy MIA: {np.mean(ent_mia)}")
 
             else: 
-                mia_results.append(mia_best_th(model, train_data, test_data, device))
+                mia_results.append(mia_best_th(model, train_data, test_data, simulation.device))
 
     print("-----------------------------")
     print("Round MIA Results:")
     print(f"Mean Loss MIA: {np.mean(mia_results[0])}")
     print(f"Mean Entropy MIA: {np.mean(mia_results[1])}")
-    print("-----------------------------")
 
     return mia_results
 
@@ -65,7 +63,6 @@ def mia_best_th(model, train_data, test_data, device, nt=150):
     Ptrain = Ptrain[:n]
     Ytrain = Ytrain[:n]
     Ltrain = Ltrain[:n]
-    print(f"Train: {Ptrain.shape}, Test: {Ptest.shape}")
 
     loss_mia = search_th(Ltrain, Ltest)
 

@@ -1166,7 +1166,7 @@ class MIAGossipSimulator(GossipSimulator):
                 del rep_queues[t]
 
                 if (t + 1) % self.delta == 0:
-                    self.mia_accuracy.append(np.mean(mia_for_each_nn(self.nodes, self.attackerNode, class_specific = True)[1]))
+                    self.mia_accuracy.append(np.mean(mia_for_each_nn(self, class_specific = True)[1]))
                     self.gen_error.append(compute_gen_errors(self, self.nodes))
 
                     if self.sampling_eval > 0:
@@ -1192,6 +1192,7 @@ class MIAGossipSimulator(GossipSimulator):
         except KeyboardInterrupt:
             LOG.warning("Simulation interrupted by user.")
 
+        self.save()
         pbar.close()
         self.notify_end()
         return
@@ -1315,6 +1316,7 @@ class MIADynamicGossipSimulator(GossipSimulator):
         except KeyboardInterrupt:
             LOG.warning("Simulation interrupted by user.")
 
+        self.save()
         pbar.close()
         self.notify_end()
         return
@@ -1461,7 +1463,7 @@ class MIAFederatedSimulator(GossipSimulator):
 
         except KeyboardInterrupt:
             LOG.warning("Simulation interrupted by user.")
-        
+        self.save()
         pbar.close()
         self.notify_end()
         return
