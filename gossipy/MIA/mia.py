@@ -21,8 +21,9 @@ def mia_for_each_nn(simulation, class_specific: bool = False, num_classes: int =
             data = node.data
             train_data, test_data = data
             train_data = node.model_handler.get_trained_data()
+            device = node.model_handler.device
             if class_specific:
-                results= mia_best_th_class(model, train_data, test_data, num_classes, simulation.device)
+                results= mia_best_th_class(model, train_data, test_data, num_classes, device)
                 mia_results[0].append(results[0])
                 mia_results[1].append(results[1])
                 #for class_idx, (loss_mia, ent_mia) in mia_results.items():
@@ -30,7 +31,7 @@ def mia_for_each_nn(simulation, class_specific: bool = False, num_classes: int =
                     #print(f"Class {class_idx} Entropy MIA: {np.mean(ent_mia)}")
 
             else: 
-                mia_results.append(mia_best_th(model, train_data, test_data, simulation.device))
+                mia_results.append(mia_best_th(model, train_data, test_data, device))
 
     print("-----------------------------")
     print("Round MIA Results:")
