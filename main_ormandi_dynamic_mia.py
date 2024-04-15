@@ -130,7 +130,7 @@ data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte)
 
 data_dispatcher = CustomDataDispatcher(data_handler, n=nodes_num, eval_on_user=True, auto_assign=True)
 
-topology = create_torus_topology(16)
+topology = create_torus_topology(nodes_num)
 network = CustomP2PNetwork(topology)
 
 nodes = GossipNode.generate(

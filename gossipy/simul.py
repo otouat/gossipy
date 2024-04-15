@@ -1446,7 +1446,7 @@ class MIAFederatedSimulator(GossipSimulator):
                         ev_train = [n.evaluate(n.dat[1]) for _, n in self.nodes.items() if n.has_test()]
                     if ev:
                         self.notify_evaluation(t, True, ev)
-                        self.gen_error.append(get_gen_errors(ev_train["accuracy"], ev["accuracy"]))
+                        #self.gen_error.append(get_gen_errors(ev_train["accuracy"], ev["accuracy"]))
                     
                     if self.data_dispatcher.has_test():
                         if self.sampling_eval > 0:
