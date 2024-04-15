@@ -145,6 +145,7 @@ def compute_modified_entropy(p, y, epsilon=0.00001):
 def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
 
     x, y = data
+    model = model.to("cuda:0" if torch.cuda.is_available() else "cpu")
     x, y = x.to(device), y.to(device)
 
     losses = []
@@ -167,7 +168,7 @@ def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor]) -> Tuple[np
     losses = np.array(losses)
     preds = np.concatenate(preds) if preds else np.array([])
     labels = np.concatenate(labels) if labels else np.array([])
-
+    model = model.to("cpu")
     return losses, preds, labels
 
 def compute_consensus_distance(nodes) -> float:
