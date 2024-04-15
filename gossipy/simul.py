@@ -1192,7 +1192,7 @@ class MIAGossipSimulator(GossipSimulator):
         except KeyboardInterrupt:
             LOG.warning("Simulation interrupted by user.")
 
-        self.save()
+        self.save("\mia_simulator.pkl")
         pbar.close()
         self.notify_end()
         return

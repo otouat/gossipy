@@ -22,8 +22,6 @@ def mia_for_each_nn(simulation, class_specific: bool = False, num_classes: int =
             train_data, test_data = data
             train_data = node.model_handler.get_trained_data()
             device = node.model_handler.device
-            print(device)
-            print('cuda:0' if torch.cuda.is_available() else 'cpu')
             if class_specific:
                 results= mia_best_th_class(model, train_data, test_data, num_classes, device)
                 mia_results[0].append(results[0])
