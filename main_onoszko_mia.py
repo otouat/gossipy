@@ -150,7 +150,7 @@ simulator = MIAGossipSimulator(
     data_dispatcher=data_dispatcher,
     delta=100,
     protocol=AntiEntropyProtocol.PUSH,
-    sampling_eval=0.1
+    sampling_eval=0.2
 )
 
 report = SimulationReport()
