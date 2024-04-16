@@ -215,7 +215,7 @@ def compute_gen_errors(Simul, nodes) -> float:
         gen_error.append(0)
 
     return gen_error
-def get_gen_errors(Simul, acc_train, acc_test) -> float:
+def get_gen_errors(acc_train, acc_test) -> float:
     return (acc_train - acc_test) / (acc_test + acc_train)
 
 def assign_model_params(source_model, target_model):

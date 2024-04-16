@@ -1180,13 +1180,11 @@ class MIAGossipSimulator(GossipSimulator):
 
                     if self.data_dispatcher.has_test():
                         if self.sampling_eval > 0:
-                            ev = [self.nodes[i].evaluate(self.data_dispatcher.get_eval_set())
-                                  for i in sample]
-                            ev_train = [self.nodes[i].evaluate(self.nodes[i].data[1]) for i in sample if self.nodes[i].has_test()]
+                            ev = [self.nodes[i].evaluate(self.data_dispatcher.get_eval_set()) for i in sample]
+                            ev_train = [self.nodes[i].evaluate(self.nodes[i].data[0]) for i in sample]
                         else:
-                            ev = [n.evaluate(self.data_dispatcher.get_eval_set())
-                                  for _, n in self.nodes.items()]
-                            ev_train = [self.nodes[i].evaluate(self.nodes[i].data[1]) for i in sample if self.nodes[i].has_test()]
+                            ev = [n.evaluate(self.data_dispatcher.get_eval_set()) for _, n in self.nodes.items()]
+                            ev_train = [n.evaluate(n.data[0]) for _, n in self.nodes.items()]
                         if ev:
                             self.notify_evaluation(t, False, ev)
                             accuracy_test_values = [node_metrics['accuracy'] for node_metrics in ev]
