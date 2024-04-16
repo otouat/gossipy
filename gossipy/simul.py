@@ -1192,7 +1192,9 @@ class MIAGossipSimulator(GossipSimulator):
                             print("1: ", ev)
                             print("2:", ev[1])
                             print("3:", ev[1]["accuracy"])
-                            self.gen_error.append(get_gen_errors(ev_train["accuracy"], ev["accuracy"]))
+                            accuracy_test_values = [node_metrics['accuracy'] for node_metrics in ev]
+                            accuracy_train_values = [node_metrics['accuracy'] for node_metrics in ev_train]
+                            self.gen_error.append(get_gen_errors(sum(accuracy_train_values) / len(accuracy_train_values), sum(accuracy_test_values) / len(accuracy_test_values)))
                 self.notify_timestep(t)
 
         except KeyboardInterrupt:
