@@ -86,8 +86,8 @@ class ResNet20(TorchModel):
 
         self.apply(_init)
 
-def resnet20():
-    return ResNet20(BasicBlock, [3, 3, 3], num_classes=100)
+def resnet20(num_classes):
+    return ResNet20(BasicBlock, [3, 3, 3], num_classes=num_classes)
 
 class CustomDataDispatcher(DataDispatcher):
     def assign(self, seed: int = 42) -> None:
@@ -113,26 +113,26 @@ class CustomDataDispatcher(DataDispatcher):
 # Dataset loading
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
 train_set, test_set = get_CIFAR100()
-nodes_num = 16
+num_nodes = 16
+num_classes= max(train_set[1].max().item(), test_set[1].max().item())+1
 
-print("Length of training data: ", len(train_set[0]))
-print("Length of testing data: ", len(test_set[0]))
+
 Xtr, ytr = transform(train_set[0]), train_set[1]
 Xte, yte = transform(test_set[0]), test_set[1]
 
 
 data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte)
 
-data_dispatcher = CustomDataDispatcher(data_handler, n=nodes_num, eval_on_user=True, auto_assign=True)
+data_dispatcher = CustomDataDispatcher(data_handler, n=num_nodes, eval_on_user=True, auto_assign=True)
 
-topology = create_torus_topology(nodes_num)
+topology = create_torus_topology(num_nodes)
 network = CustomP2PNetwork(topology)
 
 nodes = GossipNode.generate(
     data_dispatcher=data_dispatcher,
     p2p_net=network,
     model_proto=TorchModelHandler(
-        net=resnet20(),
+        net=resnet20(num_classes),
         optimizer= torch.optim.SGD,
         optimizer_params = {
             "lr": 0.1,
@@ -151,13 +151,8 @@ simulator = MIAGossipSimulator(
     data_dispatcher=data_dispatcher,
     delta=100,
     protocol=AntiEntropyProtocol.PUSH,
-    sampling_eval=0.2
+    sampling_eval=0.2,
 )
-
-# Assuming `nodes` is a list of GossipNode objects
-for node in simulator.nodes.values():
-    print(f"{node}: Number of training examples = {len(node.data[0][0])}, Number of testing examples = {len(node.data[1][0])}")
-
 
 report = SimulationReport()
 simulator.add_receiver(report)

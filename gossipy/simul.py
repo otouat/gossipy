@@ -1166,7 +1166,7 @@ class MIAGossipSimulator(GossipSimulator):
                 del rep_queues[t]
 
                 if (t + 1) % self.delta == 0:
-                    self.mia_accuracy.append(np.mean(mia_for_each_nn(self, class_specific = True)[1]))
+                    self.mia_accuracy.append(np.mean(mia_for_each_nn(self, class_specific = False)[1]))
                     #self.gen_error.append(compute_gen_errors(self, self.nodes))
 
                     if self.sampling_eval > 0:
@@ -1191,7 +1191,7 @@ class MIAGossipSimulator(GossipSimulator):
                             self.notify_evaluation(t, False, ev)
                             print("1: ", ev)
                             print("2:", ev[1])
-                            print("3:", ev["accuracy"])
+                            print("3:", ev[1]["accuracy"])
                             self.gen_error.append(get_gen_errors(ev_train["accuracy"], ev["accuracy"]))
                 self.notify_timestep(t)
 

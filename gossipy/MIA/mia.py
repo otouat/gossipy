@@ -11,7 +11,7 @@ from sklearn.metrics import accuracy_score, roc_auc_score, recall_score, f1_scor
 from gossipy import LOG
 from typing import List, Dict
 
-def mia_for_each_nn(simulation, class_specific: bool = False, num_classes: int = 10):
+def mia_for_each_nn(simulation, class_specific: bool = False):
     idx = simulation.attackerNode.idx
     nn = sorted(simulation.attackerNode.p2p_net.get_peers(idx), key=lambda x: int(x))
     model = copy.deepcopy(simulation.attackerNode.model_handler.model)
@@ -23,6 +23,8 @@ def mia_for_each_nn(simulation, class_specific: bool = False, num_classes: int =
             train_data = node.model_handler.get_trained_data()
             device = node.model_handler.device
             if class_specific:
+                num_classes = max(train_data[1].max().item(), test_data[1].max().item())+1
+                print(num_classes)
                 results= mia_best_th_class(model, train_data, test_data, num_classes, device)
                 mia_results[0].append(results[0])
                 mia_results[1].append(results[1])
@@ -30,7 +32,7 @@ def mia_for_each_nn(simulation, class_specific: bool = False, num_classes: int =
                     #print(f"Class {class_idx} Loss MIA: {np.mean(loss_mia)}")
                     #print(f"Class {class_idx} Entropy MIA: {np.mean(ent_mia)}")
 
-            else: 
+            else:
                 mia_results.append(mia_best_th(model, train_data, test_data, device))
 
     print("-----------------------------")
@@ -76,7 +78,7 @@ def mia_best_th(model, train_data, test_data, device, nt=150):
 
     return loss_mia, ent_mia
 
-def mia_best_th_class(model, train_data, test_data, num_class, device, nt=150):
+def mia_best_th_class(model, train_data, test_data, num_class, device, nt=200):
     
     def search_th(train, test, train_label, test_label, num_classes):
         thrs = np.linspace(min(train.min(), test.min()), max(train.max(), test.max()), nt)
