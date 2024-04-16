@@ -9,7 +9,7 @@ from gossipy.data.handler import ClassificationDataHandler
 from gossipy.model.handler import TorchModelHandler
 from gossipy.node import GossipNode
 from gossipy.simul import MIAGossipSimulator, SimulationReport
-from gossipy.data import get_CIFAR10
+from gossipy.data import get_CIFAR10, get_CIFAR100
 from topology import create_torus_topology, display_topology, CustomP2PNetwork
 from gossipy.MIA.mia import plot_mia_vulnerability, log_results, get_fig_evaluation
 
@@ -87,7 +87,7 @@ class ResNet20(TorchModel):
         self.apply(_init)
 
 def resnet20():
-    return ResNet20(BasicBlock, [3, 3, 3], num_classes=10)
+    return ResNet20(BasicBlock, [3, 3, 3], num_classes=100)
 
 class CustomDataDispatcher(DataDispatcher):
     def assign(self, seed: int = 42) -> None:
@@ -112,10 +112,11 @@ class CustomDataDispatcher(DataDispatcher):
 
 # Dataset loading
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
-train_set, test_set = get_CIFAR10()
+train_set, test_set = get_CIFAR100()
 nodes_num = 16
 
-
+print("Length of training data: ", len(train_set[0]))
+print("Length of testing data: ", len(test_set[0]))
 Xtr, ytr = transform(train_set[0]), train_set[1]
 Xte, yte = transform(test_set[0]), test_set[1]
 
@@ -152,6 +153,11 @@ simulator = MIAGossipSimulator(
     protocol=AntiEntropyProtocol.PUSH,
     sampling_eval=0.2
 )
+
+# Assuming `nodes` is a list of GossipNode objects
+for node in simulator.nodes.values():
+    print(f"{node}: Number of training examples = {len(node.data[0][0])}, Number of testing examples = {len(node.data[1][0])}")
+
 
 report = SimulationReport()
 simulator.add_receiver(report)

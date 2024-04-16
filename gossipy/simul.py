@@ -1167,7 +1167,7 @@ class MIAGossipSimulator(GossipSimulator):
 
                 if (t + 1) % self.delta == 0:
                     self.mia_accuracy.append(np.mean(mia_for_each_nn(self, class_specific = True)[1]))
-                    self.gen_error.append(compute_gen_errors(self, self.nodes))
+                    #self.gen_error.append(compute_gen_errors(self, self.nodes))
 
                     if self.sampling_eval > 0:
                         sample = choice(list(self.nodes.keys()),
@@ -1182,11 +1182,17 @@ class MIAGossipSimulator(GossipSimulator):
                         if self.sampling_eval > 0:
                             ev = [self.nodes[i].evaluate(self.data_dispatcher.get_eval_set())
                                   for i in sample]
+                            ev_train = [self.nodes[i].evaluate(self.nodes[i].data[1]) for i in sample if self.nodes[i].has_test()]
                         else:
                             ev = [n.evaluate(self.data_dispatcher.get_eval_set())
                                   for _, n in self.nodes.items()]
+                            ev_train = [self.nodes[i].evaluate(self.nodes[i].data[1]) for i in sample if self.nodes[i].has_test()]
                         if ev:
                             self.notify_evaluation(t, False, ev)
+                            print("1: ", ev)
+                            print("2:", ev[1])
+                            print("3:", ev["accuracy"])
+                            self.gen_error.append(get_gen_errors(ev_train["accuracy"], ev["accuracy"]))
                 self.notify_timestep(t)
 
         except KeyboardInterrupt:

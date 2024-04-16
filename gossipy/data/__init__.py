@@ -721,6 +721,53 @@ def get_CIFAR10(path: str="./data",
 
     return train_set, test_set
 
+import os
+from pathlib import Path
+from typing import Tuple, Union
+
+import torchvision
+import numpy as np
+from torch import Tensor, tensor
+
+def get_CIFAR100(path: str="./data",
+                as_tensor: bool=True) -> Union[Tuple[Tuple[np.ndarray, list], Tuple[np.ndarray, list]],
+                                               Tuple[Tuple[Tensor, Tensor], Tuple[Tensor, Tensor]]]:
+    """Returns the CIFAR100 dataset.
+
+    The method downloads the dataset if it is not already present in `path`.
+    
+    Parameters
+    ----------
+    path : str, default="./data"
+        Path to save the dataset, by default "./data".
+    as_tensor : bool, default=True
+        If True, the dataset is returned as a tuple of pytorch tensors.
+        Otherwise, the dataset is returned as a tuple of numpy arrays.
+        By default, True.
+    
+    Returns
+    -------
+    tuple[tuple[np.ndarray, list], tuple[np.ndarray, list]] or tuple[tuple[Tensor, Tensor], tuple[Tensor, Tensor]]
+        Tuple of training and test sets of the form :math:`(X_train, y_train), (X_test, y_test)`.
+    """
+
+    download = not Path(os.path.join(path, "/cifar-100-python")).is_dir()
+    train_set = torchvision.datasets.CIFAR100(root=path,
+                                             train=True,
+                                             download=download)
+    test_set = torchvision.datasets.CIFAR100(root=path,
+                                            train=False,
+                                            download=download)
+    if as_tensor:
+        train_set = tensor(train_set.data).float().permute(0, 3, 1, 2) / 255.,\
+                    tensor(train_set.targets)
+        test_set = tensor(test_set.data).float().permute(0, 3, 1, 2) / 255.,\
+                   tensor(test_set.targets)
+    else:
+        train_set = train_set.data, train_set.targets
+        test_set = test_set.data, test_set.targets
+
+    return train_set, test_set
 
 def get_FashionMNIST(path: str="./data",
                      as_tensor: bool=True) -> Union[Tuple[Tuple[np.ndarray, list], Tuple[np.ndarray, list]],
