@@ -20,11 +20,9 @@ def mia_for_each_nn(simulation, class_specific: bool = False):
         if node.idx in nn:
             data = node.data
             train_data, test_data = data
-            train_data = node.model_handler.get_trained_data()
             device = node.model_handler.device
             if class_specific:
                 num_classes = max(train_data[1].max().item(), test_data[1].max().item())+1
-                print(num_classes)
                 results= mia_best_th_class(model, train_data, test_data, num_classes, device)
                 mia_results[0].append(results[0])
                 mia_results[1].append(results[1])

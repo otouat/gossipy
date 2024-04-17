@@ -231,7 +231,6 @@ class TorchModelHandler(ModelHandler):
         self.batch_size = batch_size
         GlobalSettings().auto_device()
         self.device = GlobalSettings().get_device()
-        self.trained_data = None
         #self.model = self.model.to(self.device)
 
     def init(self) -> None:
@@ -251,7 +250,6 @@ class TorchModelHandler(ModelHandler):
             perm = torch.randperm(x.size(0))
             self._local_step(x[perm][:batch_size], y[perm][:batch_size])
         self.model = self.model.to("cpu")
-        self.trained_data = data
     
     def _local_step(self, x:torch.Tensor, y:torch.Tensor) -> None:
         self.model.train()
@@ -262,10 +260,6 @@ class TorchModelHandler(ModelHandler):
         loss.backward()
         self.optimizer.step()
         self.n_updates += 1
-
-    def get_trained_data(self) -> Set[torch.Tensor]:
-        """Returns the set of images used in training."""
-        return self.trained_data
     
     def _merge(self, other_model_handler: Union[TorchModelHandler, Iterable[TorchModelHandler]]) -> None:
         dict_params1 = self.model.state_dict()
