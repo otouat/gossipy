@@ -1306,13 +1306,16 @@ class MIADynamicGossipSimulator(GossipSimulator):
 
                     if self.data_dispatcher.has_test():
                         if self.sampling_eval > 0:
-                            ev = [self.nodes[i].evaluate(self.data_dispatcher.get_eval_set())
-                                  for i in sample]
+                            ev = [self.nodes[i].evaluate(self.data_dispatcher.get_eval_set()) for i in sample]
+                            ev_train = [self.nodes[i].evaluate(self.nodes[i].data[0]) for i in sample]
                         else:
-                            ev = [n.evaluate(self.data_dispatcher.get_eval_set())
-                                  for _, n in self.nodes.items()]
+                            ev = [n.evaluate(self.data_dispatcher.get_eval_set()) for _, n in self.nodes.items()]
+                            ev_train = [n.evaluate(n.data[0]) for _, n in self.nodes.items()]
                         if ev:
                             self.notify_evaluation(t, False, ev)
+                            accuracy_test_values = [node_metrics['accuracy'] for node_metrics in ev]
+                            accuracy_train_values = [node_metrics['accuracy'] for node_metrics in ev_train]
+                            self.gen_error.append(get_gen_errors(sum(accuracy_train_values) / len(accuracy_train_values), sum(accuracy_test_values) / len(accuracy_test_values)))
                 self.notify_timestep(t)
 
         except KeyboardInterrupt:
@@ -1399,7 +1402,6 @@ class MIAFederatedSimulator(GossipSimulator):
                                     node.node_selected.append(peer)
                             else:
                                 peers = node.node_selected
-                                protocol = AntiEntropyProtocol.PULL
                                   
                             for peer in peers:
                                 msg = node.send(t, peer, protocol)
@@ -1438,28 +1440,18 @@ class MIAFederatedSimulator(GossipSimulator):
                     self.mia_accuracy.append(np.mean(mia_for_each_nn(self, class_specific = True)[1]))
                     self.gen_error.append(compute_gen_errors(self, self.nodes))
 
-                    if self.sampling_eval > 0:
-                        node_ids = [node_id for node_id in self.nodes.keys() if node_id != "server_state"]
-                        # sample = choice(list(self.nodes.keys()), max(int(self.n_nodes * self.sampling_eval), 1))
-                        sample = choice(node_ids, max(int((self.n_nodes - 1) * self.sampling_eval), 1))
-                        ev = [self.nodes[i].evaluate() for i in sample if self.nodes[i].has_test()]
-                        ev_train = [self.nodes[i].evaluate(self.nodes[i].data[1]) for i in sample if self.nodes[i].has_test()]
-                    else:
-                        ev = [n.evaluate() for _, n in self.nodes.items() if n.has_test()]
-                        ev_train = [n.evaluate(n.dat[1]) for _, n in self.nodes.items() if n.has_test()]
-                    if ev:
-                        self.notify_evaluation(t, True, ev)
-                        #self.gen_error.append(get_gen_errors(ev_train["accuracy"], ev["accuracy"]))
-                    
                     if self.data_dispatcher.has_test():
                         if self.sampling_eval > 0:
-                            ev = [self.nodes[i].evaluate(self.data_dispatcher.get_eval_set())
-                                for i in sample]
+                            ev = [self.nodes[i].evaluate(self.data_dispatcher.get_eval_set()) for i in sample]
+                            ev_train = [self.nodes[i].evaluate(self.nodes[i].data[0]) for i in sample]
                         else:
-                            ev = [n.evaluate(self.data_dispatcher.get_eval_set())
-                                for _, n in self.nodes.items()]
+                            ev = [n.evaluate(self.data_dispatcher.get_eval_set()) for _, n in self.nodes.items()]
+                            ev_train = [n.evaluate(n.data[0]) for _, n in self.nodes.items()]
                         if ev:
                             self.notify_evaluation(t, False, ev)
+                            accuracy_test_values = [node_metrics['accuracy'] for node_metrics in ev]
+                            accuracy_train_values = [node_metrics['accuracy'] for node_metrics in ev_train]
+                            self.gen_error.append(get_gen_errors(sum(accuracy_train_values) / len(accuracy_train_values), sum(accuracy_test_values) / len(accuracy_test_values)))
                 self.notify_timestep(t)
 
         except KeyboardInterrupt:
