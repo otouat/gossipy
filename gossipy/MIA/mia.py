@@ -230,7 +230,7 @@ def plot_mia_vulnerability(mia_accuracy, gen_error):
         plt.title('MIA Vulnerability over Generalization Error')
         plt.legend()
         plt.grid(True)
-        plt.show()
+        #plt.show()
         fig2 = plt.figure(figsize=(8, 6))
         epoch = list(range(1, len(mia_accuracy) + 1))
         plt.plot(epoch, mia_accuracy, label='MIA Vulnerability per epoch', color='green')
@@ -239,7 +239,7 @@ def plot_mia_vulnerability(mia_accuracy, gen_error):
         plt.title('MIA Vulnerability per epoch')
         plt.legend()
         plt.grid(True)
-        plt.show()
+        #plt.show()
         return fig, fig2
 
 import os
@@ -317,6 +317,6 @@ def get_fig_evaluation(evals: List[List[Dict]],
         plt.plot(range(1, len(mu)+1), mu, label=k)
         LOG.info(f"{k}: {mu[-1]:.2f}")
     ax.legend(loc="lower right")
-    plt.show()
+    #plt.show()
 
     return fig
