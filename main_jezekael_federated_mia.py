@@ -35,7 +35,7 @@ class CustomDataDispatcher(DataDispatcher):
 
 # Dataset loading
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
-train_set, test_set = get_CIFAR100()
+train_set, test_set = get_CIFAR10()
 nodes_num = 16
 num_classes = max(train_set[1].max().item(), test_set[1].max().item())+1
 
@@ -65,7 +65,7 @@ nodes = FederatedGossipNode.generate(
         criterion = F.cross_entropy,
         create_model_mode = CreateModelMode.UPDATE,
         batch_size= 256,
-        local_epochs= 20),
+        local_epochs= 10),
     round_len=100,
     sync=False)
 
@@ -86,9 +86,9 @@ fig = get_fig_evaluation([[ev for _, ev in report.get_evaluation(False)]], "Over
 fig2, fig3 = plot_mia_vulnerability(simulator.mia_accuracy, simulator.gen_error)
 fig4 = display_topology(topology)
 diagrams = {
-    'Overall test results': fig,
-    'mia_vulnerability over Gen error': fig2,
-    'mia_vulnerability over epoch': fig3,
+    'Overall_test_results': fig,
+    'mia_vulnerability_over_Gen_error': fig2,
+    'mia_vulnerability_over_epoch': fig3,
     "Topology": fig4
 }
 log_results(simulator, simulator.n_rounds, diagrams, report.get_evaluation(False))

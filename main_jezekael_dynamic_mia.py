@@ -38,7 +38,7 @@ class CustomDataDispatcher(DataDispatcher):
 
 # Dataset loading
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
-train_set, test_set = get_CIFAR100()
+train_set, test_set = get_CIFAR10()
 nodes_num = 16
 num_classes = max(train_set[1].max().item(), test_set[1].max().item())+1
 
@@ -86,7 +86,7 @@ simulator = MIADynamicGossipSimulator(
 report = SimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
-simulator.start(n_rounds=100)
+simulator.start(n_rounds=10)
 
 fig = get_fig_evaluation([[ev for _, ev in report.get_evaluation(False)]], "Overall test results")
 fig2, fig3 = plot_mia_vulnerability(simulator.mia_accuracy, simulator.gen_error)

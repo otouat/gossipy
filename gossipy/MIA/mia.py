@@ -259,7 +259,7 @@ def log_results(Simul, n_rounds, diagrams, global_evaluations):
         experiment_number = 1
 
     # Create new subfolder
-    new_folder_path = f"{base_folder_path}/Exp n°{experiment_number}"
+    new_folder_path = f"{base_folder_path}/Exp_n#{experiment_number}"
     os.makedirs(new_folder_path, exist_ok=True)
 
     # Log file path for experiment parameters
