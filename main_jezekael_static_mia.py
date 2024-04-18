@@ -35,7 +35,7 @@ class CustomDataDispatcher(DataDispatcher):
 
 # Dataset loading
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
-train_set, test_set = get_CIFAR10()
+train_set, test_set = get_CIFAR100()
 num_nodes = 16
 num_classes= max(train_set[1].max().item(), test_set[1].max().item())+1
 
@@ -65,7 +65,7 @@ nodes = GossipNode.generate(
         criterion = F.cross_entropy,
         create_model_mode= CreateModelMode.MERGE_UPDATE,
         batch_size= 256,
-        local_epochs= 10),
+        local_epochs= 20),
     round_len=100,
     sync=False)
 

@@ -65,7 +65,7 @@ nodes = FederatedGossipNode.generate(
         criterion = F.cross_entropy,
         create_model_mode = CreateModelMode.UPDATE,
         batch_size= 256,
-        local_epochs= 10),
+        local_epochs= 20),
     round_len=100,
     sync=False)
 

@@ -2,7 +2,7 @@ import subprocess
 
 # Define paths to your scripts
 script_paths = [
-    #"main_jezekael_static_mia.py",
+    "main_jezekael_static_mia.py",
     "main_jezekael_dynamic_mia.py",
     "main_jezekael_federated_mia.py"
 ]
