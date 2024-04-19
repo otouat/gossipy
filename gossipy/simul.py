@@ -1293,7 +1293,6 @@ class MIADynamicGossipSimulator(GossipSimulator):
 
                 if (t + 1) % self.delta == 0:
                     self.mia_accuracy.append(np.mean(mia_for_each_nn(self, class_specific = False)[1]))
-                    self.gen_error.append(compute_gen_errors(self, self.nodes))
 
                     if self.sampling_eval > 0:
                         sample = choice(list(self.nodes.keys()),
@@ -1438,7 +1437,6 @@ class MIAFederatedSimulator(GossipSimulator):
 
                 if (t+1) % self.delta == 0:
                     self.mia_accuracy.append(np.mean(mia_for_each_nn(self, class_specific = False)[1]))
-                    self.gen_error.append(compute_gen_errors(self, self.nodes))
 
                     if self.sampling_eval > 0:
                         sample = choice(list(self.nodes.keys()),
