@@ -1,7 +1,7 @@
 from gossipy import set_seed
 from gossipy.core import AntiEntropyProtocol, CreateModelMode, StaticP2PNetwork, ConstantDelay, UniformDynamicP2PNetwork
 from gossipy.node import GossipNode
-from gossipy.data import load_classification_dataset, DataDispatcher
+from gossipy.data import load_classification_dataset, CustomDataDispatcher
 from gossipy.data.handler import ClassificationDataHandler
 from gossipy.simul import GossipSimulator, DynamicGossipSimulator, MIADynamicGossipSimulator, SimulationReport
 from gossipy.utils import plot_evaluation
@@ -13,28 +13,6 @@ from gossipy.model.architecture import resnet20
 from gossipy.data import get_CIFAR10, get_CIFAR100
 from topology import create_torus_topology, create_simple_topology, create_circular_topology, display_topology, CustomP2PNetwork
 from gossipy.MIA.mia import plot_mia_vulnerability, log_results, get_fig_evaluation
-
-
-class CustomDataDispatcher(DataDispatcher):
-    def assign(self, seed: int = 42) -> None:
-        self.tr_assignments = [[] for _ in range(self.n)]
-        self.te_assignments = [[] for _ in range(self.n)]
-
-        n_ex = self.data_handler.size()
-        ex_x_user = n_ex // self.n  # Ensure equal partitioning
-
-        for idx in range(self.n):
-            start_index = idx * ex_x_user
-            end_index = start_index + ex_x_user
-            self.tr_assignments[idx] = list(range(start_index, min(end_index, n_ex)))
-
-        if self.eval_on_user:
-            n_eval_ex = self.data_handler.eval_size()
-            eval_ex_x_user = n_eval_ex // self.n
-            for idx in range(self.n):
-                start_index = idx * eval_ex_x_user
-                end_index = start_index + eval_ex_x_user
-                self.te_assignments[idx] = list(range(start_index, min(end_index, n_eval_ex)))
 
 # Dataset loading
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
@@ -92,9 +70,9 @@ fig = get_fig_evaluation([[ev for _, ev in report.get_evaluation(False)]], "Over
 fig2, fig3 = plot_mia_vulnerability(simulator.mia_accuracy, simulator.gen_error)
 fig4 = display_topology(topology)
 diagrams = {
-    'Overall test results': fig,
-    'mia_vulnerability over Gen error': fig2,
-    'mia_vulnerability over epoch': fig3,
+    'Overall_test_results': fig,
+    'mia_vulnerability_over_Gen error': fig2,
+    'mia_vulnerability_over_epoch': fig3,
     "Topology": fig4
 }
 log_results(simulator, simulator.n_rounds, diagrams, report.get_evaluation(False))
