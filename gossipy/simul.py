@@ -15,7 +15,7 @@ from .node import GossipNode, All2AllGossipNode
 from .flow_control import TokenAccount
 from .model.handler import ModelHandler
 from .utils import StringEncoder
-from .MIA.mia import mia_for_each_nn, compute_consensus_distance, compute_gen_errors, get_gen_errors, plot_mia_vulnerability
+from .mia.mia import mia_for_each_nn, get_gen_errors
 
 # AUTHORSHIP
 __version__ = "0.0.1"
@@ -174,7 +174,6 @@ class SimulationEventSender(ABC):
         for er in self._receivers:
             er.update_end()
 
-
 class SimulationReport(SimulationEventReceiver):
     _sent_messages: int
     _total_size: int
@@ -261,6 +260,124 @@ class SimulationReport(SimulationEventReceiver):
             return self._local_evaluations
         else:
             return self._global_evaluations
+
+    # docstr-coverage:inherited
+    def update_timestep(self, t: int):
+        pass
+
+class MIASimulationReport(SimulationEventReceiver):
+    _sent_messages: int
+    _total_size: int
+    _failed_messages: int
+    _global_evaluations: List[Tuple[int, Dict[str, float]]]
+    _local_evaluations: List[Tuple[int, Dict[str, float]]]
+    _global_generalisations_errors: List[Tuple[int, Dict[str, float]]]
+    _global_mia_vulnerability: List[Tuple[int, Dict[str, float]]]
+    _local_mia_vulnerability: Dict[int, List[Tuple[int, Dict[str, float]]]]
+    _local_accuracy: Dict[int, List[Tuple[int, Dict[str, float]]]]
+
+
+    def __init__(self):
+        """Class that implements a basic simulation report.
+
+        The report traces the number of sent messages, the number of failed messages,
+        the total size of the sent messages, and the evaluation metrics (both global and local).
+
+        The report is updated according to the design pattern Observer (actually Event Receiver).
+        Thus, the report must be created and attached to the simulation before starting it.
+
+        Examples
+        --------
+        >>> from gossipy.simul import SimulationReport
+        >>> from gossipy.simul import GossipSimulator
+        >>> simulator = GossipSimulator(...)
+        >>> report = SimulationReport()
+        >>> simulator.add_receiver(report)
+        >>> simulator.start(...)
+
+        The ``report`` object is now attached to the simulation and it will be notified about the
+        events.
+
+        See Also
+        --------
+        gossipy.Sizeable
+        """
+
+        self.clear()
+
+    # docstr-coverage:inherited
+    def clear(self) -> None:
+        """Clears the report."""
+
+        self._sent_messages = 0
+        self._total_size = 0
+        self._failed_messages = 0
+        self._global_evaluations = []
+        self._local_evaluations = []
+        self._global_generalisation_error = []
+        self._local_generalisation_error = []
+        self._local_mia_vulnerability = {}
+        self._local_accuracy = {}
+
+    # docstr-coverage:inherited
+    def update_message(self, failed: bool, msg: Optional[Message] = None) -> None:
+        if failed:
+            self._failed_messages += 1
+        else:
+            assert msg is not None, "msg is not set"
+            self._sent_messages += 1
+            self._total_size += msg.get_size()
+
+    # docstr-coverage:inherited
+    def update_evaluation(self, round: int, on_user: bool, evaluation: List[Dict[str, float]]) -> None:
+        ev = self._collect_results(evaluation)
+        
+        if on_user:
+            self._local_evaluations.append((round, ev))
+        else:
+            self._global_evaluations.append((round, ev))
+
+    # docstr-coverage:inherited
+    def update_accuracy(self, round: int, accuracy: List[Dict[str, float]]) -> None:
+        for i, acc in enumerate(accuracy):
+            if i not in self._local_accuracy:
+                self._local_accuracy[i] = []  # Initialize the list for this node if it doesn't exist
+            self._local_accuracy[i].append((round, acc))
+
+    def update_mia_vulnerability(self, round: int, mia: List[Dict[str, float]]) -> None:
+        for i, node_ev in enumerate(mia):
+            if i not in self._local_mia_vulnerability:
+                self._local_mia_vulnerability[i] = []
+            self._local_mia_vulnerability[i].append((round, node_ev))
+
+    # docstr-coverage:inherited
+    def update_end(self) -> None:
+        LOG.info("# Sent messages: %d" % self._sent_messages)
+        LOG.info("# Failed messages: %d" % self._failed_messages)
+        LOG.info("Total size: %d" % self._total_size)
+
+    def _collect_results(self, results: List[Dict[str, float]]) -> Dict[str, float]:
+        if not results: return {}
+        res = {k: [] for k in results[0]}
+        for k in res:
+            for r in results:
+                res[k].append(r[k])
+            res[k] = np.mean(res[k])
+        return res
+
+    # docstr-coverage:inherited
+    def get_evaluation(self, local: bool = False):
+        if local:
+            return self._local_evaluations
+        else:
+            return self._global_evaluations
+    
+        # docstr-coverage:inherited
+    def get_mia_vulnerability(self):
+        return self._local_mia_vulnerability
+    
+    def get_accuracy(self):
+        return self._local_accuracy
 
     # docstr-coverage:inherited
     def update_timestep(self, t: int):
@@ -424,8 +541,7 @@ class GossipSimulator(SimulationEventSender):
 
                 if (t + 1) % self.delta == 0:
                     if self.sampling_eval > 0:
-                        sample = choice(list(self.nodes.keys()),
-                                        max(int(self.n_nodes * self.sampling_eval), 1))
+                        sample = choice(list(self.nodes.keys()), max(int(self.n_nodes * self.sampling_eval), 1))
                         ev = [self.nodes[i].evaluate() for i in sample if self.nodes[i].has_test()]
                     else:
                         ev = [n.evaluate() for _, n in self.nodes.items() if n.has_test()]
@@ -434,11 +550,9 @@ class GossipSimulator(SimulationEventSender):
 
                     if self.data_dispatcher.has_test():
                         if self.sampling_eval > 0:
-                            ev = [self.nodes[i].evaluate(self.data_dispatcher.get_eval_set())
-                                  for i in sample]
+                            ev = [self.nodes[i].evaluate(self.data_dispatcher.get_eval_set()) for i in sample]
                         else:
-                            ev = [n.evaluate(self.data_dispatcher.get_eval_set())
-                                  for _, n in self.nodes.items()]
+                            ev = [n.evaluate(self.data_dispatcher.get_eval_set()) for _, n in self.nodes.items()]
                         if ev:
                             self.notify_evaluation(t, False, ev)
                 self.notify_timestep(t)
@@ -1096,8 +1210,6 @@ class All2AllGossipSimulator(GossipSimulator):
         self.notify_end()
         return
 
-from collections import OrderedDict
-
 class MIAGossipSimulator(GossipSimulator):
     def __init__(self, nodes: Dict[int, GossipNode], data_dispatcher: DataDispatcher,
             delta: int, protocol: AntiEntropyProtocol,
@@ -1105,10 +1217,7 @@ class MIAGossipSimulator(GossipSimulator):
             delay: Delay = ConstantDelay(0), sampling_eval: float = 0.):
             super().__init__(nodes, data_dispatcher, delta, protocol, drop_prob,
                             online_prob, delay, sampling_eval)
-            self.mia_accuracy = []
-            self.gen_error = []
             self.n_rounds = 0
-            self.attackerNode = self.nodes[int(random() * len(self.nodes))]
 
     def start(self, n_rounds: int = 100, attackerNode: int = 0) -> None:
         assert self.initialized, \
@@ -1124,6 +1233,7 @@ class MIAGossipSimulator(GossipSimulator):
 
         try:
             for t in pbar:
+                self.n_rounds = int(round(t, -2)/100)
                 if t % self.delta == 0:
                     shuffle(node_ids)
 
@@ -1166,30 +1276,40 @@ class MIAGossipSimulator(GossipSimulator):
                 del rep_queues[t]
 
                 if (t + 1) % self.delta == 0:
-                    self.mia_accuracy.append(np.mean(mia_for_each_nn(self, class_specific = False)[1]))
-                    #self.gen_error.append(compute_gen_errors(self, self.nodes))
+                    for er in self._receivers:
+                            mia_vulnerability = [mia_for_each_nn(self, n, class_specific = False) for _, n in self.nodes.items()]
+                            er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)
 
                     if self.sampling_eval > 0:
-                        sample = choice(list(self.nodes.keys()),
-                                        max(int(self.n_nodes * self.sampling_eval), 1))
+                        sample = choice(list(self.nodes.keys()), max(int(self.n_nodes * self.sampling_eval), 1))
                         ev = [self.nodes[i].evaluate() for i in sample if self.nodes[i].has_test()]
+                        ev_train = [self.nodes[i].evaluate(self.nodes[i].data[0]) for i in sample]
                     else:
                         ev = [n.evaluate() for _, n in self.nodes.items() if n.has_test()]
+                        ev_train = [n.evaluate(n.data[0]) for _, n in self.nodes.items()]
                     if ev:
-                        self.notify_evaluation(t, True, ev)
+                        self.notify_evaluation(self.n_rounds, True, ev)
 
                     if self.data_dispatcher.has_test():
                         if self.sampling_eval > 0:
                             ev = [self.nodes[i].evaluate(self.data_dispatcher.get_eval_set()) for i in sample]
-                            ev_train = [self.nodes[i].evaluate(self.nodes[i].data[0]) for i in sample]
                         else:
                             ev = [n.evaluate(self.data_dispatcher.get_eval_set()) for _, n in self.nodes.items()]
-                            ev_train = [n.evaluate(n.data[0]) for _, n in self.nodes.items()]
+                            
                         if ev:
-                            self.notify_evaluation(t, False, ev)
-                            accuracy_test_values = [node_metrics['accuracy'] for node_metrics in ev]
-                            accuracy_train_values = [node_metrics['accuracy'] for node_metrics in ev_train]
-                            self.gen_error.append(get_gen_errors(sum(accuracy_train_values) / len(accuracy_train_values), sum(accuracy_test_values) / len(accuracy_test_values)))
+                            self.notify_evaluation(self.n_rounds, False, ev)
+                    accuracy = []
+                    tr = []  # Initialize tr as an empty list
+                    for i, node_ev in enumerate(ev_train):
+                        tr.append(node_ev['accuracy'])
+                    for i, node_ev in enumerate(ev):
+                        accuracy.append({
+                            "test" : node_ev['accuracy'],
+                            "train" : tr[i]
+                        })
+                        
+                    for er in self._receivers:
+                        er.update_accuracy(self.n_rounds, accuracy)
                 self.notify_timestep(t)
 
         except KeyboardInterrupt:
@@ -1246,6 +1366,7 @@ class MIADynamicGossipSimulator(GossipSimulator):
 
         try:
             for t in pbar:
+                self.n_rounds = int(round(t, -2)/100)
                 if t % self.delta == 0:
                     shuffle(node_ids)
 
@@ -1292,29 +1413,40 @@ class MIADynamicGossipSimulator(GossipSimulator):
                 del rep_queues[t]
 
                 if (t + 1) % self.delta == 0:
-                    self.mia_accuracy.append(np.mean(mia_for_each_nn(self, class_specific = False)[1]))
+                    for er in self._receivers:
+                            mia_vulnerability = [mia_for_each_nn(self, n, class_specific = False) for _, n in self.nodes.items()]
+                            er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)
 
                     if self.sampling_eval > 0:
-                        sample = choice(list(self.nodes.keys()),
-                                        max(int(self.n_nodes * self.sampling_eval), 1))
+                        sample = choice(list(self.nodes.keys()), max(int(self.n_nodes * self.sampling_eval), 1))
                         ev = [self.nodes[i].evaluate() for i in sample if self.nodes[i].has_test()]
+                        ev_train = [self.nodes[i].evaluate(self.nodes[i].data[0]) for i in sample]
                     else:
                         ev = [n.evaluate() for _, n in self.nodes.items() if n.has_test()]
+                        ev_train = [n.evaluate(n.data[0]) for _, n in self.nodes.items()]
                     if ev:
-                        self.notify_evaluation(t, True, ev)
+                        self.notify_evaluation(self.n_rounds, True, ev)
 
                     if self.data_dispatcher.has_test():
                         if self.sampling_eval > 0:
                             ev = [self.nodes[i].evaluate(self.data_dispatcher.get_eval_set()) for i in sample]
-                            ev_train = [self.nodes[i].evaluate(self.nodes[i].data[0]) for i in sample]
                         else:
                             ev = [n.evaluate(self.data_dispatcher.get_eval_set()) for _, n in self.nodes.items()]
-                            ev_train = [n.evaluate(n.data[0]) for _, n in self.nodes.items()]
+                            
                         if ev:
-                            self.notify_evaluation(t, False, ev)
-                            accuracy_test_values = [node_metrics['accuracy'] for node_metrics in ev]
-                            accuracy_train_values = [node_metrics['accuracy'] for node_metrics in ev_train]
-                            self.gen_error.append(get_gen_errors(sum(accuracy_train_values) / len(accuracy_train_values), sum(accuracy_test_values) / len(accuracy_test_values)))
+                            self.notify_evaluation(self.n_rounds, False, ev)
+                    accuracy = []
+                    tr = []  # Initialize tr as an empty list
+                    for i, node_ev in enumerate(ev_train):
+                        tr.append(node_ev['accuracy'])
+                    for i, node_ev in enumerate(ev):
+                        accuracy.append({
+                            "test" : node_ev['accuracy'],
+                            "train" : tr[i]
+                        })
+                        
+                    for er in self._receivers:
+                        er.update_accuracy(self.n_rounds, accuracy)
                 self.notify_timestep(t)
 
         except KeyboardInterrupt:
@@ -1386,6 +1518,7 @@ class MIAFederatedSimulator(GossipSimulator):
 
         try:
             for t in pbar:
+                self.n_rounds = int(round(t, -2)/100)
                 if t % self.delta == 0: 
                     shuffle(node_ids)
                     
@@ -1435,30 +1568,41 @@ class MIAFederatedSimulator(GossipSimulator):
                     
                 del rep_queues[t]
 
-                if (t+1) % self.delta == 0:
-                    self.mia_accuracy.append(np.mean(mia_for_each_nn(self, class_specific = False)[1]))
+                if (t + 1) % self.delta == 0:
+                    for er in self._receivers:
+                            mia_vulnerability = [mia_for_each_nn(self, self.attackerNode, class_specific = False)]
+                            er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)
 
                     if self.sampling_eval > 0:
-                        sample = choice(list(self.nodes.keys()),
-                                        max(int(self.n_nodes * self.sampling_eval), 1))
+                        sample = choice(list(self.nodes.keys()), max(int(self.n_nodes * self.sampling_eval), 1))
                         ev = [self.nodes[i].evaluate() for i in sample if self.nodes[i].has_test()]
+                        ev_train = [self.nodes[i].evaluate(self.nodes[i].data[0]) for i in sample]
                     else:
                         ev = [n.evaluate() for _, n in self.nodes.items() if n.has_test()]
+                        ev_train = [n.evaluate(n.data[0]) for _, n in self.nodes.items()]
                     if ev:
-                        self.notify_evaluation(t, True, ev)
+                        self.notify_evaluation(self.n_rounds, True, ev)
 
                     if self.data_dispatcher.has_test():
                         if self.sampling_eval > 0:
                             ev = [self.nodes[i].evaluate(self.data_dispatcher.get_eval_set()) for i in sample]
-                            ev_train = [self.nodes[i].evaluate(self.nodes[i].data[0]) for i in sample]
                         else:
                             ev = [n.evaluate(self.data_dispatcher.get_eval_set()) for _, n in self.nodes.items()]
-                            ev_train = [n.evaluate(n.data[0]) for _, n in self.nodes.items()]
+                            
                         if ev:
-                            self.notify_evaluation(t, False, ev)
-                            accuracy_test_values = [node_metrics['accuracy'] for node_metrics in ev]
-                            accuracy_train_values = [node_metrics['accuracy'] for node_metrics in ev_train]
-                            self.gen_error.append(get_gen_errors(sum(accuracy_train_values) / len(accuracy_train_values), sum(accuracy_test_values) / len(accuracy_test_values)))
+                            self.notify_evaluation(self.n_rounds, False, ev)
+                    accuracy = []
+                    tr = []  # Initialize tr as an empty list
+                    for i, node_ev in enumerate(ev_train):
+                        tr.append(node_ev['accuracy'])
+                    for i, node_ev in enumerate(ev):
+                        accuracy.append({
+                            "test" : node_ev['accuracy'],
+                            "train" : tr[i]
+                        })
+                        
+                    for er in self._receivers:
+                        er.update_accuracy(self.n_rounds, accuracy)
                 self.notify_timestep(t)
 
         except KeyboardInterrupt:

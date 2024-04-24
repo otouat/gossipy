@@ -6,15 +6,14 @@ from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import numpy as np
 import copy
-from typing import Tuple, Dict
+from typing import Tuple, Dict, List
 from sklearn.metrics import accuracy_score, roc_auc_score, recall_score, f1_score, precision_score
-from gossipy import LOG
-from typing import List, Dict
 
-def mia_for_each_nn(simulation, class_specific: bool = False):
-    idx = simulation.attackerNode.idx
-    nn = sorted(simulation.attackerNode.p2p_net.get_peers(idx), key=lambda x: int(x))
-    model = copy.deepcopy(simulation.attackerNode.model_handler.model)
+
+def mia_for_each_nn(simulation, attackerNode, class_specific: bool = False):
+    idx = attackerNode.idx
+    nn = sorted(attackerNode.p2p_net.get_peers(idx), key=lambda x: int(x))
+    model = copy.deepcopy(attackerNode.model_handler.model)
     mia_results = [[], []] if class_specific else []
     for node in simulation.nodes.values():
         if node.idx in nn:
@@ -33,11 +32,16 @@ def mia_for_each_nn(simulation, class_specific: bool = False):
             else:
                 mia_results.append(mia_best_th(model, train_data, test_data, device))
 
-    print("-----------------------------")
-    print("Round MIA Results:")
-    print(f"Mean Loss MIA: {np.mean(mia_results[0])}")
-    print(f"Mean Entropy MIA: {np.mean(mia_results[1])}")
+    #print("-----------------------------")
+    #print("Round MIA Results:")
+    #print(f"Mean Loss MIA: {np.mean(mia_results[0])}")
+    #print(f"Mean Entropy MIA: {np.mean(mia_results[1])}")
 
+    mia_results ={
+        "loss_mia": np.mean(mia_results[0]),
+        "entropy_mia": np.mean(mia_results[1])
+    
+    }
     return mia_results
 
 def mia_best_th(model, train_data, test_data, device, nt=150):
@@ -222,101 +226,3 @@ def assign_model_params(source_model, target_model):
     target_model.load_state_dict(source_state_dict, strict=False)
     target_model.to(device)
 
-def plot_mia_vulnerability(mia_accuracy, gen_error):
-        fig = plt.figure(figsize=(8, 6))
-        plt.scatter(gen_error, mia_accuracy, label='MIA Vulnerability over Generalization Error', color='blue')
-        plt.xlabel('Generalization Error')
-        plt.ylabel('MIA Vulnerability')
-        plt.title('MIA Vulnerability over Generalization Error')
-        plt.legend()
-        plt.grid(True)
-        #plt.show()
-        fig2 = plt.figure(figsize=(8, 6))
-        epoch = list(range(1, len(mia_accuracy) + 1))
-        plt.plot(epoch, mia_accuracy, label='MIA Vulnerability per epoch', color='green')
-        plt.xlabel('Epoch n°')
-        plt.ylabel('MIA Vulnerability')
-        plt.title('MIA Vulnerability per epoch')
-        plt.legend()
-        plt.grid(True)
-        #plt.show()
-        return fig, fig2
-
-import os
-import matplotlib.pyplot as plt
-import json
-from datetime import datetime
-
-def log_results(Simul, n_rounds, diagrams, global_evaluations):
-    base_folder_path = os.path.join(os.getcwd(), "results")
-    exp_tracker_file = os.path.join(base_folder_path, "exp_number.txt")
-
-    # Read the last experiment number and increment it
-    if os.path.exists(exp_tracker_file):
-        with open(exp_tracker_file, 'r') as file:
-            experiment_number = int(file.read().strip()) + 1
-    else:
-        experiment_number = 1
-
-    # Create new subfolder
-    new_folder_path = f"{base_folder_path}/Exp_n#{experiment_number}"
-    os.makedirs(new_folder_path, exist_ok=True)
-
-    # Log file path for experiment parameters
-    params_file_path = f"{new_folder_path}/simulation_params.log"
-
-    # Log experiment parameters
-    with open(params_file_path, 'w') as params_file:
-        params_file.write(f"Experiment Number: {experiment_number}\n")
-        params_file.write(f"Protocol: {type(Simul).__name__}\n")
-        params_file.write(f"Timestamp: {datetime.now()}\n")
-        params_file.write(f"Total Nodes: {Simul.n_nodes}\n")
-        params_file.write(f"Total Rounds: {n_rounds}\n")
-
-    # Log file path for simulation results
-    log_file_path = f"{new_folder_path}/simulation_results.log"
-
-    # Log simulation results
-    with open(log_file_path, 'w') as log_file:
-        log_file.write(f"Experiment Number: {experiment_number}\n")
-        log_file.write(f"Timestamp: {datetime.now()}\n")
-
-        log_file.write("\nMIA Evaluations:\n")
-        log_file.write(f"MIA Vulnerability: {Simul.mia_accuracy}\n")
-        log_file.write(f"Gen Error: {Simul.gen_error}\n")
-
-        log_file.write("\nGlobal Evaluations:\n")
-        for round_number, evaluation_dict in global_evaluations:
-            log_file.write(f"Round {round_number}:\n")
-            for key, value in evaluation_dict.items():
-                log_file.write(f"{key}: {value}\n")
-
-    # Save diagrams
-    for name, fig in diagrams.items():
-        fig.savefig(f"{new_folder_path}/{name}.png")
-
-    # Update the experiment number tracker file
-    with open(exp_tracker_file, 'w') as file:
-        file.write(str(experiment_number))
-
-def get_fig_evaluation(evals: List[List[Dict]],
-                    title: str="Untitled plot") -> None:
-
-    if not evals or not evals[0] or not evals[0][0]: return
-    fig = plt.figure()
-    fig.canvas.manager.set_window_title(title)
-    ax = fig.add_subplot(111)
-    for k in evals[0][0]:
-        evs = [[d[k] for d in l] for l in evals]
-        mu: float = np.mean(evs, axis=0)
-        std: float = np.std(evs, axis=0)
-        plt.fill_between(range(1, len(mu)+1), mu-std, mu+std, alpha=0.2)
-        plt.title(title)
-        plt.xlabel("cycle")
-        plt.ylabel("metric value")
-        plt.plot(range(1, len(mu)+1), mu, label=k)
-        LOG.info(f"{k}: {mu[-1]:.2f}")
-    ax.legend(loc="lower right")
-    #plt.show()
-
-    return fig

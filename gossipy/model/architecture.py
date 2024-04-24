@@ -80,73 +80,74 @@ def resnet20(num_classes):
     return ResNet20(BasicBlock, [3, 3, 3], num_classes=num_classes)
 
 
-
-
-def accuracy(outputs, labels):
-    _, preds = torch.max(outputs, dim=1)
-    return torch.tensor(torch.sum(preds == labels).item() / len(preds))
-
-class ImageClassificationBase(nn.Module):
-    def training_step(self, batch):
-        images, labels = batch 
-        out = self(images)                  # Generate predictions
-        loss = F.cross_entropy(out, labels) # Calculate loss
-        return loss
-    
-    def validation_step(self, batch):
-        images, labels = batch 
-        out = self(images)                    # Generate predictions
-        loss = F.cross_entropy(out, labels)   # Calculate loss
-        acc = accuracy(out, labels)           # Calculate accuracy
-        return {'val_loss': loss.detach(), 'val_acc': acc}
-    
-    def validation_epoch_end(self, outputs):
-        batch_losses = [x['val_loss'] for x in outputs]
-        epoch_loss = torch.stack(batch_losses).mean()   # Combine losses
-        batch_accs = [x['val_acc'] for x in outputs]
-        epoch_acc = torch.stack(batch_accs).mean()      # Combine accuracies
-        return {'val_loss': epoch_loss.item(), 'val_acc': epoch_acc.item()}
-    
-    def epoch_end(self, epoch, result):
-        print("Epoch [{}], last_lr: {:.5f}, train_loss: {:.4f}, val_loss: {:.4f}, val_acc: {:.4f}".format(
-            epoch, result['lrs'][-1], result['train_loss'], result['val_loss'], result['val_acc']))
-        
-def conv_block(in_channels, out_channels, pool=False):
-    layers = [nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1), 
-              nn.BatchNorm2d(out_channels), 
-              nn.ReLU(inplace=True)]
-    
-    if pool: layers.append(nn.MaxPool2d(2))
-    return nn.Sequential(*layers)
-
-class ResNet9(ImageClassificationBase):
+class ResNet9(TorchModel):
     def __init__(self, in_channels, num_classes):
         super().__init__()
-        
-        self.conv1 = conv_block(in_channels, 64)
-        self.conv2 = conv_block(64, 128, pool=True) 
-        self.res1 = nn.Sequential(conv_block(128, 128), conv_block(128, 128)) 
-        
-        self.conv3 = conv_block(128, 256, pool=True)
-        self.conv4 = conv_block(256, 512, pool=True) 
-        self.res2 = nn.Sequential(conv_block(512, 512), conv_block(512, 512)) 
-        self.conv5 = conv_block(512, 1028, pool=True) 
-        self.res3 = nn.Sequential(conv_block(1028, 1028), conv_block(1028, 1028))  
-        
-        self.classifier = nn.Sequential(nn.MaxPool2d(2), # 1028 x 1 x 1
-                                        nn.Flatten(), # 1028 
-                                        nn.Linear(1028, num_classes)) # 1028 -> 100
-       
+
+        self.conv1 = nn.Conv2d(in_channels, 64, kernel_size=3, stride=1, padding=1)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.conv2 = nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
+        self.bn2 = nn.BatchNorm2d(128)
+        self.pool = nn.MaxPool2d(2)
+        self.res1 = nn.Sequential(
+            nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(128)
+        )
+        self.conv3 = nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1)
+        self.bn3 = nn.BatchNorm2d(256)
+        self.conv4 = nn.Conv2d(256, 512, kernel_size=3, stride=1, padding=1)
+        self.bn4 = nn.BatchNorm2d(512)
+        self.res2 = nn.Sequential(
+            nn.Conv2d(512, 512, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(512),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(512, 512, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(512)
+        )
+        self.conv5 = nn.Conv2d(512, 1028, kernel_size=3, stride=1, padding=1)
+        self.bn5 = nn.BatchNorm2d(1028)
+        self.res3 = nn.Sequential(
+            nn.Conv2d(1028, 1028, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(1028),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(1028, 1028, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(1028)
+        )
+        self.fc = nn.Linear(1028, num_classes)
+
+        self.init_weights()  # Initialize the weights
+    
     def forward(self, xb):
-        out = self.conv1(xb)
-        out = self.conv2(out)
-        out = self.res1(out) + out
-        out = self.conv3(out)
-        out = self.conv4(out)
-        out = self.res2(out) + out
-        out = self.conv5(out)
-        out = self.res3(out) + out
-        out = self.classifier(out)
+        out = F.relu(self.bn1(self.conv1(xb)))
+        out = F.relu(self.bn2(self.conv2(out)))
+        out = self.pool(out)
+        residual = out
+        out = self.res1(out) + residual
+        out = F.relu(self.bn3(self.conv3(out)))
+        out = F.relu(self.bn4(self.conv4(out)))
+        out = self.pool(out)
+        residual = out
+        out = self.res2(out) + residual
+        out = F.relu(self.bn5(self.conv5(out)))
+        out = self.pool(out)
+        residual = out
+        out = self.res3(out) + residual
+        out = F.adaptive_avg_pool2d(out, (1, 1))
+        out = out.view(out.size(0), -1)
+        out = self.fc(out)
         return out
 
-model = ResNet9(3, 100)
+    def init_weights(self):
+        def init_layer(layer):
+            if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
+                nn.init.kaiming_normal_(layer.weight, mode='fan_out', nonlinearity='relu')
+                if layer.bias is not None:
+                    nn.init.constant_(layer.bias, 0)
+            elif isinstance(layer, nn.BatchNorm2d):
+                nn.init.constant_(layer.weight, 1)
+                nn.init.constant_(layer.bias, 0)
+        
+        self.apply(init_layer)

@@ -1,23 +1,23 @@
 import torch
 import torch.nn.functional as F
-from torchvision.transforms import Compose, Normalize, RandomVerticalFlip
+from torchvision.transforms import Compose, Normalize
 from gossipy.core import AntiEntropyProtocol, CreateModelMode, StaticP2PNetwork
 from gossipy.data import CustomDataDispatcher
 from gossipy.data.handler import ClassificationDataHandler
 from gossipy.model.handler import TorchModelHandler
 from gossipy.node import FederatedGossipNode
-from gossipy.simul import MIAFederatedSimulator, SimulationReport
+from gossipy.simul import MIAFederatedSimulator, MIASimulationReport
 from gossipy.model.architecture import resnet20
 from gossipy.data import get_CIFAR10, get_CIFAR100
-from topology import create_federated_topology, display_topology,  CustomP2PNetwork
-from gossipy.MIA.mia import plot_mia_vulnerability, log_results, get_fig_evaluation
+from gossipy.topology import create_federated_topology, CustomP2PNetwork
+from gossipy.mia.mia import log_results
 
 
 
 # Dataset loading
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
-train_set, test_set = get_CIFAR10()
-nodes_num = 16
+train_set, test_set = get_CIFAR100()
+nodes_num = 4
 num_classes = max(train_set[1].max().item(), test_set[1].max().item())+1
 
 
@@ -58,18 +58,9 @@ simulator = MIAFederatedSimulator(
     sampling_eval=0
 )
 
-report = SimulationReport()
+report = MIASimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
-simulator.start(n_rounds=100)
+simulator.start(n_rounds=5)
 
-fig = get_fig_evaluation([[ev for _, ev in report.get_evaluation(False)]], "Overall test results")
-fig2, fig3 = plot_mia_vulnerability(simulator.mia_accuracy, simulator.gen_error)
-fig4 = display_topology(topology)
-diagrams = {
-    'Overall_test_results': fig,
-    'mia_vulnerability_over_Gen error': fig2,
-    'mia_vulnerability_over_epoch': fig3,
-    "Topology": fig4
-}
-log_results(simulator, simulator.n_rounds, diagrams, report.get_evaluation(False))
+log_results(simulator, report, topology)
