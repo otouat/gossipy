@@ -52,7 +52,6 @@ def mia_best_th(model, train_data, test_data, device, nt=150):
 
     model.eval()
     Ltrain, Ptrain, Ytrain = evaluate(model, device, train_data)
-    print(device)
     Ltest, Ptest, Ytest = evaluate(model, device, test_data)
     model.train()
 

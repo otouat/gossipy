@@ -365,7 +365,6 @@ class TorchModelHandler(ModelHandler):
             else:
                 res["auc"] = 0.5
                 LOG.warning("# of classes != 2. AUC is set to 0.5.")
-        print("2 cuda" if torch.cuda.is_available() else " 2 cpu")
         self.model = self.model.to("cuda" if torch.cuda.is_available() else "cpu")
         return res
 

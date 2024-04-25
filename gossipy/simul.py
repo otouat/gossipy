@@ -16,6 +16,7 @@ from .flow_control import TokenAccount
 from .model.handler import ModelHandler
 from .utils import StringEncoder
 from .mia.mia import mia_for_each_nn, get_gen_errors
+from .mia.utils import log_results
 
 # AUTHORSHIP
 __version__ = "0.0.1"
@@ -1313,6 +1314,7 @@ class MIAGossipSimulator(GossipSimulator):
                 self.notify_timestep(t)
 
         except KeyboardInterrupt:
+            log_results(self, self._receivers[0], None)
             LOG.warning("Simulation interrupted by user.")
 
         pbar.close()
@@ -1450,6 +1452,7 @@ class MIADynamicGossipSimulator(GossipSimulator):
                 self.notify_timestep(t)
 
         except KeyboardInterrupt:
+            log_results(self, self._receivers[0], None)
             LOG.warning("Simulation interrupted by user.")
 
         pbar.close()
@@ -1606,8 +1609,10 @@ class MIAFederatedSimulator(GossipSimulator):
                 self.notify_timestep(t)
 
         except KeyboardInterrupt:
+            log_results(self, self._receivers[0], None)
             LOG.warning("Simulation interrupted by user.")
 
         pbar.close()
         self.notify_end()
+
         return

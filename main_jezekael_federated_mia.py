@@ -17,7 +17,7 @@ from gossipy.mia.utils import log_results
 # Dataset loading
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
 train_set, test_set = get_CIFAR100()
-nodes_num = 36
+nodes_num = 16
 num_classes = max(train_set[1].max().item(), test_set[1].max().item())+1
 
 
@@ -27,7 +27,7 @@ Xte, yte = transform(test_set[0]), test_set[1]
 
 data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=0.5)
 
-data_dispatcher = CustomDataDispatcher(data_handler, n=nodes_num, eval_on_user=True, auto_assign=True)
+data_dispatcher = CustomDataDispatcher(data_handler, n=nodes_num*2, eval_on_user=True, auto_assign=True)
 
 topology = create_federated_topology(nodes_num)
 network = CustomP2PNetwork(topology)
@@ -61,6 +61,6 @@ simulator = MIAFederatedSimulator(
 report = MIASimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
-simulator.start(n_rounds=100)
+simulator.start(n_rounds=50)
 
 log_results(simulator, report, topology)
