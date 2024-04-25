@@ -8,7 +8,7 @@ import numpy as np
 import copy
 from typing import Tuple, Dict, List
 from sklearn.metrics import accuracy_score, roc_auc_score, recall_score, f1_score, precision_score
-
+import os
 
 def mia_for_each_nn(simulation, attackerNode, class_specific: bool = False):
     idx = attackerNode.idx
@@ -25,17 +25,9 @@ def mia_for_each_nn(simulation, attackerNode, class_specific: bool = False):
                 results= mia_best_th_class(model, train_data, test_data, num_classes, device)
                 mia_results[0].append(results[0])
                 mia_results[1].append(results[1])
-                #for class_idx, (loss_mia, ent_mia) in mia_results.items():
-                    #print(f"Class {class_idx} Loss MIA: {np.mean(loss_mia)}")
-                    #print(f"Class {class_idx} Entropy MIA: {np.mean(ent_mia)}")
 
             else:
                 mia_results.append(mia_best_th(model, train_data, test_data, device))
-
-    #print("-----------------------------")
-    #print("Round MIA Results:")
-    #print(f"Mean Loss MIA: {np.mean(mia_results[0])}")
-    #print(f"Mean Entropy MIA: {np.mean(mia_results[1])}")
 
     mia_results ={
         "loss_mia": np.mean(mia_results[0]),
@@ -60,6 +52,7 @@ def mia_best_th(model, train_data, test_data, device, nt=150):
 
     model.eval()
     Ltrain, Ptrain, Ytrain = evaluate(model, device, train_data)
+    print(device)
     Ltest, Ptest, Ytest = evaluate(model, device, test_data)
     model.train()
 
