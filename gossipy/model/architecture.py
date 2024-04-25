@@ -3,34 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from gossipy.model import TorchModel
 
-class BasicBlock(nn.Module):
-    expansion = 1
-
-    def __init__(self, in_planes, planes, stride=1):
-        super(BasicBlock, self).__init__()
-        self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=1, padding=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(planes)
-
-        self.shortcut = nn.Sequential()
-        if stride != 1 or in_planes != self.expansion * planes:
-            self.shortcut = nn.Sequential(
-                nn.Conv2d(in_planes, self.expansion * planes, kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(self.expansion * planes)
-            )
-
-    def forward(self, x):
-        out = F.relu(self.bn1(self.conv1(x)))
-        out = self.bn2(self.conv2(out))
-        out += self.shortcut(x)
-        out = F.relu(out)
-        print(f"Input type: {x.dtype}, Output type: {out.dtype}")
-        return out
-
-
 class ResNet20(TorchModel):
-    def __init__(self, block, num_blocks, num_classes=10):
+    def __init__(self, num_classes=10):
         super(ResNet20, self).__init__()
         self.in_planes = 16
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1)
@@ -77,14 +51,14 @@ class ResNet20(TorchModel):
         self.apply(_init)
 
 def resnet20(num_classes):
-    return ResNet20(BasicBlock, [3, 3, 3], num_classes=num_classes)
+    return ResNet20(num_classes=num_classes)
 
 
 class ResNet9(TorchModel):
-    def __init__(self, in_channels, num_classes):
+    def __init__(self, num_classes):
         super().__init__()
 
-        self.conv1 = nn.Conv2d(in_channels, 64, kernel_size=3, stride=1, padding=1)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1)  # Adjusted input channels to 3
         self.bn1 = nn.BatchNorm2d(64)
         self.conv2 = nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
         self.bn2 = nn.BatchNorm2d(128)
@@ -151,3 +125,6 @@ class ResNet9(TorchModel):
                 nn.init.constant_(layer.bias, 0)
         
         self.apply(init_layer)
+
+def resnet9(num_classes):
+    return ResNet9(num_classes=num_classes)
