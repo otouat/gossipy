@@ -1,46 +1,66 @@
-import re
+import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 
-def plot_mia_vulnerability(mia_accuracy, gen_error):
-    fig = plt.figure()
-    plt.scatter(gen_error, mia_accuracy, label='MIA Vulnerability over Generalization Error', color='blue')
-    plt.xlabel('Generalization Error')
-    plt.ylabel('MIA Vulnerability')
-    plt.title('MIA Vulnerability over Generalization Error')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-    
-    fig2 = plt.figure()
-    epoch = list(range(1, len(mia_accuracy) + 1))
-    plt.plot(epoch, mia_accuracy, label='MIA Vulnerability per epoch', color='green')
-    plt.xlabel('Epoch n°')
-    plt.ylabel('MIA Vulnerability')
-    plt.title('MIA Vulnerability per epoch')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-    
-    return fig, fig2
 
-# Read the log file
-with open('results\Exp n°32\simulation_results.log', 'r') as file:
-    log_content = file.read()
+# Read the CSV file
+df = pd.read_csv(r"C:\Users\jezek\OneDrive\Documents\Python\Djack\gossipy\results\Exp_n#64\mia_results.csv")
 
-# Extract MIA vulnerability values
-mia_accuracy = re.findall(r'MIA Vulnerability: \[(.*?)\]', log_content, re.DOTALL)
-mia_accuracy = [float(x) for x in mia_accuracy[0].split(", ")]
+# Extract unique nodes
+nodes = df['Node'].unique()
 
-# Extract generalization error values
-gen_error = re.findall(r'Gen Error: \[\[(.*?)\]\]', log_content, re.DOTALL)
-gen_error = [[float(x) for x in re.findall(r'\d+\.\d+', row)] for row in gen_error[0].split(", ")]
-gen_error = [item for sublist in gen_error for item in sublist]
+# Define the color map
+node_colors = plt.cm.get_cmap('tab10', len(nodes))
 
-print("mia_accuracy: ", mia_accuracy)
-print(len(mia_accuracy))
-print("gen_error: ", gen_error)
-print(len(gen_error))
-# Plot the graphs+
-size = len(mia_accuracy)
-size = 90
-plot_mia_vulnerability(mia_accuracy[-size:], gen_error[-size:])
+# Plotting all four graphs together
+fig, axs = plt.subplots(2, 2, figsize=(15, 10))
+
+# Plotting the accuracy of train and test for each node over the epochs
+for node in nodes:
+    node_df = df[df['Node'] == node]
+    color = node_colors(node)
+    axs[0, 0].plot(node_df['Round'], node_df['Train Accuracy'], 'o', label=f'Train Accuracy - Node {node}', linestyle='dashed', color=color)
+    axs[0, 0].plot(node_df['Round'], node_df['Test Accuracy'], 'o', label=f'Test Accuracy - Node {node}', linestyle='solid', color=color)
+custom_lines = [Line2D([0], [0], linestyle='dashed'),
+                Line2D([0], [0], linestyle='solid',)]
+
+axs[0, 0].set_xlabel('Epochs')
+axs[0, 0].set_ylabel('Accuracy')
+axs[0, 0].set_title('Train and Test Accuracy for Each Node over Epochs')
+axs[0, 0].legend(custom_lines, ['Train Accuracy', 'Test Accuracy'])
+axs[0, 0].grid(True)
+
+# Calculating and plotting the average generalisation error over the epochs
+avg_acc_train = df.groupby('Round')['Train Accuracy'].mean()
+avg_acc_test = df.groupby('Round')['Test Accuracy'].mean()
+gen_errors = (avg_acc_train - avg_acc_test) / (avg_acc_train + avg_acc_test)
+
+axs[0, 1].plot(avg_acc_train.index, gen_errors)
+axs[0, 1].set_xlabel('Epochs')
+axs[0, 1].set_ylabel('Average Generalization Error')
+axs[0, 1].set_title('Average Generalization Error over Epochs')
+axs[0, 1].grid(True)
+
+# Calculating the average MIA vulnerability at each round
+avg_mia_loss = df.groupby('Round')['Loss MIA'].mean()
+avg_mia_entropy = df.groupby('Round')['Entropy MIA'].mean()
+
+axs[1, 0].plot(avg_mia_loss.index, avg_mia_loss, label='Average MIA Loss')
+axs[1, 0].plot(avg_mia_entropy.index, avg_mia_entropy, linestyle='--', label='Average MIA Entropy')
+axs[1, 0].set_xlabel('Epochs')
+axs[1, 0].set_ylabel('Average MIA Vulnerability')
+axs[1, 0].set_title('Average MIA Vulnerability over Epochs')
+axs[1, 0].legend()
+axs[1, 0].grid(True)
+
+# Calculating the average MIA vulnerability over the generalization errors
+axs[1, 1].scatter(gen_errors, avg_mia_loss, label='Average MIA Loss')
+axs[1, 1].scatter(gen_errors, avg_mia_entropy, label='Average MIA Entropy')
+axs[1, 1].set_xlabel('Average Generalization Error')
+axs[1, 1].set_ylabel('Average MIA Vulnerability')
+axs[1, 1].set_title('Average MIA Vulnerability over Generalization Errors')
+axs[1, 1].legend()
+axs[1, 1].grid(True)
+
+plt.tight_layout()
+plt.show()

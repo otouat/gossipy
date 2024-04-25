@@ -8,76 +8,9 @@ from datetime import datetime
 from typing import List, Dict, Tuple
 from gossipy import LOG
 from gossipy.topology import display_topology
-
-def plot(report):
-    fig, axs = plt.subplots(4, figsize=(10, 20))  # Increased figsize to accommodate the additional plot
-    
-    # Plot train and test accuracy for each node
-    node_colors = plt.cm.get_cmap('tab10', len(report.get_accuracy()))
-
-    for node_id, train_test_acc in report.get_accuracy().items():
-        rounds = []
-        train_accs = []
-        test_accs = []
-        for round_num, acc_list in train_test_acc:
-            rounds.append(round_num)
-            train_accs.append(acc_list['train'])
-            test_accs.append(acc_list['test'])
-        axs[0].plot(rounds, train_accs, 'o', label=f'Node {node_id} (Train)', linestyle='dashed', color=node_colors(node_id))
-        axs[0].plot(rounds, test_accs, 'x', label=f'Node {node_id} (Test)', linestyle='solid', color=node_colors(node_id))
-    
-    axs[0].set_xlabel('Round')
-    axs[0].set_ylabel('Accuracy')
-    axs[0].set_title('Train and Test Accuracy per Node')
-    #axs[0].legend(loc='upper left')
-    axs[0].grid(True)
-    
-    # Plot mean MIA vulnerability each round
-    mean_mia_vulnerability_per_round = [np.mean([mia['loss_mia'] for round_num, mia in mia_list]) for mia_list in report.get_mia_vulnerability().values()]
-    rounds = range(1, len(mean_mia_vulnerability_per_round) + 1)
-    axs[1].plot(rounds, mean_mia_vulnerability_per_round, label='Mean MIA Vulnerability', color='green')
-    
-    axs[1].set_xlabel('Round')
-    axs[1].set_ylabel('MIA Vulnerability')
-    axs[1].set_title('Mean MIA Vulnerability per Round')
-    axs[1].legend()
-    axs[1].grid(True)
-    
-    # Plot average generalization error
-    avg_gen_error_per_round = []
-    train_acc_list = []
-    test_acc_list = []
-    for round_num in range(1, len(mean_mia_vulnerability_per_round) + 1):
-        for node_id, train_test_acc in report.get_accuracy().items():
-            for r, acc_list in train_test_acc:
-                if r == round_num:
-                    train_acc_list.append(acc_list['train'])
-                    test_acc_list.append(acc_list['test'])
-        if train_acc_list and test_acc_list:
-            avg_train_acc = np.mean(train_acc_list)
-            avg_test_acc = np.mean(test_acc_list)
-            gen_error = (avg_train_acc - avg_test_acc) / (avg_train_acc + avg_test_acc)
-            avg_gen_error_per_round.append(gen_error)
-        else:
-            avg_gen_error_per_round.append(np.nan)
-    
-    axs[2].plot(rounds, avg_gen_error_per_round, label='Average Generalization Error', color='orange')
-    axs[2].set_xlabel('Round')
-    axs[2].set_ylabel('Generalization Error')
-    axs[2].set_title('Average Generalization Error per Round')
-    axs[2].legend()
-    axs[2].grid(True)
-    
-    # Plot MIA vulnerability over Generalization Error
-    axs[3].scatter(avg_gen_error_per_round, mean_mia_vulnerability_per_round, label='MIA Vulnerability over Generalization Error', color='blue')
-    axs[3].set_xlabel('Average Generalization Error')
-    axs[3].set_ylabel('Mean MIA Vulnerability')
-    axs[3].set_title('MIA Vulnerability over Generalization Error')
-    axs[3].legend()
-    axs[3].grid(True)
-    
-    plt.tight_layout()
-    return fig
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 
 def log_results(Simul, report, topology):
     base_folder_path = os.path.join(os.getcwd(), "results")
@@ -105,24 +38,6 @@ def log_results(Simul, report, topology):
         params_file.write(f"Total Nodes: {Simul.n_nodes}\n")
         params_file.write(f"Total Rounds: {Simul.n_rounds}\n")
 
-    # Save diagrams
-    fig = get_fig_evaluation([[ev for _, ev in report.get_evaluation(False)]], "Overall test results")
-    fig2 = plot(report)
-    if topology is not None:  # Modified condition to check if topology is not None
-        fig3 = display_topology(topology)
-        diagrams = {
-            'Overall_gossipy_results': fig,
-            'Overall_test_results': fig2,
-            "Topology": fig3
-        }
-    else:
-        diagrams = {
-            'Overall_gossipy_results': fig,
-            'Overall_test_results': fig2
-        }
-    for name, fig in diagrams.items():
-        fig.savefig(f"{new_folder_path}/{name}.png")
-
     # Save combined MIA vulnerability and accuracy
     combined_file_path = f"{new_folder_path}/mia_results.csv"
     with open(combined_file_path, 'w', newline='') as combined_file:
@@ -143,10 +58,92 @@ def log_results(Simul, report, topology):
                     accuracy_dict['train'],
                     accuracy_dict['test']
                 ])
-
+    
     # Update the experiment number tracker file
     with open(exp_tracker_file, 'w') as file:
         file.write(str(experiment_number))
+    
+    # Save diagrams
+    fig = get_fig_evaluation([[ev for _, ev in report.get_evaluation(False)]], "Overall test results")
+    fig2 = plot(combined_file_path)
+    if topology is not None:  # Modified condition to check if topology is not None
+        fig3 = display_topology(topology)
+        diagrams = {
+            'Overall_gossipy_results': fig,
+            'Overall_test_results': fig2,
+            "Topology": fig3
+        }
+    else:
+        diagrams = {
+            'Overall_gossipy_results': fig,
+            'Overall_test_results': fig2
+        }
+    for name, fig in diagrams.items():
+        fig.savefig(f"{new_folder_path}/{name}.png")
+
+
+def plot(file_path):
+    # Read the CSV file
+    df = pd.read_csv(file_path)
+
+    # Extract unique nodes
+    nodes = df['Node'].unique()
+
+    # Define the color map
+    node_colors = plt.cm.get_cmap('tab10', len(nodes))
+
+    # Plotting all four graphs together
+    fig, axs = plt.subplots(2, 2, figsize=(15, 10))
+
+    # Plotting the accuracy of train and test for each node over the epochs
+    for node in nodes:
+        node_df = df[df['Node'] == node]
+        color = node_colors(node)
+        axs[0, 0].plot(node_df['Round'], node_df['Train Accuracy'], 'o', label=f'Train Accuracy - Node {node}', linestyle='dashed', color=color)
+        axs[0, 0].plot(node_df['Round'], node_df['Test Accuracy'], 'o', label=f'Test Accuracy - Node {node}', linestyle='solid', color=color)
+    custom_lines = [Line2D([0], [0], linestyle='dashed'),
+                    Line2D([0], [0], linestyle='solid',)]
+
+    axs[0, 0].set_xlabel('Epochs')
+    axs[0, 0].set_ylabel('Accuracy')
+    axs[0, 0].set_title('Train and Test Accuracy for Each Node over Epochs')
+    axs[0, 0].legend(custom_lines, ['Train Accuracy', 'Test Accuracy'])
+    axs[0, 0].grid(True)
+
+    # Calculating and plotting the average generalisation error over the epochs
+    avg_acc_train = df.groupby('Round')['Train Accuracy'].mean()
+    avg_acc_test = df.groupby('Round')['Test Accuracy'].mean()
+    gen_errors = (avg_acc_train - avg_acc_test) / (avg_acc_train + avg_acc_test)
+
+    axs[0, 1].plot(avg_acc_train.index, gen_errors)
+    axs[0, 1].set_xlabel('Epochs')
+    axs[0, 1].set_ylabel('Average Generalization Error')
+    axs[0, 1].set_title('Average Generalization Error over Epochs')
+    axs[0, 1].grid(True)
+
+    # Calculating the average MIA vulnerability at each round
+    avg_mia_loss = df.groupby('Round')['Loss MIA'].mean()
+    avg_mia_entropy = df.groupby('Round')['Entropy MIA'].mean()
+
+    axs[1, 0].plot(avg_mia_loss.index, avg_mia_loss, label='Average MIA Loss')
+    axs[1, 0].plot(avg_mia_entropy.index, avg_mia_entropy, linestyle='--', label='Average MIA Entropy')
+    axs[1, 0].set_xlabel('Epochs')
+    axs[1, 0].set_ylabel('Average MIA Vulnerability')
+    axs[1, 0].set_title('Average MIA Vulnerability over Epochs')
+    axs[1, 0].legend()
+    axs[1, 0].grid(True)
+
+    # Calculating the average MIA vulnerability over the generalization errors
+    axs[1, 1].scatter(gen_errors, avg_mia_loss, label='Average MIA Loss')
+    axs[1, 1].scatter(gen_errors, avg_mia_entropy, label='Average MIA Entropy')
+    axs[1, 1].set_xlabel('Average Generalization Error')
+    axs[1, 1].set_ylabel('Average MIA Vulnerability')
+    axs[1, 1].set_title('Average MIA Vulnerability over Generalization Errors')
+    axs[1, 1].legend()
+    axs[1, 1].grid(True)
+
+    plt.tight_layout()
+    return fig
 
 def get_fig_evaluation(evals: List[List[Dict]],
                     title: str="Untitled plot") -> None:
