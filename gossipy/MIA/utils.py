@@ -23,8 +23,8 @@ def plot(report):
             rounds.append(round_num)
             train_accs.append(acc_list['train'])
             test_accs.append(acc_list['test'])
-        axs[0].plot(rounds, train_accs, 'o', label=f'Node {node_id} (Train)', linestyle='--', color=node_colors(node_id))
-        axs[0].plot(rounds, test_accs, 'x', label=f'Node {node_id} (Test)', color=node_colors(node_id))
+        axs[0].plot(rounds, train_accs, 'o', label=f'Node {node_id} (Train)', linestyle='dashed', color=node_colors(node_id))
+        axs[0].plot(rounds, test_accs, 'x', label=f'Node {node_id} (Test)', linestyle='solid', color=node_colors(node_id))
     
     axs[0].set_xlabel('Round')
     axs[0].set_ylabel('Accuracy')

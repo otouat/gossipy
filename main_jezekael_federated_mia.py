@@ -7,7 +7,7 @@ from gossipy.data.handler import ClassificationDataHandler
 from gossipy.model.handler import TorchModelHandler
 from gossipy.node import FederatedGossipNode
 from gossipy.simul import MIAFederatedSimulator, MIASimulationReport
-from gossipy.model.architecture import resnet20
+from gossipy.model.architecture import resnet20, resnet9
 from gossipy.data import get_CIFAR10, get_CIFAR100
 from gossipy.topology import create_federated_topology, CustomP2PNetwork
 from gossipy.mia.utils import log_results
@@ -36,7 +36,7 @@ nodes = FederatedGossipNode.generate(
     data_dispatcher=data_dispatcher,
     p2p_net=network,
     model_proto=TorchModelHandler(
-        net=resnet20(num_classes),
+        net=resnet9(num_classes),
         optimizer= torch.optim.SGD,
         optimizer_params = {
             "lr": 0.1,
