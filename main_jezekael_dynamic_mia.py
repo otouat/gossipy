@@ -17,7 +17,7 @@ from gossipy.mia.utils import log_results
 # Dataset loading
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
 train_set, test_set = get_CIFAR100()
-nodes_num = 36
+nodes_num = 100
 num_classes = max(train_set[1].max().item(), test_set[1].max().item())+1
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
@@ -35,7 +35,7 @@ nodes = GossipNode.generate(
     data_dispatcher=data_dispatcher,
     p2p_net=network,
     model_proto=TorchModelHandler(
-        net=resnet9(num_classes),
+        net=resnet20(num_classes),
         optimizer= torch.optim.SGD,
         optimizer_params = {
             "lr": 0.1,
