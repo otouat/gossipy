@@ -24,7 +24,7 @@ Xte, yte = transform(test_set[0]), test_set[1]
 
 data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte)
 
-data_dispatcher = CustomDataDispatcher(data_handler, n=num_nodes*2, eval_on_user=True, auto_assign=True)
+data_dispatcher = CustomDataDispatcher(data_handler, n=num_nodes, eval_on_user=True, auto_assign=True)
 
 topology = create_torus_topology(num_nodes)
 network = CustomP2PNetwork(topology)
@@ -58,6 +58,6 @@ simulator = MIAGossipSimulator(
 report = MIASimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
-simulator.start(n_rounds=50)
+simulator.start(n_rounds=200)
 
 log_results(simulator, report, topology)

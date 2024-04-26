@@ -27,7 +27,7 @@ Xte, yte = transform(test_set[0]), test_set[1]
 
 data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=0.5)
 
-data_dispatcher = CustomDataDispatcher(data_handler, n=nodes_num*2, eval_on_user=True, auto_assign=True)
+data_dispatcher = CustomDataDispatcher(data_handler, n=nodes_num, eval_on_user=True, auto_assign=True)
 
 topology = create_federated_topology(nodes_num)
 network = CustomP2PNetwork(topology)
@@ -61,6 +61,6 @@ simulator = MIAFederatedSimulator(
 report = MIASimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
-simulator.start(n_rounds=50)
+simulator.start(n_rounds=200)
 
 log_results(simulator, report, topology)
