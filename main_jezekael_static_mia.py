@@ -34,7 +34,7 @@ nodes = GossipNode.generate(
     data_dispatcher=data_dispatcher,
     p2p_net=network,
     model_proto=TorchModelHandler(
-        net=resnet20(num_classes),
+        net=ResNet50(num_classes),
         optimizer= torch.optim.SGD,
         optimizer_params = {
             "lr": 0.1,
