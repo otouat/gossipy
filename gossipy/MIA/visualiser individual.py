@@ -15,27 +15,27 @@ node_colors = plt.cm.get_cmap('tab10', len(nodes))
 # Plotting all four graphs together
 fig, axs = plt.subplots(2, 2, figsize=(15, 10))
 
+# Plotting the accuracy of train and test for each node over the epochs
+for node in nodes:
+    node_df = df[df['Node'] == node]
+    color = node_colors(node)
+    axs[0, 0].plot(node_df['Round'], node_df['Train Accuracy'], 'o', label=f'Train Accuracy - Node {node}', linestyle='dashed', color=color)
+    axs[0, 0].plot(node_df['Round'], node_df['Test Accuracy'], 'o', label=f'Test Accuracy - Node {node}', linestyle='solid', color=color)
+custom_lines = [Line2D([0], [0], linestyle='dashed'),
+                Line2D([0], [0], linestyle='solid',)]
 
-avg_train_acc = df.groupby('Round')['Train Accuracy'].mean()
-avg_test_acc = df.groupby('Round')['Test Accuracy'].mean()
-std_train_acc = df.groupby('Round')['Train Accuracy'].std()
-std_test_acc = df.groupby('Round')['Test Accuracy'].std()
-
-axs[0, 0].plot(avg_train_acc.index, avg_train_acc,'b-', label='Average MIA Loss')
-axs[0, 0].fill_between(avg_train_acc.index, avg_train_acc - std_train_acc, avg_train_acc + std_train_acc, color='b', alpha=0.2)
-axs[0, 0].plot(avg_test_acc.index, avg_test_acc, 'r--', label='Average MIA Entropy')
-axs[0, 0].fill_between(avg_test_acc.index, avg_test_acc  - std_test_acc, avg_test_acc + std_test_acc, color='r', alpha=0.2)
 axs[0, 0].set_xlabel('Epochs')
 axs[0, 0].set_ylabel('Accuracy')
 axs[0, 0].set_title('Train and Test Accuracy for Each Node over Epochs')
+axs[0, 0].legend(custom_lines, ['Train Accuracy', 'Test Accuracy'])
 axs[0, 0].grid(True)
 
 # Calculating and plotting the average generalisation error over the epochs
-gen_errors = (avg_train_acc - avg_test_acc) / (avg_train_acc + avg_test_acc)
-std_gen_errors = (std_train_acc - std_test_acc) / (std_train_acc - std_test_acc)
+avg_acc_train = df.groupby('Round')['Train Accuracy'].mean()
+avg_acc_test = df.groupby('Round')['Test Accuracy'].mean()
+gen_errors = (avg_acc_train - avg_acc_test) / (avg_acc_train + avg_acc_test)
 
-axs[0, 1].plot(avg_train_acc.index, gen_errors)
-#axs[0, 1].fill_between(avg_train_acc.index, gen_errors - std_gen_errors, gen_errors + std_gen_errors, color='b', alpha=0.2)
+axs[0, 1].plot(avg_acc_train.index, gen_errors)
 axs[0, 1].set_xlabel('Epochs')
 axs[0, 1].set_ylabel('Average Generalization Error')
 axs[0, 1].set_title('Average Generalization Error over Epochs')
@@ -44,13 +44,9 @@ axs[0, 1].grid(True)
 # Calculating the average MIA vulnerability at each round
 avg_mia_loss = df.groupby('Round')['Loss MIA'].mean()
 avg_mia_entropy = df.groupby('Round')['Entropy MIA'].mean()
-std_mia_loss = df.groupby('Round')['Loss MIA'].std()
-std_mia_entropy = df.groupby('Round')['Entropy MIA'].std()
 
-axs[1, 0].plot(avg_mia_loss.index, avg_mia_loss,'b-', label='Average MIA Loss')
-#axs[1, 0].fill_between(avg_mia_loss.index, avg_mia_loss - std_mia_loss, avg_mia_loss + std_mia_loss, color='b', alpha=0.2)
-axs[1, 0].plot(avg_mia_entropy.index, avg_mia_entropy, 'r--', label='Average MIA Entropy')
-#axs[1, 0].fill_between(avg_mia_entropy.index, avg_mia_entropy  - std_mia_entropy, avg_mia_entropy + std_mia_entropy, color='r', alpha=0.2)
+axs[1, 0].plot(avg_mia_loss.index, avg_mia_loss, label='Average MIA Loss')
+axs[1, 0].plot(avg_mia_entropy.index, avg_mia_entropy, linestyle='--', label='Average MIA Entropy')
 axs[1, 0].set_xlabel('Epochs')
 axs[1, 0].set_ylabel('Average MIA Vulnerability')
 axs[1, 0].set_title('Average MIA Vulnerability over Epochs')

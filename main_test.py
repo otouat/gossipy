@@ -8,12 +8,13 @@ from gossipy.model.handler import TorchModelHandler
 from gossipy.node import GossipNode
 from gossipy.simul import MIAGossipSimulator, SimulationReport, MIASimulationReport
 from gossipy.model.architecture import resnet20, resnet9
+from gossipy.model.resnet import *
 from gossipy.data import get_CIFAR10, get_CIFAR100
 from gossipy.topology import create_torus_topology, CustomP2PNetwork
 from gossipy.mia.utils import log_results
 
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
-train_set, test_set = get_CIFAR10()
+train_set, test_set = get_CIFAR100()
 num_nodes = 4
 num_classes= max(train_set[1].max().item(), test_set[1].max().item())+1
 
@@ -33,7 +34,7 @@ nodes = GossipNode.generate(
     data_dispatcher=data_dispatcher,
     p2p_net=network,
     model_proto=TorchModelHandler(
-        net=resnet9(num_classes),
+        net=ResNet18(num_classes),
         optimizer= torch.optim.SGD,
         optimizer_params = {
             "lr": 0.1,
@@ -43,7 +44,7 @@ nodes = GossipNode.generate(
         criterion = F.cross_entropy,
         create_model_mode= CreateModelMode.MERGE_UPDATE,
         batch_size= 256,
-        local_epochs= 10),
+        local_epochs= 3),
     round_len=100,
     sync=False)
 
@@ -58,6 +59,6 @@ simulator = MIAGossipSimulator(
 report = MIASimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
-simulator.start(n_rounds=5)
+simulator.start(n_rounds=4)
 
 log_results(simulator, report, topology)
