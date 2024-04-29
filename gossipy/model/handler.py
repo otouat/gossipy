@@ -249,7 +249,7 @@ class TorchModelHandler(ModelHandler):
         else:
             perm = torch.randperm(x.size(0))
             self._local_step(x[perm][:batch_size], y[perm][:batch_size])
-        self.model = self.model.to("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = self.model.to("cpu")
     
     def _local_step(self, x:torch.Tensor, y:torch.Tensor) -> None:
         self.model.train()
@@ -365,7 +365,7 @@ class TorchModelHandler(ModelHandler):
             else:
                 res["auc"] = 0.5
                 LOG.warning("# of classes != 2. AUC is set to 0.5.")
-        self.model = self.model.to("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = self.model.to("cpu")
         return res
 
 

@@ -4,13 +4,12 @@ from matplotlib.lines import Line2D
 
 
 # Read the CSV file
-df = pd.read_csv(r"C:\Users\jezek\OneDrive\Documents\Python\Djack\gossipy\results\Exp_n#78\mia_results.csv")
+df = pd.read_csv(r"C:\Users\jezek\OneDrive\Documents\Python\Djack\gossipy\results\Exp_n#75\mia_results.csv")
 
 # Extract unique nodes
 nodes = df['Node'].unique()
 
 # Define the color map
-node_colors = plt.cm.get_cmap('tab10', len(nodes))
 
 # Plotting all four graphs together
 fig, axs = plt.subplots(2, 2, figsize=(15, 10))
