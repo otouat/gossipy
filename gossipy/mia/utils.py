@@ -12,7 +12,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
-def log_results(Simul, report, topology, message, model_name, dataset_name):
+def log_results(Simul, report, topology, message="", model_name="", dataset_name=""):
     base_folder_path = os.path.join(os.getcwd(), "results")
     exp_tracker_file = os.path.join(base_folder_path, "exp_number.txt")
 

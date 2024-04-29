@@ -23,7 +23,7 @@ Xtr, ytr = transform(train_set[0]), train_set[1]
 Xte, yte = transform(test_set[0]), test_set[1]
 
 
-data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte)
+data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=0.5)
 
 data_dispatcher = CustomDataDispatcher(data_handler, n=num_nodes, eval_on_user=True, auto_assign=True)
 
