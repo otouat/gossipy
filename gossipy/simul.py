@@ -1212,13 +1212,17 @@ class All2AllGossipSimulator(GossipSimulator):
         return
 
 class MIAGossipSimulator(GossipSimulator):
-    def __init__(self, nodes: Dict[int, GossipNode], data_dispatcher: DataDispatcher,
-            delta: int, protocol: AntiEntropyProtocol,
-            drop_prob: float = 0., online_prob: float = 1.,
-            delay: Delay = ConstantDelay(0), sampling_eval: float = 0.):
+    def __init__(self, 
+                 nodes: Dict[int, GossipNode], 
+                 data_dispatcher: DataDispatcher,
+                 delta: int, 
+                 protocol: AntiEntropyProtocol,
+                 drop_prob: float = 0., 
+                 online_prob: float = 1.,
+                 delay: Delay = ConstantDelay(0), 
+                 sampling_eval: float = 0.):
             super().__init__(nodes, data_dispatcher, delta, protocol, drop_prob,
                             online_prob, delay, sampling_eval)
-            self.n_rounds = 0
 
     def start(self, n_rounds: int = 100, attackerNode: int = 0) -> None:
         assert self.initialized, \
@@ -1337,9 +1341,6 @@ class MIADynamicGossipSimulator(GossipSimulator):
         assert 0 < peer_sampling_period <= delta
         super().__init__(nodes, data_dispatcher, delta, protocol, drop_prob, online_prob, delay,
                          sampling_eval)
-        self.mia_accuracy = []
-        self.gen_error = []
-        self.n_rounds = 0
         self.peer_sampling_period = peer_sampling_period
         self.attackerNode = self.nodes[int(random() * len(self.nodes))]
 
@@ -1466,9 +1467,6 @@ class MIAFederatedSimulator(GossipSimulator):
             delay: Delay = ConstantDelay(0), sampling_eval: float = 0.):
             super().__init__(nodes, data_dispatcher, delta, protocol, drop_prob,
                             online_prob, delay, sampling_eval)
-            self.mia_accuracy = []
-            self.gen_error = []
-            self.n_rounds = 0
             self.attackerNode = self.nodes[0]
 
     def init_nodes(self, seed:int=98765) -> None:

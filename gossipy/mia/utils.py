@@ -12,7 +12,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
-def log_results(Simul, report, topology):
+def log_results(Simul, report, topology, message, model_name, dataset_name):
     base_folder_path = os.path.join(os.getcwd(), "results")
     exp_tracker_file = os.path.join(base_folder_path, "exp_number.txt")
 
@@ -37,6 +37,9 @@ def log_results(Simul, report, topology):
         params_file.write(f"Timestamp: {datetime.now()}\n")
         params_file.write(f"Total Nodes: {Simul.n_nodes}\n")
         params_file.write(f"Total Rounds: {Simul.n_rounds}\n")
+        params_file.write(f"Models: {model_name}\n")
+        params_file.write(f"Dataset: {dataset_name}\n")
+        params_file.write(f"Message: {message}\n")
 
     # Save combined MIA vulnerability and accuracy
     combined_file_path = f"{new_folder_path}/mia_results.csv"

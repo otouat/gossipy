@@ -13,13 +13,13 @@ import os
 def mia_for_each_nn(simulation, attackerNode, class_specific: bool = False):
     idx = attackerNode.idx
     nn = sorted(attackerNode.p2p_net.get_peers(idx), key=lambda x: int(x))
-    model = copy.deepcopy(attackerNode.model_handler.model)
     mia_results = [[], []] if class_specific else []
     for node in simulation.nodes.values():
         if node.idx in nn:
             data = node.data
             train_data, test_data = data
             device = node.model_handler.device
+            model = copy.deepcopy(node.model_handler.model)
             if class_specific:
                 num_classes = max(train_data[1].max().item(), test_data[1].max().item())+1
                 results= mia_best_th_class(model, train_data, test_data, num_classes, device)
@@ -36,7 +36,7 @@ def mia_for_each_nn(simulation, attackerNode, class_specific: bool = False):
     }
     return mia_results
 
-def mia_best_th(model, train_data, test_data, device, nt=150):
+def mia_best_th(model, train_data, test_data, device, nt=200):
     
     def search_th(train, test):
         thrs = np.linspace(min(train.min(), test.min()), max(train.max(), test.max()), nt)
@@ -180,7 +180,7 @@ def compute_consensus_distance(nodes) -> float:
                 pairwise_distance += distance / (num_nodes ** 2 - num_nodes)
 
         consensus_distance += pairwise_distance
-
+    
     return consensus_distance
 
 def compute_gen_errors(Simul, nodes) -> float:
