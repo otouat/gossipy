@@ -14,13 +14,13 @@ from gossipy.topology import create_torus_topology, create_federated_topology, C
 from gossipy.mia.utils import log_results
 
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
-train_set, test_set = get_CIFAR10()
+train_set, test_set = get_CIFAR100()
 
 
 n_classes= max(train_set[1].max().item(), test_set[1].max().item())+1
 model = ResNet152(n_classes)
 n_nodes = 100
-n_rounds = 200
+n_rounds = 250
 n_local_epochs = 5
 batch_size= 64
 optimizer_params = {
@@ -30,7 +30,7 @@ optimizer_params = {
     }
 message = ""
 model_name = model
-dataset_name = "CIFAR10"
+dataset_name = "CIFAR100"
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
 Xte, yte = transform(test_set[0]), test_set[1]
