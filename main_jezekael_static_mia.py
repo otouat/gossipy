@@ -14,7 +14,7 @@ from gossipy.topology import create_torus_topology, CustomP2PNetwork
 from gossipy.mia.utils import log_results
 
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
-train_set, test_set = get_CIFAR100()
+train_set, test_set = get_CIFAR10()
 num_nodes = 100
 num_classes= max(train_set[1].max().item(), test_set[1].max().item())+1
 
