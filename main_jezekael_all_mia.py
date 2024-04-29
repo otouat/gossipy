@@ -18,7 +18,7 @@ train_set, test_set = get_CIFAR100()
 
 
 n_classes= max(train_set[1].max().item(), test_set[1].max().item())+1
-model = ResNet152(n_classes)
+model = resnet20(n_classes)
 n_nodes = 100
 n_rounds = 250
 n_local_epochs = 5
@@ -28,7 +28,7 @@ optimizer_params = {
         "momentum": 0.9,
         "weight_decay": 0.001
     }
-message = "Experience with ResNet152 on CIFAR100 dataset."
+message = "Experiment with CIFAR100 dataset, ResNet20 model, 100 nodes, 250 rounds, 5 local epochs, 64 batch size, 0.1 learning rate, 0.9 momentum, 0.001 weight decay. And MIA with corrected models"
 model_name = model
 dataset_name = "CIFAR100"
 
