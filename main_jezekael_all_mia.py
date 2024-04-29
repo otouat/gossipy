@@ -28,7 +28,7 @@ optimizer_params = {
         "momentum": 0.9,
         "weight_decay": 0.001
     }
-message = ""
+message = "Experience with ResNet152 on CIFAR100 dataset."
 model_name = model
 dataset_name = "CIFAR100"
 
