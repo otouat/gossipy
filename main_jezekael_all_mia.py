@@ -22,7 +22,7 @@ model = resnet20(n_classes)
 n_nodes = 100
 n_rounds = 250
 n_local_epochs = 5
-batch_size= 64
+batch_size= 256
 optimizer_params = {
         "lr": 0.1,
         "momentum": 0.9,

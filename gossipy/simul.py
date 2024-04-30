@@ -275,6 +275,7 @@ class MIASimulationReport(SimulationEventReceiver):
     _global_generalisations_errors: List[Tuple[int, Dict[str, float]]]
     _global_mia_vulnerability: List[Tuple[int, Dict[str, float]]]
     _local_mia_vulnerability: Dict[int, List[Tuple[int, Dict[str, float]]]]
+    _global_accuracy: Dict[int, List[Tuple[int, Dict[str, float]]]]
     _local_accuracy: Dict[int, List[Tuple[int, Dict[str, float]]]]
 
 
@@ -318,6 +319,7 @@ class MIASimulationReport(SimulationEventReceiver):
         self._global_generalisation_error = []
         self._local_generalisation_error = []
         self._local_mia_vulnerability = {}
+        self._global_accuracy = {}
         self._local_accuracy = {}
 
     # docstr-coverage:inherited
@@ -339,11 +341,18 @@ class MIASimulationReport(SimulationEventReceiver):
             self._global_evaluations.append((round, ev))
 
     # docstr-coverage:inherited
-    def update_accuracy(self, round: int, accuracy: List[Dict[str, float]]) -> None:
-        for i, acc in enumerate(accuracy):
-            if i not in self._local_accuracy:
-                self._local_accuracy[i] = []  # Initialize the list for this node if it doesn't exist
-            self._local_accuracy[i].append((round, acc))
+    def update_accuracy(self, round: int, on_user: bool, accuracy: List[Dict[str, float]]) -> None:
+        if on_user:
+            for i, acc in enumerate(accuracy):
+                if i not in self._local_accuracy:
+                    self._local_accuracy[i] = []  # Initialize the list for this node if it doesn't exist
+                self._local_accuracy[i].append((round, acc))
+        else:
+            for i, acc in enumerate(accuracy):
+                if i not in self._global_accuracy:
+                    self._global_accuracy[i] = []  # Initialize the list for this node if it doesn't exist
+                self._global_accuracy[i].append((round, acc))
+
 
     def update_mia_vulnerability(self, round: int, mia: List[Dict[str, float]]) -> None:
         for i, node_ev in enumerate(mia):
@@ -377,8 +386,11 @@ class MIASimulationReport(SimulationEventReceiver):
     def get_mia_vulnerability(self):
         return self._local_mia_vulnerability
     
-    def get_accuracy(self):
-        return self._local_accuracy
+    def get_accuracy(self, local: bool = False):
+        if local:
+            return self._local_accuracy
+        else:
+            return self._global_accuracy
 
     # docstr-coverage:inherited
     def update_timestep(self, t: int):
@@ -732,8 +744,7 @@ class FederatedSimulator(GossipSimulator):
                     
                     if self.data_dispatcher.has_test():
                         if self.sampling_eval > 0:
-                            ev = [self.nodes[i].evaluate(self.data_dispatcher.get_eval_set())
-                                for i in sample]
+                            ev = [self.nodes[i].evaluate(self.data_dispatcher.get_eval_set()) for i in sample]
                         else:
                             ev = [n.evaluate(self.data_dispatcher.get_eval_set())
                                 for _, n in self.nodes.items()]
@@ -1287,6 +1298,7 @@ class MIAGossipSimulator(GossipSimulator):
 
                     if self.sampling_eval > 0:
                         sample = choice(list(self.nodes.keys()), max(int(self.n_nodes * self.sampling_eval), 1))
+                        print("1 :",  len(self.nodes[0].data[0][0]))
                         ev = [self.nodes[i].evaluate() for i in sample if self.nodes[i].has_test()]
                         ev_train = [self.nodes[i].evaluate(self.nodes[i].data[0]) for i in sample]
                     else:
@@ -1294,8 +1306,17 @@ class MIAGossipSimulator(GossipSimulator):
                         ev_train = [n.evaluate(n.data[0]) for _, n in self.nodes.items()]
                     if ev:
                         self.notify_evaluation(self.n_rounds, True, ev)
+                        accuracy = []
+                        for i, (node_ev, node_ev_train) in enumerate(zip(ev, ev_train)):
+                            accuracy.append({
+                                "test" : node_ev['accuracy'],
+                                "train" : node_ev_train['accuracy']
+                            })
+                        for er in self._receivers:
+                            er.update_accuracy(self.n_rounds, True, accuracy)
 
                     if self.data_dispatcher.has_test():
+                        print("2 :", len(self.data_dispatcher.get_eval_set()[0]))
                         if self.sampling_eval > 0:
                             ev = [self.nodes[i].evaluate(self.data_dispatcher.get_eval_set()) for i in sample]
                         else:
@@ -1303,18 +1324,14 @@ class MIAGossipSimulator(GossipSimulator):
                             
                         if ev:
                             self.notify_evaluation(self.n_rounds, False, ev)
-                    accuracy = []
-                    tr = []  # Initialize tr as an empty list
-                    for i, node_ev in enumerate(ev_train):
-                        tr.append(node_ev['accuracy'])
-                    for i, node_ev in enumerate(ev):
-                        accuracy.append({
-                            "test" : node_ev['accuracy'],
-                            "train" : tr[i]
-                        })
-                        
-                    for er in self._receivers:
-                        er.update_accuracy(self.n_rounds, accuracy)
+                            accuracy = []
+                            for i, node_ev in enumerate(ev):
+                                accuracy.append({
+                                    "test" : node_ev['accuracy'],
+                                })
+                            for er in self._receivers:
+                                er.update_accuracy(self.n_rounds, False, ev)
+  
                 self.notify_timestep(t)
 
         except KeyboardInterrupt:

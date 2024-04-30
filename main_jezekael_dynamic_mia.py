@@ -18,7 +18,7 @@ from gossipy.mia.utils import log_results
 # Dataset loading
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
 train_set, test_set = get_CIFAR10()
-nodes_num = 100
+n_nodes = 36
 num_classes = max(train_set[1].max().item(), test_set[1].max().item())+1
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
@@ -27,9 +27,9 @@ Xte, yte = transform(test_set[0]), test_set[1]
 
 data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=0.5)
 
-data_dispatcher = CustomDataDispatcher(data_handler, n=nodes_num, eval_on_user=True, auto_assign=True)
+data_dispatcher = CustomDataDispatcher(data_handler, n=n_nodes*2, eval_on_user=True, auto_assign=True)
 
-topology = create_torus_topology(nodes_num)
+topology = create_torus_topology(n_nodes)
 network = CustomP2PNetwork(topology)
 
 nodes = GossipNode.generate(

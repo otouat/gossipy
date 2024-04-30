@@ -45,21 +45,25 @@ def log_results(Simul, report, topology, message="", model_name="", dataset_name
     combined_file_path = f"{new_folder_path}/mia_results.csv"
     with open(combined_file_path, 'w', newline='') as combined_file:
         writer = csv.writer(combined_file)
-        writer.writerow(['Node', 'Round', 'Loss MIA', 'Entropy MIA', 'Train Accuracy', 'Test Accuracy'])
+        writer.writerow(['Node', 'Round', 'Loss MIA', 'Entropy MIA', 'Train Accuracy', 'Local Test Accuracy', 'Global Test Accuracy'])
         
         for node_id, mia_vulnerabilities in report.get_mia_vulnerability().items():
-            accuracies = report.get_accuracy()[node_id] if node_id in report.get_accuracy() else []
+            local_accuracies = report.get_accuracy(True)[node_id] if node_id in report.get_accuracy() else []
+            global_accuracies = report.get_accuracy(True)[node_id] if node_id in report.get_accuracy() else []
             
-            for round_number, (mia_round, acc_round) in enumerate(zip(mia_vulnerabilities, accuracies), 1):
+            for round_number, (mia_round, local_acc_round, global_acc_round) in enumerate(zip(mia_vulnerabilities, local_accuracies, global_accuracies), 1):
                 mia_dict = mia_round[1]
-                accuracy_dict = acc_round[1] if acc_round else {'train': None, 'test': None}
+                local_accuracy_dict =  local_acc_round[1] if  local_acc_round else {'train': None, 'test': None}
+                global_accuracy_dict =   global_acc_round[1] if   global_acc_round else {'test': None}
                 writer.writerow([
                     node_id, 
                     round_number, 
                     mia_dict['loss_mia'], 
-                    mia_dict['entropy_mia'], 
-                    accuracy_dict['train'],
-                    accuracy_dict['test']
+                    mia_dict['entropy_mia'],
+                    local_accuracy_dict['train'],
+                    local_accuracy_dict['test'],
+                    global_accuracy_dict['test']
+                    
                 ])
     
     # Update the experiment number tracker file
@@ -100,22 +104,27 @@ def plot(file_path):
 
 
     avg_train_acc = df.groupby('Round')['Train Accuracy'].mean()
-    avg_test_acc = df.groupby('Round')['Test Accuracy'].mean()
+    avg_local_test_acc = df.groupby('Round')['Local Test Accuracy'].mean()
+    avg_global_test_acc = df.groupby('Round')['Global Test Accuracy'].mean()
     std_train_acc = df.groupby('Round')['Train Accuracy'].std()
-    std_test_acc = df.groupby('Round')['Test Accuracy'].std()
+    std_local_test_acc = df.groupby('Round')['Local Test Accuracy'].std()
+    std_global_test_acc = df.groupby('Round')['Global Test Accuracy'].std()
 
-    axs[0, 0].plot(avg_train_acc.index, avg_train_acc,'b-', label='Average MIA Loss')
+    axs[0, 0].plot(avg_train_acc.index, avg_train_acc,'b-', label='Accuracy on train set')
     axs[0, 0].fill_between(avg_train_acc.index, avg_train_acc - std_train_acc, avg_train_acc + std_train_acc, color='b', alpha=0.2)
-    axs[0, 0].plot(avg_test_acc.index, avg_test_acc, 'r--', label='Average MIA Entropy')
-    axs[0, 0].fill_between(avg_test_acc.index, avg_test_acc  - std_test_acc, avg_test_acc + std_test_acc, color='r', alpha=0.2)
+    axs[0, 0].plot(avg_local_test_acc.index, avg_local_test_acc, 'r--', label='Accuracy on local test set')
+    axs[0, 0].fill_between(avg_local_test_acc.index, avg_local_test_acc  - std_local_test_acc, avg_local_test_acc + std_local_test_acc, color='r', alpha=0.2)
+    axs[0, 0].plot(avg_global_test_acc.index, avg_global_test_acc, 'g--', label='Accuracy on global test set')
+    axs[0, 0].fill_between(avg_global_test_acc.index, avg_global_test_acc  - std_global_test_acc, avg_global_test_acc + std_global_test_acc, color='g', alpha=0.2)
     axs[0, 0].set_xlabel('Epochs')
     axs[0, 0].set_ylabel('Accuracy')
     axs[0, 0].set_title('Train and Test Accuracy for Each Node over Epochs')
+    axs[0, 0].legend()
     axs[0, 0].grid(True)
 
     # Calculating and plotting the average generalisation error over the epochs
-    gen_errors = (avg_train_acc - avg_test_acc) / (avg_train_acc + avg_test_acc)
-    std_gen_errors = (std_train_acc - std_test_acc) / (std_train_acc - std_test_acc)
+    gen_errors = (avg_train_acc - avg_local_test_acc) / (avg_train_acc + avg_local_test_acc)
+    std_gen_errors = (std_train_acc - std_local_test_acc) / (std_train_acc - std_local_test_acc)
 
     axs[0, 1].plot(avg_train_acc.index, gen_errors)
     #axs[0, 1].fill_between(avg_train_acc.index, gen_errors - std_gen_errors, gen_errors + std_gen_errors, color='b', alpha=0.2)
