@@ -35,7 +35,7 @@ nodes = GossipNode.generate(
     p2p_net=network,
     model_proto=TorchModelHandler(
         net=resnet20(num_classes),
-        optimizer= torch.optim.SGD,
+        optimizer= torch.optim.Adam,
         optimizer_params = {
             "lr": 0.1,
             "momentum": 0.9,
@@ -59,6 +59,6 @@ simulator = MIAGossipSimulator(
 report = MIASimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
-simulator.start(n_rounds=200)
+simulator.start(n_rounds=100)
 
 log_results(simulator, report, topology)

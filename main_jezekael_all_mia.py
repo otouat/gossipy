@@ -18,19 +18,17 @@ train_set, test_set = get_CIFAR100()
 
 
 n_classes= max(train_set[1].max().item(), test_set[1].max().item())+1
-model = resnet20(n_classes)
+model = ResNet101(n_classes)
 n_nodes = 100
 n_rounds = 250
 n_local_epochs = 5
-batch_size= 256
+batch_size= 128
 optimizer_params = {
-        "lr": 0.1,
-        "momentum": 0.9,
-        "weight_decay": 0.001
+        "lr": 0.1
+        #"momentum": 0.9,
+        #"weight_decay": 0.001
     }
-message = "Experiment with CIFAR100 dataset, ResNet20 model, 100 nodes, 250 rounds, 5 local epochs, 64 batch size, 0.1 learning rate, 0.9 momentum, 0.001 weight decay. And MIA with corrected models"
-model_name = model
-dataset_name = "CIFAR100"
+message = "Experiment with ResNet101 on CIFAR100 dataset. Optimizer: Adam, lr=0.1, batch_size=128, n_local_epochs=5, n_rounds=250, n_nodes=100."
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
 Xte, yte = transform(test_set[0]), test_set[1]
@@ -49,7 +47,7 @@ nodes = GossipNode.generate(
     p2p_net=network,
     model_proto=TorchModelHandler(
         net=model,
-        optimizer= torch.optim.SGD,
+        optimizer= torch.optim.Adam,
         optimizer_params = optimizer_params,
         criterion = F.cross_entropy,
         create_model_mode= CreateModelMode.MERGE_UPDATE,
@@ -73,7 +71,7 @@ simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
 simulator.start(n_rounds=n_rounds)
 
-log_results(simulator, report, topology, message, model_name, dataset_name)
+log_results(simulator, report, topology, message)
 
 #Dynamic --------------------------------------
 nodes = GossipNode.generate(
@@ -107,7 +105,7 @@ simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
 simulator.start(n_rounds=n_rounds)
 
-log_results(simulator, report, topology, message, model_name, dataset_name)
+log_results(simulator, report, topology, message)
 
 #Federated --------------------------------------
 
@@ -143,4 +141,4 @@ simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
 simulator.start(n_rounds=n_rounds)
 
-log_results(simulator, report, topology, message, model_name, dataset_name)
+log_results(simulator, report, topology, message)

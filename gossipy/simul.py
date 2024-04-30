@@ -1445,6 +1445,15 @@ class MIADynamicGossipSimulator(GossipSimulator):
                         ev_train = [n.evaluate(n.data[0]) for _, n in self.nodes.items()]
                     if ev:
                         self.notify_evaluation(self.n_rounds, True, ev)
+                        accuracy = []
+                        for i, (node_ev, node_ev_train) in enumerate(zip(ev, ev_train)):
+                            accuracy.append({
+                                "test" : node_ev['accuracy'],
+                                "train" : node_ev_train['accuracy']
+                            })
+                        
+                        for er in self._receivers:
+                            er.update_accuracy(self.n_rounds, True, accuracy)
 
                     if self.data_dispatcher.has_test():
                         if self.sampling_eval > 0:
@@ -1454,18 +1463,13 @@ class MIADynamicGossipSimulator(GossipSimulator):
                             
                         if ev:
                             self.notify_evaluation(self.n_rounds, False, ev)
-                    accuracy = []
-                    tr = []  # Initialize tr as an empty list
-                    for i, node_ev in enumerate(ev_train):
-                        tr.append(node_ev['accuracy'])
-                    for i, node_ev in enumerate(ev):
-                        accuracy.append({
-                            "test" : node_ev['accuracy'],
-                            "train" : tr[i]
-                        })
-                        
-                    for er in self._receivers:
-                        er.update_accuracy(self.n_rounds, accuracy)
+                            accuracy = []
+                            for i, node_ev in enumerate(ev):
+                                accuracy.append({
+                                    "test" : node_ev['accuracy'],
+                                })
+                            for er in self._receivers:
+                                er.update_accuracy(self.n_rounds, False, accuracy)
                 self.notify_timestep(t)
 
         except KeyboardInterrupt:
@@ -1587,11 +1591,13 @@ class MIAFederatedSimulator(GossipSimulator):
 
                 if (t + 1) % self.delta == 0:
                     for er in self._receivers:
-                            mia_vulnerability = [mia_for_each_nn(self, self.attackerNode, class_specific = False)]
+                            mia_vulnerability = [mia_for_each_nn(self, n, class_specific = False) for _, n in self.nodes.items()]
                             er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)
 
                     if self.sampling_eval > 0:
-                        sample = choice(list(self.nodes.keys()), max(int(self.n_nodes * self.sampling_eval), 1))
+                        node_ids = [node_id for node_id in self.nodes.keys() if node_id != "server_state"]
+                        sample = choice(node_ids, max(int((self.n_nodes - 1) * self.sampling_eval), 1))
+
                         ev = [self.nodes[i].evaluate() for i in sample if self.nodes[i].has_test()]
                         ev_train = [self.nodes[i].evaluate(self.nodes[i].data[0]) for i in sample]
                     else:
@@ -1599,6 +1605,15 @@ class MIAFederatedSimulator(GossipSimulator):
                         ev_train = [n.evaluate(n.data[0]) for _, n in self.nodes.items()]
                     if ev:
                         self.notify_evaluation(self.n_rounds, True, ev)
+                        accuracy = []
+                        for i, (node_ev, node_ev_train) in enumerate(zip(ev, ev_train)):
+                            accuracy.append({
+                                "test" : node_ev['accuracy'],
+                                "train" : node_ev_train['accuracy']
+                            })
+                        
+                        for er in self._receivers:
+                            er.update_accuracy(self.n_rounds, True, accuracy)
 
                     if self.data_dispatcher.has_test():
                         if self.sampling_eval > 0:
@@ -1608,18 +1623,13 @@ class MIAFederatedSimulator(GossipSimulator):
                             
                         if ev:
                             self.notify_evaluation(self.n_rounds, False, ev)
-                    accuracy = []
-                    tr = []  # Initialize tr as an empty list
-                    for i, node_ev in enumerate(ev_train):
-                        tr.append(node_ev['accuracy'])
-                    for i, node_ev in enumerate(ev):
-                        accuracy.append({
-                            "test" : node_ev['accuracy'],
-                            "train" : tr[i]
-                        })
-                        
-                    for er in self._receivers:
-                        er.update_accuracy(self.n_rounds, accuracy)
+                            accuracy = []
+                            for i, node_ev in enumerate(ev):
+                                accuracy.append({
+                                    "test" : node_ev['accuracy'],
+                                })
+                            for er in self._receivers:
+                                er.update_accuracy(self.n_rounds, False, accuracy)
                 self.notify_timestep(t)
 
         except KeyboardInterrupt:

@@ -65,6 +65,6 @@ simulator = MIADynamicGossipSimulator(
 report = MIASimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
-simulator.start(n_rounds=200)
+simulator.start(n_rounds=100)
 
 log_results(simulator, report, topology)
