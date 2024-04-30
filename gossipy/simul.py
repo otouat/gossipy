@@ -1298,7 +1298,6 @@ class MIAGossipSimulator(GossipSimulator):
 
                     if self.sampling_eval > 0:
                         sample = choice(list(self.nodes.keys()), max(int(self.n_nodes * self.sampling_eval), 1))
-                        print("1 :",  len(self.nodes[0].data[0][0]))
                         ev = [self.nodes[i].evaluate() for i in sample if self.nodes[i].has_test()]
                         ev_train = [self.nodes[i].evaluate(self.nodes[i].data[0]) for i in sample]
                     else:
@@ -1312,11 +1311,11 @@ class MIAGossipSimulator(GossipSimulator):
                                 "test" : node_ev['accuracy'],
                                 "train" : node_ev_train['accuracy']
                             })
+                        
                         for er in self._receivers:
                             er.update_accuracy(self.n_rounds, True, accuracy)
 
                     if self.data_dispatcher.has_test():
-                        print("2 :", len(self.data_dispatcher.get_eval_set()[0]))
                         if self.sampling_eval > 0:
                             ev = [self.nodes[i].evaluate(self.data_dispatcher.get_eval_set()) for i in sample]
                         else:
@@ -1330,7 +1329,7 @@ class MIAGossipSimulator(GossipSimulator):
                                     "test" : node_ev['accuracy'],
                                 })
                             for er in self._receivers:
-                                er.update_accuracy(self.n_rounds, False, ev)
+                                er.update_accuracy(self.n_rounds, False, accuracy)
   
                 self.notify_timestep(t)
 
