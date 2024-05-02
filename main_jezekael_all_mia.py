@@ -18,17 +18,18 @@ train_set, test_set = get_CIFAR100()
 
 
 n_classes= max(train_set[1].max().item(), test_set[1].max().item())+1
-model = resnet20(n_classes)
+model = ResNet50(n_classes)
 n_nodes = 100
 n_rounds = 250
 n_local_epochs = 5
-batch_size= 256
+batch_size= 128
+optimizer=torch.optim.Adam
 optimizer_params = {
-        "lr": 0.1,
-        "momentum": 0.9,
-        "weight_decay": 0.001
+        "lr": 0.001
+        #"momentum": 0.9,
+        #"weight_decay": 0.001
     }
-message = "Experiment with ResNet50 on CIFAR100 dataset. 100 nodes, 250 rounds, 5 local epochs, batch size 128, lr 0.1."
+message = "Experiment with ResNet50 on CIFAR100 dataset. 100 nodes, 250 rounds, 5 local epochs, batch size 128, lr 0.001."
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
 Xte, yte = transform(test_set[0]), test_set[1]
@@ -47,7 +48,7 @@ nodes = GossipNode.generate(
     p2p_net=network,
     model_proto=TorchModelHandler(
         net=model,
-        optimizer=torch.optim.SGD,
+        optimizer=optimizer,
         optimizer_params = optimizer_params,
         criterion = F.cross_entropy,
         create_model_mode= CreateModelMode.MERGE_UPDATE,
@@ -79,7 +80,7 @@ nodes = GossipNode.generate(
     p2p_net=network,
     model_proto=TorchModelHandler(
         net=model,
-        optimizer=torch.optim.SGD,
+        optimizer=optimizer,
         optimizer_params = optimizer_params,
         criterion = F.cross_entropy,
         create_model_mode= CreateModelMode.MERGE_UPDATE,
@@ -117,7 +118,7 @@ nodes = FederatedGossipNode.generate(
     p2p_net=network,
     model_proto=TorchModelHandler(
         net=model,
-        optimizer=torch.optim.SGD,
+        optimizer=optimizer,
         optimizer_params = optimizer_params,
         criterion = F.cross_entropy,
         create_model_mode = CreateModelMode.UPDATE,
