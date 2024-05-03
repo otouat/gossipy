@@ -231,6 +231,7 @@ class TorchModelHandler(ModelHandler):
         self.batch_size = batch_size
         GlobalSettings().auto_device()
         self.device = GlobalSettings().get_device()
+        global counter_local = 0
         #self.model = self.model.to(self.device)
 
     def init(self) -> None:
@@ -252,13 +253,16 @@ class TorchModelHandler(ModelHandler):
         self.model = self.model.to("cpu")
     
     def _local_step(self, x:torch.Tensor, y:torch.Tensor) -> None:
+        counter_local += 1
+        print(f"Local step {counter_local}")
         self.model.train()
         x, y = x.to(self.device), y.to(self.device)
         y_pred = self.model(x)
         loss = self.criterion(y_pred, y)
-        self.optimizer.zero_grad()
+        self.optimizer.zero_grad(set_to_none=True)
         loss.backward()
         self.optimizer.step()
+        self.optimizer.zero_grad(set_to_none=True)
         self.n_updates += 1
     
     def _merge(self, other_model_handler: Union[TorchModelHandler, Iterable[TorchModelHandler]]) -> None:
