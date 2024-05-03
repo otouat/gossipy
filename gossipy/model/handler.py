@@ -257,7 +257,7 @@ class TorchModelHandler(ModelHandler):
     
     def _local_step(self, x:torch.Tensor, y:torch.Tensor) -> None:
         self.counter_local += 1
-        print(f"Local step {self.counter_local}")
+        #print(f"Local step {self.counter_local}")
         self.model.train()
         x, y = x.to(self.device), y.to(self.device)
         #with profile(activities=[ProfilerActivity.CUDA], profile_memory=True, record_shapes=True) as prof:
@@ -349,12 +349,11 @@ class TorchModelHandler(ModelHandler):
         """
 
         x, y = data
-        x, y = x.to(self.device), y.to(self.device)
+        #x, y = x.to(self.device), y.to(self.device)
         self.model.eval()
         #self.model = self.model.to(self.device)
         self.model = self.model.to("cpu")
-        with torch.autocast(device_type="cpu"):
-            scores = self.model(x)
+        scores = self.model(x)
 
         if y.dim() == 1:
             y_true = y.cpu().numpy().flatten()
