@@ -351,8 +351,9 @@ class TorchModelHandler(ModelHandler):
         x, y = data
         x, y = x.to(self.device), y.to(self.device)
         self.model.eval()
-        self.model = self.model.to(self.device)
-        with torch.autocast(device_type="cuda"):
+        #self.model = self.model.to(self.device)
+        self.model = self.model.to("cpu")
+        with torch.autocast(device_type="cpu"):
             scores = self.model(x)
 
         if y.dim() == 1:
