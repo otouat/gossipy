@@ -150,19 +150,19 @@ def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor]) -> Tuple[np
     labels = []
 
     for idx in range(len(x)):
-        with profile(activities=[ProfilerActivity.CUDA], profile_memory=True, record_shapes=True) as prof:
-            with torch.autocast(device_type="cuda"):
-                with torch.no_grad():
-                    scores = model(x[idx].unsqueeze(0))
-                    loss = torch.nn.functional.cross_entropy(scores, y[idx].unsqueeze(0))
+        #with profile(activities=[ProfilerActivity.CUDA], profile_memory=True, record_shapes=True) as prof:
+        with torch.autocast(device_type="cuda"):
+            with torch.no_grad():
+                scores = model(x[idx].unsqueeze(0))
+                loss = torch.nn.functional.cross_entropy(scores, y[idx].unsqueeze(0))
 
-                    # Collect probability scores instead of class predictions
-                    prob_scores = torch.nn.functional.softmax(scores, dim=-1).cpu().numpy()
-                    label = y[idx].cpu().numpy()
+                # Collect probability scores instead of class predictions
+                prob_scores = torch.nn.functional.softmax(scores, dim=-1).cpu().numpy()
+                label = y[idx].cpu().numpy()
 
-                    losses.append(loss.cpu().numpy())
-                    preds.append(prob_scores.reshape(1, -1))  # Store probability scores
-                    labels.append(label.reshape(1, -1))  # Ensure labels are added as arrays
+                losses.append(loss.cpu().numpy())
+                preds.append(prob_scores.reshape(1, -1))  # Store probability scores
+                labels.append(label.reshape(1, -1))  # Ensure labels are added as arrays
     losses = np.array(losses)
     preds = np.concatenate(preds) if preds else np.array([])
     labels = np.concatenate(labels) if labels else np.array([])

@@ -260,13 +260,13 @@ class TorchModelHandler(ModelHandler):
         print(f"Local step {self.counter_local}")
         self.model.train()
         x, y = x.to(self.device), y.to(self.device)
-        with profile(activities=[ProfilerActivity.CUDA], profile_memory=True, record_shapes=True) as prof:
-            with torch.autocast(device_type="cuda"):
-                y_pred = self.model(x)
-                loss = self.criterion(y_pred, y)
-                self.optimizer.zero_grad(set_to_none=True)
-        if self.counter_local % 40 == 0: 
-           print(prof.key_averages().table(sort_by="self_cuda_memory_usage", row_limit=10))
+        #with profile(activities=[ProfilerActivity.CUDA], profile_memory=True, record_shapes=True) as prof:
+        with torch.autocast(device_type="cuda"):
+            y_pred = self.model(x)
+            loss = self.criterion(y_pred, y)
+            self.optimizer.zero_grad(set_to_none=True)
+        #if self.counter_local % 40 == 0: 
+           #print(prof.key_averages().table(sort_by="self_cuda_memory_usage", row_limit=10))
         loss.backward()
         self.optimizer.step()
         self.optimizer.zero_grad(set_to_none=True)
@@ -352,7 +352,8 @@ class TorchModelHandler(ModelHandler):
         x, y = x.to(self.device), y.to(self.device)
         self.model.eval()
         self.model = self.model.to(self.device)
-        scores = self.model(x)
+        with torch.autocast(device_type="cuda"):
+            scores = self.model(x)
 
         if y.dim() == 1:
             y_true = y.cpu().numpy().flatten()
