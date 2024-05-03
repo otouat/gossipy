@@ -22,13 +22,13 @@ model = ResNet101(n_classes)
 n_nodes = 4
 n_rounds = 250
 n_local_epochs = 5
-batch_size = 256
+batch_size = 8
 optimizer_params = {
         "lr": 0.001,
         #"momentum": 0.9,
         #"weight_decay": 0.001
     }
-message = "Experiment with ResNet101 on CIFAR10 dataset. 100 nodes, 250 rounds, 5 local epochs, batch size 128, lr 0.001 (Adam)"
+message = "Experiment with ResNet101 on CIFAR10 dataset. 100 nodes, 250 rounds, 5 local epochs, batch size 8, lr 0.001 (Adam)"
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
 Xte, yte = transform(test_set[0]), test_set[1]

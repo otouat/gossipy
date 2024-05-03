@@ -147,17 +147,18 @@ def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor]) -> Tuple[np
     labels = []
 
     for idx in range(len(x)):
-        with torch.no_grad():
-            scores = model(x[idx].unsqueeze(0))
-            loss = torch.nn.functional.cross_entropy(scores, y[idx].unsqueeze(0))
+        with torch.autocast(device_type="cuda"):
+            with torch.no_grad():
+                scores = model(x[idx].unsqueeze(0))
+                loss = torch.nn.functional.cross_entropy(scores, y[idx].unsqueeze(0))
 
-            # Collect probability scores instead of class predictions
-            prob_scores = torch.nn.functional.softmax(scores, dim=-1).cpu().numpy()
-            label = y[idx].cpu().numpy()
+                # Collect probability scores instead of class predictions
+                prob_scores = torch.nn.functional.softmax(scores, dim=-1).cpu().numpy()
+                label = y[idx].cpu().numpy()
 
-            losses.append(loss.cpu().numpy())
-            preds.append(prob_scores.reshape(1, -1))  # Store probability scores
-            labels.append(label.reshape(1, -1))  # Ensure labels are added as arrays
+                losses.append(loss.cpu().numpy())
+                preds.append(prob_scores.reshape(1, -1))  # Store probability scores
+                labels.append(label.reshape(1, -1))  # Ensure labels are added as arrays
 
     losses = np.array(losses)
     preds = np.concatenate(preds) if preds else np.array([])
@@ -182,35 +183,6 @@ def compute_consensus_distance(nodes) -> float:
         consensus_distance += pairwise_distance
     
     return consensus_distance
-
-def compute_gen_errors(Simul, nodes) -> float:
-    aggregated_acc_train = []
-    aggregated_acc_test = []
-    gen_error = []
-
-    for _, node in nodes.items():
-        acc_train = node.evaluate(node.data[0])["accuracy"]
-        aggregated_acc_train.append(acc_train)
-        if node.has_test():
-            if Simul.data_dispatcher.has_test():
-                acc_test = node.evaluate(node.data[1])["accuracy"]
-                #acc_test = node.evaluate(self.data_dispatcher.get_eval_set())["accuracy"]
-            else:
-                acc_test = node.evaluate(node.data[1])["accuracy"]
-            aggregated_acc_test.append(acc_test)
-
-    # Compute the generalization error based on aggregated accuracies
-    if aggregated_acc_train and aggregated_acc_test:
-        avg_acc_train = sum(aggregated_acc_train) / len(aggregated_acc_train)
-        avg_acc_test = sum(aggregated_acc_test) / len(aggregated_acc_test)
-        gen_error_value = (avg_acc_train - avg_acc_test) / (avg_acc_test + avg_acc_train)
-        gen_error.append(gen_error_value)
-    else:
-        gen_error.append(0)
-
-    return gen_error
-def get_gen_errors(acc_train, acc_test) -> float:
-    return (acc_train - acc_test) / (acc_test + acc_train)
 
 def assign_model_params(source_model, target_model):
     device = next(target_model.parameters()).device

@@ -24,6 +24,7 @@ class BasicBlock(nn.Module):
                 nn.BatchNorm2d(out_channels * BasicBlock.expansion)
             )
 
+    @torch.autocast(device_type="cuda")
     def forward(self, x):
         residual = self.shortcut(x)
         x = self.conv1(x)
@@ -59,6 +60,7 @@ class BottleNeck(nn.Module):
         else:
             self.shortcut = nn.Identity()
 
+    @torch.autocast(device_type="cuda")
     def forward(self, x):
         residual = self.shortcut(x)
         x = self.conv1(x)
@@ -101,7 +103,8 @@ class TorchResNet(TorchModel):
             self.in_channels = out_channels * block.expansion
 
         return nn.Sequential(*layers)
-
+    
+    @torch.autocast(device_type="cuda")
     def forward(self, x):
         output = self.conv1(x)
         output = self.conv2_x(output)

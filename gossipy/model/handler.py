@@ -257,9 +257,10 @@ class TorchModelHandler(ModelHandler):
         print(f"Local step {self.counter_local}")
         self.model.train()
         x, y = x.to(self.device), y.to(self.device)
-        y_pred = self.model(x)
-        loss = self.criterion(y_pred, y)
-        self.optimizer.zero_grad(set_to_none=True)
+        with torch.autocast(device_type="cuda"):
+            y_pred = self.model(x)
+            loss = self.criterion(y_pred, y)
+            self.optimizer.zero_grad(set_to_none=True)
         loss.backward()
         self.optimizer.step()
         self.optimizer.zero_grad(set_to_none=True)
