@@ -19,7 +19,7 @@ train_set, test_set = get_CIFAR100()
 
 n_classes= max(train_set[1].max().item(), test_set[1].max().item())+1
 model = ResNet101(n_classes)
-n_nodes = 49
+n_nodes = 4
 n_rounds = 250
 n_local_epochs = 5
 batch_size = 256
@@ -36,7 +36,7 @@ Xte, yte = transform(test_set[0]), test_set[1]
 
 data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=0.5)
 
-data_dispatcher = CustomDataDispatcher(data_handler, n=n_nodes, eval_on_user=True, auto_assign=True)
+data_dispatcher = CustomDataDispatcher(data_handler, n=n_nodes*100, eval_on_user=True, auto_assign=True)
 
 topology = create_torus_topology(n_nodes)
 network = CustomP2PNetwork(topology)
