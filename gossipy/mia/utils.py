@@ -12,7 +12,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
-def log_results(Simul, report, topology, message=""):
+def log_results(Simul, report, message=""):
     base_folder_path = os.path.join(os.getcwd(), "results")
     exp_tracker_file = os.path.join(base_folder_path, "exp_number.txt")
 
@@ -72,18 +72,11 @@ def log_results(Simul, report, topology, message=""):
     # Save diagrams
     fig = get_fig_evaluation([[ev for _, ev in report.get_evaluation(False)]], "Overall test results")
     fig2 = plot(combined_file_path)
-    if topology is not None:  # Modified condition to check if topology is not None
-        fig3 = display_topology(topology)
-        diagrams = {
-            'Overall_gossipy_results': fig,
-            'Overall_test_results': fig2,
-            "Topology": fig3
-        }
-    else:
-        diagrams = {
-            'Overall_gossipy_results': fig,
-            'Overall_test_results': fig2
-        }
+    diagrams = {
+        'Overall_gossipy_results': fig,
+        'Overall_test_results': fig2
+    }
+
     for name, fig in diagrams.items():
         fig.savefig(f"{new_folder_path}/{name}.png")
 

@@ -349,10 +349,10 @@ class TorchModelHandler(ModelHandler):
         """
 
         x, y = data
-        #x, y = x.to(self.device), y.to(self.device)
+        x, y = x.to(self.device), y.to(self.device)
         self.model.eval()
-        #self.model = self.model.to(self.device)
-        self.model = self.model.to("cpu")
+        self.model = self.model.to(self.device)
+        #self.model = self.model.to("cpu")
         scores = self.model(x)
 
         if y.dim() == 1:
