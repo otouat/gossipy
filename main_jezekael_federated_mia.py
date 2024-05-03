@@ -14,21 +14,20 @@ from gossipy.topology import create_torus_topology, create_federated_topology, C
 from gossipy.mia.utils import log_results
 
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
-train_set, test_set = get_CIFAR100()
-
+train_set, test_set = get_CIFAR10()
 
 n_classes= max(train_set[1].max().item(), test_set[1].max().item())+1
 model = resnet20(n_classes)
 n_nodes = 100
-n_rounds = 250
+n_rounds = 150
 n_local_epochs = 5
-batch_size= 256
+batch_size = 256
 optimizer_params = {
         "lr": 0.1,
         "momentum": 0.9,
         "weight_decay": 0.001
     }
-message = "Experiment with ResNet20 on CIFAR100 dataset. 100 nodes, 250 rounds, 5 local epochs, batch size 128, lr 0.1."
+message = "Experiment with ResNet20 on CIFAR10 dataset. 100 nodes, 250 rounds, 5 local epochs, batch size 256, lr 0.1"
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
 Xte, yte = transform(test_set[0]), test_set[1]
@@ -70,4 +69,4 @@ simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
 simulator.start(n_rounds=n_rounds)
 
-log_results(simulator, report, topology, message)
+log_results(simulator, report, message)
