@@ -163,7 +163,6 @@ def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor]) -> Tuple[np
                     losses.append(loss.cpu().numpy())
                     preds.append(prob_scores.reshape(1, -1))  # Store probability scores
                     labels.append(label.reshape(1, -1))  # Ensure labels are added as arrays
-        print(prof.key_averages().table(sort_by="self_cuda_memory_usage", row_limit=10))
     losses = np.array(losses)
     preds = np.concatenate(preds) if preds else np.array([])
     labels = np.concatenate(labels) if labels else np.array([])

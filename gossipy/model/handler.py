@@ -265,7 +265,8 @@ class TorchModelHandler(ModelHandler):
                 y_pred = self.model(x)
                 loss = self.criterion(y_pred, y)
                 self.optimizer.zero_grad(set_to_none=True)
-        print(prof.key_averages().table(sort_by="self_cuda_memory_usage", row_limit=10))
+        if self.counter_local % 40 == 0: 
+           print(prof.key_averages().table(sort_by="self_cuda_memory_usage", row_limit=10))
         loss.backward()
         self.optimizer.step()
         self.optimizer.zero_grad(set_to_none=True)
