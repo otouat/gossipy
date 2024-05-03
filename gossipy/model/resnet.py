@@ -51,13 +51,13 @@ class BottleNeck(nn.Module):
         self.conv3 = nn.Conv2d(out_channels, out_channels * BottleNeck.expansion, kernel_size=1, bias=False)
         self.bn3 = nn.BatchNorm2d(out_channels * BottleNeck.expansion)
 
-        self.shortcut = nn.Sequential()
-
         if stride != 1 or in_channels != out_channels * BottleNeck.expansion:
             self.shortcut = nn.Sequential(
                 nn.Conv2d(in_channels, out_channels * BottleNeck.expansion, stride=stride, kernel_size=1, bias=False),
                 nn.BatchNorm2d(out_channels * BottleNeck.expansion)
             )
+        else:
+            self.shortcut = nn.Identity()
 
     def forward(self, x):
         residual = self.shortcut(x)
@@ -72,9 +72,6 @@ class BottleNeck(nn.Module):
         x += residual
         x = self.relu(x)
         return x
-
-    def forward(self, x):
-        return nn.ReLU(inplace=True)(self.residual_function(x) + self.shortcut(x))
 
 class TorchResNet(TorchModel):
     def __init__(self, block, num_blocks, num_classes=100):
