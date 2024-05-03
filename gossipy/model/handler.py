@@ -4,6 +4,9 @@ import copy
 import torch
 from torch import LongTensor
 from torch.nn import ParameterList, Parameter
+import torch
+import torchvision.models as models
+from torch.profiler import profile, record_function, ProfilerActivity
 import numpy as np
 from typing import Any, Callable, Tuple, Dict, Optional, Union, Iterable
 from sklearn.metrics import accuracy_score, roc_auc_score, recall_score, f1_score, precision_score
@@ -257,10 +260,12 @@ class TorchModelHandler(ModelHandler):
         print(f"Local step {self.counter_local}")
         self.model.train()
         x, y = x.to(self.device), y.to(self.device)
-        with torch.autocast(device_type="cuda"):
-            y_pred = self.model(x)
-            loss = self.criterion(y_pred, y)
-            self.optimizer.zero_grad(set_to_none=True)
+        with profile(activities=[ProfilerActivity.CPU], profile_memory=True, record_shapes=True) as prof:
+            with torch.autocast(device_type="cuda"):
+                y_pred = self.model(x)
+                loss = self.criterion(y_pred, y)
+                self.optimizer.zero_grad(set_to_none=True)
+        print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
         loss.backward()
         self.optimizer.step()
         self.optimizer.zero_grad(set_to_none=True)

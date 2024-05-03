@@ -2,6 +2,9 @@ from sklearn.utils import resample
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch
+import torchvision.models as models
+from torch.profiler import profile, record_function, ProfilerActivity
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import numpy as np
@@ -147,19 +150,20 @@ def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor]) -> Tuple[np
     labels = []
 
     for idx in range(len(x)):
-        with torch.autocast(device_type="cuda"):
-            with torch.no_grad():
-                scores = model(x[idx].unsqueeze(0))
-                loss = torch.nn.functional.cross_entropy(scores, y[idx].unsqueeze(0))
+        with profile(activities=[ProfilerActivity.CPU], profile_memory=True, record_shapes=True) as prof:
+            with torch.autocast(device_type="cuda"):
+                with torch.no_grad():
+                    scores = model(x[idx].unsqueeze(0))
+                    loss = torch.nn.functional.cross_entropy(scores, y[idx].unsqueeze(0))
 
-                # Collect probability scores instead of class predictions
-                prob_scores = torch.nn.functional.softmax(scores, dim=-1).cpu().numpy()
-                label = y[idx].cpu().numpy()
+                    # Collect probability scores instead of class predictions
+                    prob_scores = torch.nn.functional.softmax(scores, dim=-1).cpu().numpy()
+                    label = y[idx].cpu().numpy()
 
-                losses.append(loss.cpu().numpy())
-                preds.append(prob_scores.reshape(1, -1))  # Store probability scores
-                labels.append(label.reshape(1, -1))  # Ensure labels are added as arrays
-
+                    losses.append(loss.cpu().numpy())
+                    preds.append(prob_scores.reshape(1, -1))  # Store probability scores
+                    labels.append(label.reshape(1, -1))  # Ensure labels are added as arrays
+        print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
     losses = np.array(losses)
     preds = np.concatenate(preds) if preds else np.array([])
     labels = np.concatenate(labels) if labels else np.array([])
