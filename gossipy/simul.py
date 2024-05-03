@@ -15,7 +15,7 @@ from .node import GossipNode, All2AllGossipNode
 from .flow_control import TokenAccount
 from .model.handler import ModelHandler
 from .utils import StringEncoder
-from .mia.mia import mia_for_each_nn, get_gen_errors
+from .mia.mia import mia_for_each_nn
 from .mia.utils import log_results
 
 # AUTHORSHIP
