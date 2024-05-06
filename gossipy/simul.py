@@ -1640,3 +1640,126 @@ class MIAFederatedSimulator(GossipSimulator):
         self.notify_end()
 
         return
+
+from gossipy.ra.ra import *
+
+
+class RAGossipSimulator(GossipSimulator):
+    def __init__(self, 
+                 nodes: Dict[int, GossipNode], 
+                 data_dispatcher: DataDispatcher,
+                 delta: int, 
+                 protocol: AntiEntropyProtocol,
+                 drop_prob: float = 0., 
+                 online_prob: float = 1.,
+                 delay: Delay = ConstantDelay(0), 
+                 sampling_eval: float = 0.):
+            super().__init__(nodes, data_dispatcher, delta, protocol, drop_prob,
+                            online_prob, delay, sampling_eval)
+
+    def start(self, n_rounds: int = 100, attackerNode: int = 0) -> None:
+        assert self.initialized, \
+            "The simulator is not inizialized. Please, call the method 'init_nodes'."
+        LOG.info("Simulation started.")
+        node_ids = np.arange(self.n_nodes)
+        self.n_rounds = n_rounds
+
+        pbar = track(range(n_rounds * self.delta), description="Simulating...")
+
+        msg_queues = DefaultDict(list)
+        rep_queues = DefaultDict(list)
+
+        try:
+            for t in pbar:
+                self.n_rounds = int(round(t, -2)/100)
+                if t % self.delta == 0:
+                    shuffle(node_ids)
+
+                for i in node_ids:
+                    node = self.nodes[i]
+                    if node.timed_out(t):
+                        peer = node.get_peer()
+                        if peer is None:
+                            break
+                        msg = node.send(t, peer, self.protocol)
+                        self.notify_message(False, msg)
+                        if msg:
+                            if random() >= self.drop_prob:
+                                d = self.delay.get(msg)
+                                msg_queues[t + d].append(msg)
+                            else:
+                                self.notify_message(True)
+
+                is_online = random(self.n_nodes) <= self.online_prob
+                for msg in msg_queues[t]:
+                    if is_online[msg.receiver]:
+                        reply = self.nodes[msg.receiver].receive(t, msg)
+                        if reply:
+                            if random() > self.drop_prob:
+                                d = self.delay.get(reply)
+                                rep_queues[t + d].append(reply)
+                            else:
+                                self.notify_message(True)
+                    else:
+                        self.notify_message(True)
+                del msg_queues[t]
+
+                for reply in rep_queues[t]:
+                    if is_online[reply.receiver]:
+                        self.notify_message(False, reply)
+                        self.nodes[reply.receiver].receive(t, reply)
+                    else:
+                        self.notify_message(True)
+
+                del rep_queues[t]
+
+                if (t + 1) % self.delta == 0:
+                    for er in self._receivers:
+                            mia_vulnerability = [mia_for_each_nn(self, n, class_specific = False) for _, n in self.nodes.items()]
+                            er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)
+
+                    if self.sampling_eval > 0:
+                        sample = choice(list(self.nodes.keys()), max(int(self.n_nodes * self.sampling_eval), 1))
+                        ev = [self.nodes[i].evaluate() for i in sample if self.nodes[i].has_test()]
+                        ev_train = [self.nodes[i].evaluate(self.nodes[i].data[0]) for i in sample]
+                    else:
+                        ev = [n.evaluate() for _, n in self.nodes.items() if n.has_test()]
+                        ev_train = [n.evaluate(n.data[0]) for _, n in self.nodes.items()]
+                    if ev:
+                        self.notify_evaluation(self.n_rounds, True, ev)
+                        accuracy = []
+                        for i, (node_ev, node_ev_train) in enumerate(zip(ev, ev_train)):
+                            accuracy.append({
+                                "test" : node_ev['accuracy'],
+                                "train" : node_ev_train['accuracy']
+                            })
+                        
+                        for er in self._receivers:
+                            er.update_accuracy(self.n_rounds, True, accuracy)
+
+                    if self.data_dispatcher.has_test():
+                        if self.sampling_eval > 0:
+                            ev = [self.nodes[i].evaluate(self.data_dispatcher.get_eval_set()) for i in sample]
+                        else:
+                            ev = [n.evaluate(self.data_dispatcher.get_eval_set()) for _, n in self.nodes.items()]
+                            
+                        if ev:
+                            self.notify_evaluation(self.n_rounds, False, ev)
+                            accuracy = []
+                            for i, node_ev in enumerate(ev):
+                                accuracy.append({
+                                    "test" : node_ev['accuracy'],
+                                })
+                            for er in self._receivers:
+                                er.update_accuracy(self.n_rounds, False, accuracy)
+  
+                self.notify_timestep(t)
+
+        except KeyboardInterrupt:
+            log_results(self, self._receivers[0], None)
+            LOG.warning("Simulation interrupted by user.")
+
+        pbar.close()
+        self.notify_end()
+        return
+    

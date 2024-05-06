@@ -457,16 +457,11 @@ class UniformDynamicP2PNetwork(DynamicP2PNetwork):
         self._shuffle_ratio = shuffle_ratio
 
     def update_view(self, node_id: int):
-        print("*********************************************************")
-        print(self._topology[node_id])
-        print(node_id)
         degree = len(self._topology[node_id])
         nb_nodes_to_exchange = math.ceil(self._shuffle_ratio * degree)
         id_nodes_to_exchange = sample(population=self._topology[node_id],
                                       k=nb_nodes_to_exchange)
         node_jd = choice(id_nodes_to_exchange)
-        print(node_jd)
-        print(self._topology[node_jd])
 
         self._topology[node_id] = [node for node in self._topology[node_id] if
                                    node not in id_nodes_to_exchange]
@@ -493,10 +488,6 @@ class UniformDynamicP2PNetwork(DynamicP2PNetwork):
                 chosen = choice(jd_nodes_to_exchange)
             jd_nodes_to_exchange.remove(chosen)
             self._topology[node_jd].append(chosen)
-
-        print(self._topology[node_id])
-        print(self._topology[node_jd])
-        print("*********************************************************")
 
 
 class MixingMatrix:
