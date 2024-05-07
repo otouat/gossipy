@@ -1302,6 +1302,7 @@ class MIAGossipSimulator(GossipSimulator):
                 del rep_queues[t]
 
                 if (t + 1) % self.delta == 0:
+                    torch.cuda.empty_cache()
                     for er in self._receivers:
                             mia_vulnerability = [mia_for_each_nn(self, n, class_specific = False) for _, n in self.nodes.items()]
                             er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)

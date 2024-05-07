@@ -46,7 +46,7 @@ def log_results(Simul, report, message=""):
         writer.writerow(['Node', 'Round', 'Loss MIA', 'Entropy MIA', 'Marginalized Loss MIA', 'Marginalized Entropy MIA', 'Train Accuracy', 'Local Test Accuracy', 'Global Test Accuracy'])
         
         for node_id, mia_vulnerabilities in report.get_mia_vulnerability(False).items():
-            marginalized_mia_vulnerabilities = report.get_mia_vulnerability(True)[node_id] if node_id in report.get_mia_vulnerability() else []
+            marginalized_mia_vulnerabilities = report.get_mia_vulnerability(True).get(node_id, []) if node_id in report.get_mia_vulnerability() else []
             local_accuracies = report.get_accuracy(True)[node_id] if node_id in report.get_accuracy() else []
             global_accuracies = report.get_accuracy(False)[node_id] if node_id in report.get_accuracy() else []
             
@@ -151,8 +151,8 @@ def plot(file_path):
     axs[1, 0].grid(True)
 
     # Calculating the average MIA vulnerability over the generalization errors
-    axs[1, 1].scatter(gen_errors, avg_mia_loss, label='Average MIA Loss')
     axs[1, 1].scatter(gen_errors, avg_mia_entropy, label='Average MIA Entropy')
+    axs[1, 1].scatter(gen_errors, avg_mar_mia_entropy, label='Average Marginalized MIA Entropy')
     axs[1, 1].set_xlabel('Average Generalization Error')
     axs[1, 1].set_ylabel('Average MIA Vulnerability')
     axs[1, 1].set_title('Average MIA Vulnerability over Generalization Errors')
