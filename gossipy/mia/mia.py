@@ -12,8 +12,9 @@ import copy
 from typing import Tuple, Dict, List
 from sklearn.metrics import accuracy_score, roc_auc_score, recall_score, f1_score, precision_score
 import os
+from gossipy.ra.ra import *
 
-def mia_for_each_nn(simulation, attackerNode, class_specific: bool = False):
+def mia_for_each_nn(simulation, attackerNode, class_specific: bool = False, marginalized : bool = False):
     idx = attackerNode.idx
     nn = sorted(attackerNode.p2p_net.get_peers(idx), key=lambda x: int(x))
     mia_results = [[], []] if class_specific else []
@@ -23,7 +24,13 @@ def mia_for_each_nn(simulation, attackerNode, class_specific: bool = False):
             train_data, test_data = data
             device = node.model_handler.device
             model = copy.deepcopy(node.model_handler.model)
-            if class_specific:
+            if marginalized:
+                print("Attacker node ", attackerNode, " Isolated node ", node, " Received models ", attackerNode.received_models)
+                model.load_state_dict(isolate_victim(attackerNode.received_models, node.idx), strict=False)
+                model.to(node.model_handler.device)
+                mia_results.append(mia_best_th(model, node.data[0], node.data[1], node.model_handler.device))
+
+            elif class_specific:
                 num_classes = max(train_data[1].max().item(), test_data[1].max().item())+1
                 results= mia_best_th_class(model, train_data, test_data, num_classes, device)
                 mia_results[0].append(results[0])
@@ -31,12 +38,15 @@ def mia_for_each_nn(simulation, attackerNode, class_specific: bool = False):
 
             else:
                 mia_results.append(mia_best_th(model, train_data, test_data, device))
+            
 
     mia_results ={
         "loss_mia": np.mean(mia_results[0]),
         "entropy_mia": np.mean(mia_results[1])
     
     }
+    if marginalized:
+        attackerNode.received_models = [None] * len(nn)
     return mia_results
 
 def mia_best_th(model, train_data, test_data, device, nt=200):

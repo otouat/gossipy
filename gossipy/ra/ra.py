@@ -9,8 +9,10 @@ def isolate_victim(model_update_buffer, victim_id):
     # Received model updates for the round
     thetas = model_update_buffer.copy()
     n = len(thetas)
-    # Remove victim's one
-    victim = thetas.pop(victim_id)
+    for i, (num, _) in enumerate(thetas):
+        if num == victim_id:
+            victim = thetas.pop(i)
+            break
     others = thetas
 
     # accumulate others

@@ -11,7 +11,7 @@ import json
 from . import CACHE, LOG, CacheKey
 from .core import AntiEntropyProtocol, Message, ConstantDelay, Delay, MixingMatrix, UniformMixing, DynamicP2PNetwork
 from .data import DataDispatcher
-from .node import GossipNode, All2AllGossipNode
+from .node import GossipNode, AttackGossipNode, All2AllGossipNode
 from .flow_control import TokenAccount
 from .model.handler import ModelHandler
 from .utils import StringEncoder
@@ -319,6 +319,7 @@ class MIASimulationReport(SimulationEventReceiver):
         self._global_generalisation_error = []
         self._local_generalisation_error = []
         self._local_mia_vulnerability = {}
+        self._marginalized_mia_vulnerability = {}
         self._global_accuracy = {}
         self._local_accuracy = {}
 
@@ -354,11 +355,17 @@ class MIASimulationReport(SimulationEventReceiver):
                 self._global_accuracy[i].append((round, acc))
 
 
-    def update_mia_vulnerability(self, round: int, mia: List[Dict[str, float]]) -> None:
-        for i, node_ev in enumerate(mia):
-            if i not in self._local_mia_vulnerability:
-                self._local_mia_vulnerability[i] = []
-            self._local_mia_vulnerability[i].append((round, node_ev))
+    def update_mia_vulnerability(self, round: int, mia: List[Dict[str, float]], marginalized: bool = False) -> None:
+        if marginalized:
+            for i, node_ev in enumerate(mia):
+                if i not in self._marginalized_mia_vulnerability:
+                    self._marginalized_mia_vulnerability[i] = []
+                self._marginalized_mia_vulnerability[i].append((round, node_ev))
+        else:
+            for i, node_ev in enumerate(mia):
+                if i not in self._local_mia_vulnerability:
+                    self._local_mia_vulnerability[i] = []
+                self._local_mia_vulnerability[i].append((round, node_ev))
 
     # docstr-coverage:inherited
     def update_end(self) -> None:
@@ -383,8 +390,11 @@ class MIASimulationReport(SimulationEventReceiver):
             return self._global_evaluations
     
         # docstr-coverage:inherited
-    def get_mia_vulnerability(self):
-        return self._local_mia_vulnerability
+    def get_mia_vulnerability(self, marginalized: bool = False):
+        if marginalized:
+            return self._marginalized_mia_vulnerability
+        else:
+            return self._local_mia_vulnerability
     
     def get_accuracy(self, local: bool = False):
         if local:
@@ -1435,6 +1445,9 @@ class MIADynamicGossipSimulator(GossipSimulator):
                     for er in self._receivers:
                             mia_vulnerability = [mia_for_each_nn(self, n, class_specific = False) for _, n in self.nodes.items()]
                             er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)
+                            mia_vulnerability = [mia_for_each_nn(self, n, class_specific = False, marginalized = True) for _, n in self.nodes.items() if n.marginalized_state == True & isinstance(n, AttackGossipNode)]
+                            if any(item is not None for item in mia_vulnerability):
+                                er.update_mia_vulnerability(self.n_rounds, mia_vulnerability, marginalized = True)
 
                     if self.sampling_eval > 0:
                         sample = choice(list(self.nodes.keys()), max(int(self.n_nodes * self.sampling_eval), 1))

@@ -45,7 +45,7 @@ def log_results(Simul, report, message=""):
         writer = csv.writer(combined_file)
         writer.writerow(['Node', 'Round', 'Loss MIA', 'Entropy MIA', 'Train Accuracy', 'Local Test Accuracy', 'Global Test Accuracy'])
         
-        for node_id, mia_vulnerabilities in report.get_mia_vulnerability().items():
+        for node_id, mia_vulnerabilities in report.get_mia_vulnerability(False).items():
             local_accuracies = report.get_accuracy(True)[node_id] if node_id in report.get_accuracy() else []
             global_accuracies = report.get_accuracy(False)[node_id] if node_id in report.get_accuracy() else []
             

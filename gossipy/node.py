@@ -1141,9 +1141,6 @@ class FederatedGossipNode(GossipNode):
                        **kwargs)
             nodes[idx] = node
         return nodes
-    
-from gossipy.ra.ra import *
-from gossipy.mia.mia import *
 
 class AttackGossipNode(GossipNode):
     def __init__(self,
@@ -1192,7 +1189,8 @@ class AttackGossipNode(GossipNode):
         self.sync: bool = sync
         self.delta: int = randint(0, round_len) if sync else int(normal(round_len, round_len/10))
         self.p2p_net = p2p_net
-        self.received_models = []
+        self.received_models = [] # [None] * len(p2p_net.get_peers(self.idx))
+        self.marginalized_state = False
 
     def init_model(self, local_train: bool=True, *args, **kwargs) -> None:
         """Initializes the local model.
@@ -1309,18 +1307,27 @@ class AttackGossipNode(GossipNode):
         if msg_type == MessageType.PUSH or \
            msg_type == MessageType.REPLY or \
            msg_type == MessageType.PUSH_PULL:
-            recv_model = CACHE.pop(recv_model)
-            self.received_models.append((msg.sender, recv_model))
-            self.model_handler(recv_model, self.data[0])
-            expected_peers = set(self.p2p_net.get_peers(self.idx))
-            received_peers = set(pair[0] for pair in self.received_models)
-            if received_peers == expected_peers:
-                print("Isolated node ", self.idx)
-                model = self.model_handler.model
-                model.load_state_dict(isolate_victim(self.received_models, self.idx), strict=False)
-                model.to("cpu")
-                print(mia_best_th(model, self.data[0], self.data[1], "cpu"))
-                self.received_models = []
+
+            if recv_model is not None:
+                recv_model = CACHE.pop(recv_model)
+                print("Received model from node ", msg.sender, " with model ", recv_model)
+                existing_model_index = next((i for i, (sender, _) in enumerate(self.received_models) if sender == msg.sender), None)
+                if existing_model_index is not None:
+                    self.received_models.pop(existing_model_index)
+
+                self.received_models.append((msg.sender, recv_model))
+                self.model_handler(recv_model, self.data[0])
+                expected_peers = set(self.p2p_net.get_peers(self.idx))
+                received_peers = set(pair[0] for pair in self.received_models)
+                if received_peers == expected_peers:
+                    self.marginalized_state = True
+                    print("Marginalized True - Received model: ", self.received_models)
+                else:
+                    self.marginalized_state = False
+            else:
+                recv_model = CACHE.pop(recv_model)
+                print("Received model is None. Ignoring.")
+
 
         if msg_type == MessageType.PULL or \
            msg_type == MessageType.PUSH_PULL:
