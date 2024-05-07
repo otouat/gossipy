@@ -25,7 +25,6 @@ def mia_for_each_nn(simulation, attackerNode, class_specific: bool = False, marg
             device = node.model_handler.device
             model = copy.deepcopy(node.model_handler.model)
             if marginalized:
-                print("Attacker node ", attackerNode, " Isolated node ", node, " Received models ", attackerNode.received_models)
                 model.load_state_dict(isolate_victim(attackerNode.received_models, node.idx), strict=False)
                 model.to(node.model_handler.device)
                 mia_results.append(mia_best_th(model, node.data[0], node.data[1], node.model_handler.device))
@@ -45,8 +44,6 @@ def mia_for_each_nn(simulation, attackerNode, class_specific: bool = False, marg
         "entropy_mia": np.mean(mia_results[1])
     
     }
-    if marginalized:
-        attackerNode.received_models = [None] * len(nn)
     return mia_results
 
 def mia_best_th(model, train_data, test_data, device, nt=200):

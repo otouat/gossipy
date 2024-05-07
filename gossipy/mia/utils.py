@@ -43,22 +43,26 @@ def log_results(Simul, report, message=""):
     combined_file_path = f"{new_folder_path}/mia_results.csv"
     with open(combined_file_path, 'w', newline='') as combined_file:
         writer = csv.writer(combined_file)
-        writer.writerow(['Node', 'Round', 'Loss MIA', 'Entropy MIA', 'Train Accuracy', 'Local Test Accuracy', 'Global Test Accuracy'])
+        writer.writerow(['Node', 'Round', 'Loss MIA', 'Entropy MIA', 'Marginalized Loss MIA', 'Marginalized Entropy MIA', 'Train Accuracy', 'Local Test Accuracy', 'Global Test Accuracy'])
         
         for node_id, mia_vulnerabilities in report.get_mia_vulnerability(False).items():
+            marginalized_mia_vulnerabilities = report.get_mia_vulnerability(True)[node_id] if node_id in report.get_mia_vulnerability() else []
             local_accuracies = report.get_accuracy(True)[node_id] if node_id in report.get_accuracy() else []
             global_accuracies = report.get_accuracy(False)[node_id] if node_id in report.get_accuracy() else []
             
-            for round_number, (mia_round, local_acc_round, global_acc_round) in enumerate(zip(mia_vulnerabilities, local_accuracies, global_accuracies), 1):
-                mia_dict = mia_round[1]
+            for round_number, (mia_round, marginalized_mia_round, local_acc_round, global_acc_round) in enumerate(zip(mia_vulnerabilities, marginalized_mia_vulnerabilities, local_accuracies, global_accuracies), 1):
+                mia_vulnerabilities_dict = mia_round[1]
+                marginalized_mia_vulnerabilities_dict =  marginalized_mia_round[1] if  marginalized_mia_round else {'entropy_mia': None, 'loss_mia': None}
                 local_accuracy_dict =  local_acc_round[1] if  local_acc_round else {'train': None, 'test': None}
                 global_accuracy_dict =   global_acc_round[1] if   global_acc_round else {'test': None}
                 
                 writer.writerow([
                     node_id, 
                     round_number, 
-                    mia_dict['loss_mia'], 
-                    mia_dict['entropy_mia'],
+                    mia_vulnerabilities_dict['loss_mia'], 
+                    mia_vulnerabilities_dict['entropy_mia'],
+                    marginalized_mia_vulnerabilities_dict['loss_mia'],
+                    marginalized_mia_vulnerabilities_dict['entropy_mia'],
                     local_accuracy_dict['train'],
                     local_accuracy_dict['test'],
                     global_accuracy_dict['test']
@@ -131,9 +135,14 @@ def plot(file_path):
     std_mia_loss = df.groupby('Round')['Loss MIA'].std()
     std_mia_entropy = df.groupby('Round')['Entropy MIA'].std()
 
-    axs[1, 0].plot(avg_mia_loss.index, avg_mia_loss,'b-', label='Average MIA Loss')
+    avg_mar_mia_loss = df.groupby('Round')['Marginalized Loss MIA'].mean()
+    avg_mar_mia_entropy = df.groupby('Round')['Marginalized Entropy MIA'].mean()
+    std_mar_mia_loss = df.groupby('Round')['Marginalized Loss MIA'].std()
+    std_mar_mia_entropy = df.groupby('Round')['Marginalized Entropy MIA'].std()
+
+    axs[1, 0].plot(avg_mia_entropy.index, avg_mia_entropy, 'b-', label='Average MIA Entropy')
     #axs[1, 0].fill_between(avg_mia_loss.index, avg_mia_loss - std_mia_loss, avg_mia_loss + std_mia_loss, color='b', alpha=0.2)
-    axs[1, 0].plot(avg_mia_entropy.index, avg_mia_entropy, 'r--', label='Average MIA Entropy')
+    axs[1, 0].plot(avg_mar_mia_entropy.index, avg_mar_mia_entropy, 'r--', label='Average Marginalized MIA Entropy')
     #axs[1, 0].fill_between(avg_mia_entropy.index, avg_mia_entropy  - std_mia_entropy, avg_mia_entropy + std_mia_entropy, color='r', alpha=0.2)
     axs[1, 0].set_xlabel('Epochs')
     axs[1, 0].set_ylabel('Average MIA Vulnerability')

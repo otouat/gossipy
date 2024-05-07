@@ -1310,10 +1310,10 @@ class AttackGossipNode(GossipNode):
 
             if recv_model is not None:
                 recv_model = CACHE.pop(recv_model)
-                print("Received model from node ", msg.sender, " with model ", recv_model)
-                existing_model_index = next((i for i, (sender, _) in enumerate(self.received_models) if sender == msg.sender), None)
-                if existing_model_index is not None:
-                    self.received_models.pop(existing_model_index)
+                for i, (sender, _) in enumerate(self.received_models):
+                    if sender == msg.sender:
+                        self.received_models.pop(i)
+                        break
 
                 self.received_models.append((msg.sender, recv_model))
                 self.model_handler(recv_model, self.data[0])
@@ -1321,12 +1321,10 @@ class AttackGossipNode(GossipNode):
                 received_peers = set(pair[0] for pair in self.received_models)
                 if received_peers == expected_peers:
                     self.marginalized_state = True
-                    print("Marginalized True - Received model: ", self.received_models)
                 else:
                     self.marginalized_state = False
             else:
                 recv_model = CACHE.pop(recv_model)
-                print("Received model is None. Ignoring.")
 
 
         if msg_type == MessageType.PULL or \
