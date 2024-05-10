@@ -5,7 +5,7 @@ from gossipy.core import AntiEntropyProtocol, CreateModelMode, ConstantDelay, St
 from gossipy.data import CustomDataDispatcher
 from gossipy.data.handler import ClassificationDataHandler
 from gossipy.model.handler import TorchModelHandler
-from gossipy.node import GossipNode, FederatedGossipNode
+from gossipy.node import AttackGossipNode, GossipNode, FederatedGossipNode
 from gossipy.simul import MIAGossipSimulator, MIADynamicGossipSimulator, MIAFederatedSimulator, MIASimulationReport
 from gossipy.model.architecture import *
 from gossipy.model.resnet import *
@@ -19,7 +19,7 @@ transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
 train_set, test_set = get_CIFAR100()
 
 n_classes= max(train_set[1].max().item(), test_set[1].max().item())+1
-model = ResNet152(n_classes)
+model = resnet20(n_classes)
 n_nodes = 100
 n_rounds = 250
 n_local_epochs = 1
@@ -41,7 +41,7 @@ data_dispatcher = CustomDataDispatcher(data_handler, n=n_nodes, eval_on_user=Tru
 
 topology = UniformDynamicP2PNetwork(data_dispatcher.size(), topology=nx.to_numpy_array(random_regular_graph(4, n_nodes, seed=42)))
 
-nodes = GossipNode.generate(
+nodes = AttackGossipNode.generate(
     data_dispatcher=data_dispatcher,
     p2p_net=topology,
     model_proto=TorchModelHandler(
