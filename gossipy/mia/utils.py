@@ -49,6 +49,8 @@ def log_results(Simul, report, message=""):
             marginalized_mia_vulnerabilities = report.get_mia_vulnerability(True).get(node_id, []) if node_id in report.get_mia_vulnerability(True) else []
             local_accuracies = report.get_accuracy(True).get(node_id, [])
             global_accuracies = report.get_accuracy(False).get(node_id, [])
+            print(marginalized_mia_vulnerabilities)
+            print(local_accuracies)
 
             for round_number, (mia_round, marginalized_mia_round, local_acc_round, global_acc_round) in enumerate(zip(mia_vulnerabilities, marginalized_mia_vulnerabilities, local_accuracies, global_accuracies), 1):
                 mia_vulnerabilities_dict = mia_round[1]
@@ -67,13 +69,15 @@ def log_results(Simul, report, message=""):
                     local_accuracy_dict.get('test', None),
                     global_accuracy_dict.get('test', None)
                 ])
-
     
     # Update the experiment number tracker file
     with open(exp_tracker_file, 'w') as file:
         file.write(str(experiment_number))
     
+    print("Experiment parameters logged successfully.")
+    
     # Save diagrams
+    print("Generating diagrams...")
     fig = get_fig_evaluation([[ev for _, ev in report.get_evaluation(False)]], "Overall test results")
     fig2 = plot(combined_file_path)
     diagrams = {
@@ -82,8 +86,11 @@ def log_results(Simul, report, message=""):
     }
 
     for name, fig in diagrams.items():
-        fig.savefig(f"{new_folder_path}/{name}.png")
+        fig_path = f"{new_folder_path}/{name}.png"
+        fig.savefig(fig_path)
+        print(f"Diagram saved: {fig_path}")
 
+    print("Diagrams saved successfully.")
 
 def plot(file_path):
     # Read the CSV file
