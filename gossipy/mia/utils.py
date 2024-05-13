@@ -44,30 +44,30 @@ def log_results(Simul, report, message=""):
     with open(combined_file_path, 'w', newline='') as combined_file:
         writer = csv.writer(combined_file)
         writer.writerow(['Node', 'Round', 'Loss MIA', 'Entropy MIA', 'Marginalized Loss MIA', 'Marginalized Entropy MIA', 'Train Accuracy', 'Local Test Accuracy', 'Global Test Accuracy'])
-        
+
         for node_id, mia_vulnerabilities in report.get_mia_vulnerability(False).items():
-            marginalized_mia_vulnerabilities = report.get_mia_vulnerability(True).get(node_id, []) if node_id in report.get_mia_vulnerability() else []
-            local_accuracies = report.get_accuracy(True)[node_id] if node_id in report.get_accuracy() else []
-            global_accuracies = report.get_accuracy(False)[node_id] if node_id in report.get_accuracy() else []
-            
+            marginalized_mia_vulnerabilities = report.get_mia_vulnerability(True).get(node_id, []) if node_id in report.get_mia_vulnerability(True) else []
+            local_accuracies = report.get_accuracy(True).get(node_id, [])
+            global_accuracies = report.get_accuracy(False).get(node_id, [])
+
             for round_number, (mia_round, marginalized_mia_round, local_acc_round, global_acc_round) in enumerate(zip(mia_vulnerabilities, marginalized_mia_vulnerabilities, local_accuracies, global_accuracies), 1):
                 mia_vulnerabilities_dict = mia_round[1]
-                marginalized_mia_vulnerabilities_dict =  marginalized_mia_round[1] if  marginalized_mia_round else {'entropy_mia': None, 'loss_mia': None}
-                local_accuracy_dict =  local_acc_round[1] if  local_acc_round else {'train': None, 'test': None}
-                global_accuracy_dict =   global_acc_round[1] if   global_acc_round else {'test': None}
-                
+                marginalized_mia_vulnerabilities_dict = marginalized_mia_round[1] if marginalized_mia_round else {'loss_mia': None, 'entropy_mia': None}
+                local_accuracy_dict = local_acc_round[1] if local_acc_round else {'train': None, 'test': None}
+                global_accuracy_dict = global_acc_round[1] if global_acc_round else {'test': None}
+
                 writer.writerow([
-                    node_id, 
-                    round_number, 
-                    mia_vulnerabilities_dict['loss_mia'], 
-                    mia_vulnerabilities_dict['entropy_mia'],
-                    marginalized_mia_vulnerabilities_dict['loss_mia'],
-                    marginalized_mia_vulnerabilities_dict['entropy_mia'],
-                    local_accuracy_dict['train'],
-                    local_accuracy_dict['test'],
-                    global_accuracy_dict['test']
-                    
+                    node_id,
+                    round_number,
+                    mia_vulnerabilities_dict.get('loss_mia', None),
+                    mia_vulnerabilities_dict.get('entropy_mia', None),
+                    marginalized_mia_vulnerabilities_dict.get('loss_mia', None),
+                    marginalized_mia_vulnerabilities_dict.get('entropy_mia', None),
+                    local_accuracy_dict.get('train', None),
+                    local_accuracy_dict.get('test', None),
+                    global_accuracy_dict.get('test', None)
                 ])
+
     
     # Update the experiment number tracker file
     with open(exp_tracker_file, 'w') as file:
@@ -105,6 +105,23 @@ def plot(file_path):
     std_train_acc = df.groupby('Round')['Train Accuracy'].std()
     std_local_test_acc = df.groupby('Round')['Local Test Accuracy'].std()
     std_global_test_acc = df.groupby('Round')['Global Test Accuracy'].std()
+
+    print("Data types:")
+    print("avg_train_acc:", type(avg_train_acc))
+    print("std_train_acc:", type(std_train_acc))
+    print("avg_local_test_acc:", type(avg_local_test_acc))
+    print("std_local_test_acc:", type(std_local_test_acc))
+
+    print("Values:")
+    print("avg_train_acc:", avg_train_acc)
+    print("std_train_acc:", std_train_acc)
+    print("avg_local_test_acc:", avg_local_test_acc)
+    print("std_local_test_acc:", std_local_test_acc)
+
+    avg_train_acc = np.nan_to_num(avg_train_acc)
+    std_train_acc = np.nan_to_num(std_train_acc)
+    avg_local_test_acc = np.nan_to_num(avg_local_test_acc)
+    std_local_test_acc = np.nan_to_num(std_local_test_acc)
 
     axs[0, 0].plot(avg_train_acc.index, avg_train_acc,'b-', label='Accuracy on train set')
     axs[0, 0].fill_between(avg_train_acc.index, avg_train_acc - std_train_acc, avg_train_acc + std_train_acc, color='b', alpha=0.2)
