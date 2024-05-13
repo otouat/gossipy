@@ -1306,9 +1306,9 @@ class MIAGossipSimulator(GossipSimulator):
                     for er in self._receivers:
                             mia_vulnerability = [mia_for_each_nn(self, n, class_specific = False) for _, n in self.nodes.items()]
                             er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)
-                            mia_vulnerability = [mia_for_each_nn(self, n, class_specific = False, marginalized = True) for _, n in self.nodes.items() if n.marginalized_state == True & isinstance(n, AttackGossipNode)]
-                            if any(item is not None for item in mia_vulnerability):
-                                er.update_mia_vulnerability(self.n_rounds, mia_vulnerability, marginalized = True)
+                            mia_mar_vulnerability = [mia_for_each_nn(self, n, class_specific=False, marginalized=True) for _, n in self.nodes.items() if isinstance(n, AttackGossipNode) and getattr(n, 'marginalized_state', False)]
+                            if any(item is not None for item in mia_mar_vulnerability):
+                                er.update_mia_vulnerability(self.n_rounds, mia_mar_vulnerability, marginalized = True)
                     torch.cuda.empty_cache()
                     if self.sampling_eval > 0:
                         sample = choice(list(self.nodes.keys()), max(int(self.n_nodes * self.sampling_eval), 1))
@@ -1450,9 +1450,9 @@ class MIADynamicGossipSimulator(GossipSimulator):
                     for er in self._receivers:
                             mia_vulnerability = [mia_for_each_nn(self, n, class_specific = False) for _, n in self.nodes.items()]
                             er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)
-                            mia_vulnerability = [mia_for_each_nn(self, n, class_specific = False, marginalized = True) for _, n in self.nodes.items() if n.marginalized_state == True & isinstance(n, AttackGossipNode)]
-                            if any(item is not None for item in mia_vulnerability):
-                                er.update_mia_vulnerability(self.n_rounds, mia_vulnerability, marginalized = True)
+                            mia_mar_vulnerability = [mia_for_each_nn(self, n, class_specific=False, marginalized=True) for _, n in self.nodes.items() if isinstance(n, AttackGossipNode) and getattr(n, 'marginalized_state', False)]
+                            if any(item is not None for item in mia_mar_vulnerability):
+                                er.update_mia_vulnerability(self.n_rounds, mia_mar_vulnerability, marginalized = True)
 
                     if self.sampling_eval > 0:
                         sample = choice(list(self.nodes.keys()), max(int(self.n_nodes * self.sampling_eval), 1))
