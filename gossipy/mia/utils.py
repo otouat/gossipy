@@ -52,13 +52,14 @@ def log_results(Simul, report, message=""):
             marginalized_mia_vulnerabilities = report.get_mia_vulnerability(True).get(node_id, []) if node_id in report.get_mia_vulnerability(True) else []
             local_accuracies = report.get_accuracy(True).get(node_id, [])
             global_accuracies = report.get_accuracy(False).get(node_id, [])
-
+            print("1.2")
+            print(enumerate(zip(mia_vulnerabilities, marginalized_mia_vulnerabilities, local_accuracies, global_accuracies), 1))
             for round_number, (mia_round, marginalized_mia_round, local_acc_round, global_acc_round) in enumerate(zip(mia_vulnerabilities, marginalized_mia_vulnerabilities, local_accuracies, global_accuracies), 1):
                 mia_vulnerabilities_dict = mia_round[1]
                 marginalized_mia_vulnerabilities_dict = marginalized_mia_round[1] if marginalized_mia_round else {'loss_mia': None, 'entropy_mia': None}
                 local_accuracy_dict = local_acc_round[1] if local_acc_round else {'train': None, 'test': None}
                 global_accuracy_dict = global_acc_round[1] if global_acc_round else {'test': None}
-
+                print("1.3")
                 # Write row to CSV
                 writer.writerow([
                     node_id,
