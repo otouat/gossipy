@@ -47,19 +47,16 @@ def log_results(Simul, report, message=""):
     with open(combined_file_path, 'w', newline='') as combined_file:
         writer = csv.writer(combined_file)
         writer.writerow(['Node', 'Round', 'Loss MIA', 'Entropy MIA', 'Marginalized Loss MIA', 'Marginalized Entropy MIA', 'Train Accuracy', 'Local Test Accuracy', 'Global Test Accuracy'])
-        print("1.1")
         for node_id, mia_vulnerabilities in report.get_mia_vulnerability(False).items():
             marginalized_mia_vulnerabilities = report.get_mia_vulnerability(True).get(node_id, []) if node_id in report.get_mia_vulnerability(True) else []
             local_accuracies = report.get_accuracy(True).get(node_id, [])
             global_accuracies = report.get_accuracy(False).get(node_id, [])
-            print("1.2")
             # Determine the number of rounds based on mia_vulnerabilities
             num_rounds = len(mia_vulnerabilities)
 
             for round_number in range(1, num_rounds + 1):
                 mia_round = mia_vulnerabilities[round_number - 1]
                 mia_vulnerabilities_dict = mia_round[1]
-                print("1.3")
                 # Initialize marginalized MIA vulnerabilities dictionary
                 marginalized_mia_vulnerabilities_dict = {'loss_mia': None, 'entropy_mia': None}
                 
@@ -75,7 +72,7 @@ def log_results(Simul, report, message=""):
                     local_accuracy_dict = local_accuracies[round_number - 1][1]
                 if global_accuracies:
                     global_accuracy_dict = global_accuracies[round_number - 1][1]
-                print("1.4")
+
                 # Write row to CSV
                 writer.writerow([
                     node_id,
@@ -132,18 +129,6 @@ def plot(file_path):
     std_train_acc = df.groupby('Round')['Train Accuracy'].std()
     std_local_test_acc = df.groupby('Round')['Local Test Accuracy'].std()
     std_global_test_acc = df.groupby('Round')['Global Test Accuracy'].std()
-
-    print("Data types:")
-    print("avg_train_acc:", type(avg_train_acc))
-    print("std_train_acc:", type(std_train_acc))
-    print("avg_local_test_acc:", type(avg_local_test_acc))
-    print("std_local_test_acc:", type(std_local_test_acc))
-
-    print("Values:")
-    print("avg_train_acc:", avg_train_acc)
-    print("std_train_acc:", std_train_acc)
-    print("avg_local_test_acc:", avg_local_test_acc)
-    print("std_local_test_acc:", std_local_test_acc)
 
     avg_train_acc = np.nan_to_num(avg_train_acc)
     std_train_acc = np.nan_to_num(std_train_acc)
