@@ -74,7 +74,7 @@ def log_results(Simul, report, message=""):
                     local_accuracy_dict.get('test', None),
                     global_accuracy_dict.get('test', None)
                 ])
-    print("5")
+                print("1.5")
     # Update the experiment number tracker file
     with open(exp_tracker_file, 'w') as file:
         file.write(str(experiment_number))
