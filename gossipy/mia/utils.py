@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
 def log_results(Simul, report, message=""):
+    print("1")
     base_folder_path = os.path.join(os.getcwd(), "results")
     exp_tracker_file = os.path.join(base_folder_path, "exp_number.txt")
 
@@ -22,14 +23,14 @@ def log_results(Simul, report, message=""):
             experiment_number = int(file.read().strip()) + 1
     else:
         experiment_number = 1
-
+    print("2")
     # Create new subfolder
     new_folder_path = f"{base_folder_path}/Exp_n#{experiment_number}"
     os.makedirs(new_folder_path, exist_ok=True)
 
     # Log file path for experiment parameters
     params_file_path = f"{new_folder_path}/simulation_params.log"
-
+    print("3")
     # Log experiment parameters
     with open(params_file_path, 'w') as params_file:
         params_file.write(f"Experiment Number: {experiment_number}\n")
@@ -39,6 +40,8 @@ def log_results(Simul, report, message=""):
         params_file.write(f"Total Rounds: {Simul.n_rounds}\n")
         params_file.write(f"Message: {message}\n")
 
+    print("4")
+    print(report.get_mia_vulnerability(False).items())
     # Save combined MIA vulnerability and accuracy
     combined_file_path = f"{new_folder_path}/mia_results.csv"
     with open(combined_file_path, 'w', newline='') as combined_file:
@@ -69,11 +72,10 @@ def log_results(Simul, report, message=""):
                     local_accuracy_dict.get('test', None),
                     global_accuracy_dict.get('test', None)
                 ])
-    
+    print("5")
     # Update the experiment number tracker file
     with open(exp_tracker_file, 'w') as file:
         file.write(str(experiment_number))
-    
     print("Experiment parameters logged successfully.")
     
     # Save diagrams
