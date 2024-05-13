@@ -57,28 +57,25 @@ def log_results(Simul, report, message=""):
             num_rounds = len(mia_vulnerabilities)
 
             for round_number in range(1, num_rounds + 1):
-                print("1.3")
                 mia_round = mia_vulnerabilities[round_number - 1]
                 mia_vulnerabilities_dict = mia_round[1]
-                
-                # Initialize marginalized MIA vulnerabilities and accuracy dictionaries
+                print("1.3")
+                # Initialize marginalized MIA vulnerabilities dictionary
                 marginalized_mia_vulnerabilities_dict = {'loss_mia': None, 'entropy_mia': None}
-                local_accuracy_dict = {'train': None, 'test': None}
-                global_accuracy_dict = {'test': None}
                 
                 # Check if marginalized_mia_vulnerabilities is not empty
                 if marginalized_mia_vulnerabilities:
                     marginalized_mia_round = marginalized_mia_vulnerabilities[round_number - 1]
                     marginalized_mia_vulnerabilities_dict = marginalized_mia_round[1]
-                    
-                    local_acc_round = local_accuracies[round_number - 1]
-                    if local_acc_round:
-                        local_accuracy_dict = local_acc_round[1]
 
-                    global_acc_round = global_accuracies[round_number - 1]
-                    if global_acc_round:
-                        global_accuracy_dict = global_acc_round[1]
-
+                # Extract local and global accuracy metrics
+                local_accuracy_dict = {'train': None, 'test': None}
+                global_accuracy_dict = {'test': None}
+                if local_accuracies:
+                    local_accuracy_dict = local_accuracies[round_number - 1][1]
+                if global_accuracies:
+                    global_accuracy_dict = global_accuracies[round_number - 1][1]
+                print("1.4")
                 # Write row to CSV
                 writer.writerow([
                     node_id,
@@ -91,6 +88,7 @@ def log_results(Simul, report, message=""):
                     local_accuracy_dict.get('test', None),
                     global_accuracy_dict.get('test', None)
                 ])
+
 
 
     # Update the experiment number tracker file
