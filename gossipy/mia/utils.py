@@ -50,11 +50,12 @@ def log_results(Simul, report, message=""):
         print("1.1")
         for node_id, mia_vulnerabilities in report.get_mia_vulnerability(False).items():
             print("1.2")
+            print(report.get_mia_vulnerability(True).items())
+            print(report.get_accuracy(True).items())
             marginalized_mia_vulnerabilities = report.get_mia_vulnerability(True).get(node_id, []) if node_id in report.get_mia_vulnerability(True) else []
             local_accuracies = report.get_accuracy(True).get(node_id, [])
-            global_accuracies = report.get_accuracy(False).get(node_id, [])
-            print(marginalized_mia_vulnerabilities)
-            print(local_accuracies)
+            print("marginalized_mia_vulnerabilities:", marginalized_mia_vulnerabilities)
+            print("local_accuracies:", local_accuracies)
 
             for round_number, (mia_round, marginalized_mia_round, local_acc_round, global_acc_round) in enumerate(zip(mia_vulnerabilities, marginalized_mia_vulnerabilities, local_accuracies, global_accuracies), 1):
                 print("1.3")
