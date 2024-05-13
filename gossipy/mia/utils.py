@@ -54,6 +54,7 @@ def log_results(Simul, report, message=""):
             print(report.get_accuracy(True).items())
             marginalized_mia_vulnerabilities = report.get_mia_vulnerability(True).get(node_id, []) if node_id in report.get_mia_vulnerability(True) else []
             local_accuracies = report.get_accuracy(True).get(node_id, [])
+            global_accuracies = report.get_accuracy(False).get(node_id, [])
             print("marginalized_mia_vulnerabilities:", marginalized_mia_vulnerabilities)
             print("local_accuracies:", local_accuracies)
 
