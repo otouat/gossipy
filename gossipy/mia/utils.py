@@ -49,22 +49,17 @@ def log_results(Simul, report, message=""):
         writer.writerow(['Node', 'Round', 'Loss MIA', 'Entropy MIA', 'Marginalized Loss MIA', 'Marginalized Entropy MIA', 'Train Accuracy', 'Local Test Accuracy', 'Global Test Accuracy'])
         print("1.1")
         for node_id, mia_vulnerabilities in report.get_mia_vulnerability(False).items():
-            print("1.2")
-            print(report.get_mia_vulnerability(True).items())
-            print(report.get_accuracy(True).items())
             marginalized_mia_vulnerabilities = report.get_mia_vulnerability(True).get(node_id, []) if node_id in report.get_mia_vulnerability(True) else []
             local_accuracies = report.get_accuracy(True).get(node_id, [])
             global_accuracies = report.get_accuracy(False).get(node_id, [])
-            print("marginalized_mia_vulnerabilities:", marginalized_mia_vulnerabilities)
-            print("local_accuracies:", local_accuracies)
 
             for round_number, (mia_round, marginalized_mia_round, local_acc_round, global_acc_round) in enumerate(zip(mia_vulnerabilities, marginalized_mia_vulnerabilities, local_accuracies, global_accuracies), 1):
-                print("1.3")
                 mia_vulnerabilities_dict = mia_round[1]
                 marginalized_mia_vulnerabilities_dict = marginalized_mia_round[1] if marginalized_mia_round else {'loss_mia': None, 'entropy_mia': None}
                 local_accuracy_dict = local_acc_round[1] if local_acc_round else {'train': None, 'test': None}
                 global_accuracy_dict = global_acc_round[1] if global_acc_round else {'test': None}
-                print("1.4")
+
+                # Write row to CSV
                 writer.writerow([
                     node_id,
                     round_number,
@@ -76,7 +71,7 @@ def log_results(Simul, report, message=""):
                     local_accuracy_dict.get('test', None),
                     global_accuracy_dict.get('test', None)
                 ])
-                print("1.5")
+
     # Update the experiment number tracker file
     with open(exp_tracker_file, 'w') as file:
         file.write(str(experiment_number))
