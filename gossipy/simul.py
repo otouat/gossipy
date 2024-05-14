@@ -1303,15 +1303,12 @@ class MIAGossipSimulator(GossipSimulator):
                 del rep_queues[t]
 
                 if (t + 1) % self.delta == 0:
-                    torch.cuda.empty_cache()
                     for er in self._receivers:
                             mia_vulnerability = [mia_for_each_nn(self, n, class_specific = False) for _, n in self.nodes.items()]
                             er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)
                             mia_mar_vulnerability = [mia_for_each_nn(self, n, class_specific=False, marginalized=True) for _, n in self.nodes.items() if isinstance(n, AttackGossipNode) and getattr(n, 'marginalized_state', False)]
                             if any(item is not None for item in mia_mar_vulnerability):
                                 er.update_mia_vulnerability(self.n_rounds, mia_mar_vulnerability, marginalized = True)
-                            print()
-                    torch.cuda.empty_cache()
                     if self.sampling_eval > 0:
                         sample = choice(list(self.nodes.keys()), max(int(self.n_nodes * self.sampling_eval), 1))
                         ev = [self.nodes[i].evaluate() for i in sample if self.nodes[i].has_test()]
@@ -1347,7 +1344,6 @@ class MIAGossipSimulator(GossipSimulator):
                             for er in self._receivers:
                                 er.update_accuracy(self.n_rounds, False, accuracy)
 
-                torch.cuda.empty_cache()
                 self.notify_timestep(t)
 
         except KeyboardInterrupt:

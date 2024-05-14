@@ -55,7 +55,7 @@ def log_results(Simul, report, message=""):
             num_rounds = len(mia_vulnerabilities)
 
             for round_number in range(1, num_rounds + 1):
-                mia_round = mia_vulnerabilities[round_number - 1]
+                mia_round = mia_vulnerabilities[round_number]
                 mia_vulnerabilities_dict = mia_round[1]
                 # Initialize marginalized MIA vulnerabilities dictionary
                 marginalized_mia_vulnerabilities_dict = {'loss_mia': None, 'entropy_mia': None}
