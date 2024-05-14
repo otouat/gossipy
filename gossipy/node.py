@@ -1142,6 +1142,8 @@ class FederatedGossipNode(GossipNode):
             nodes[idx] = node
         return nodes
 
+from gossipy.ra.ra import *
+
 class AttackGossipNode(GossipNode):
     def __init__(self,
                  idx: int, #node's id
@@ -1190,6 +1192,8 @@ class AttackGossipNode(GossipNode):
         self.delta: int = randint(0, round_len) if sync else int(normal(round_len, round_len/10))
         self.p2p_net = p2p_net
         self.received_models = [] # [None] * len(p2p_net.get_peers(self.idx))
+        self.final_agg = None
+        self.gradient =  OrderedDict()
         self.marginalized_state = False
 
     def init_model(self, local_train: bool=True, *args, **kwargs) -> None:
@@ -1321,6 +1325,9 @@ class AttackGossipNode(GossipNode):
                 received_peers = set(pair[0] for pair in self.received_models)
                 if received_peers == expected_peers:
                     self.marginalized_state = True
+                    self.final_agg = sum_nested_structures_and_negate(self.received_models)
+                    for key in self.final_agg:
+                        self.gradient[key] = self.final_agg[key] - self.received_models[len(self.received_models)-1][key] 
                 else:
                     self.marginalized_state = False
             else:

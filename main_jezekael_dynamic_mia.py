@@ -24,10 +24,11 @@ n_nodes = 100
 n_rounds = 250
 n_local_epochs = 1
 batch_size = 256
+peer_sampling_period=10
 optimizer_params = {
         "lr": 0.1,
-        #"momentum": 0.9,
-        #"weight_decay": 0.001
+        "momentum": 0.9,
+        "weight_decay": 0.001
     }
 message = "Experiment with ResNet20 on CIFAR10 dataset. 100 nodes, 250 rounds, 1 local epochs, batch size 256, lr 0.1 and peer sampling period 10"
 
@@ -46,7 +47,7 @@ nodes = AttackGossipNode.generate(
     p2p_net=topology,
     model_proto=TorchModelHandler(
         net=model,
-        optimizer=torch.optim.Adam,
+        optimizer=torch.optim.SGD,
         optimizer_params = optimizer_params,
         criterion = F.cross_entropy,
         create_model_mode= CreateModelMode.MERGE_UPDATE,
@@ -64,7 +65,7 @@ simulator = MIADynamicGossipSimulator(
     online_prob=1,  # Approximates the average online rate of the STUNner's smartphone traces
     drop_prob=0,  # 0.1 Simulate the possibility of message dropping,
     sampling_eval=0,
-    peer_sampling_period=10
+    peer_sampling_period=peer_sampling_period
 )
 
 report = MIASimulationReport()

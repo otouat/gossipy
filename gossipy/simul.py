@@ -1307,8 +1307,11 @@ class MIAGossipSimulator(GossipSimulator):
                             mia_vulnerability = [mia_for_each_nn(self, n, class_specific = False) for _, n in self.nodes.items()]
                             er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)
                             mia_mar_vulnerability = [mia_for_each_nn(self, n, class_specific=False, marginalized=True) for _, n in self.nodes.items() if isinstance(n, AttackGossipNode) and getattr(n, 'marginalized_state', False)]
+                            ra_mar_vulnerability = [ra_for_each_nn(self, n, marginalized=True) for _, n in self.nodes.items() if isinstance(n, AttackGossipNode) and getattr(n, 'marginalized_state', False)]
                             if any(item is not None for item in mia_mar_vulnerability):
                                 er.update_mia_vulnerability(self.n_rounds, mia_mar_vulnerability, marginalized = True)
+                                print(ra_mar_vulnerability)
+
                     if self.sampling_eval > 0:
                         sample = choice(list(self.nodes.keys()), max(int(self.n_nodes * self.sampling_eval), 1))
                         ev = [self.nodes[i].evaluate() for i in sample if self.nodes[i].has_test()]

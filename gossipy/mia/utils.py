@@ -39,8 +39,6 @@ def log_results(Simul, report, message=""):
         params_file.write(f"Total Rounds: {Simul.n_rounds}\n")
         params_file.write(f"Message: {message}\n")
 
-    print("1")
-    print(report.get_mia_vulnerability(False).items())
     # Save combined MIA vulnerability and accuracy
     combined_file_path = f"{new_folder_path}/mia_results.csv"
     with open(combined_file_path, 'w', newline='') as combined_file:
