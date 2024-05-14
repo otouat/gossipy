@@ -1347,7 +1347,7 @@ class MIAGossipSimulator(GossipSimulator):
                 self.notify_timestep(t)
 
         except KeyboardInterrupt:
-            log_results(self, self._receivers[0], None)
+            log_results(self, self._receivers[0], "")
             LOG.warning("Simulation interrupted by user.")
 
         pbar.close()
@@ -1489,7 +1489,7 @@ class MIADynamicGossipSimulator(GossipSimulator):
                 self.notify_timestep(t)
 
         except KeyboardInterrupt:
-            log_results(self, self._receivers[0], None)
+            log_results(self, self._receivers[0], "")
             LOG.warning("Simulation interrupted by user.")
 
         pbar.close()
@@ -1649,7 +1649,7 @@ class MIAFederatedSimulator(GossipSimulator):
                 self.notify_timestep(t)
 
         except KeyboardInterrupt:
-            log_results(self, self._receivers[0], None)
+            log_results(self, self._receivers[0], "")
             LOG.warning("Simulation interrupted by user.")
 
         pbar.close()
