@@ -28,7 +28,7 @@ def sum_nested_structures_and_negate(structures):
             result[key] += structure[key]            
     # Négation des résultats accumulés
     for key in result:
-        result[key] *= (1/ (len(structures)-2) )        
+        result[key] *= float(1/ (len(structures)-2) )        
     return result
 
 def w_fully_adv_init(W, mean, std, s):
