@@ -1191,7 +1191,7 @@ class AttackGossipNode(GossipNode):
         self.sync: bool = sync
         self.delta: int = randint(0, round_len) if sync else int(normal(round_len, round_len/10))
         self.p2p_net = p2p_net
-        self.received_models = [None for _ in range(len(self.p2p_net.get_peers(self.idx)))]
+        self.received_models = []
         self.final_agg = OrderedDict()
         self.gradient =  OrderedDict()
         self.marginalized_state = False
