@@ -1316,10 +1316,10 @@ class AttackGossipNode(GossipNode):
                 recv_model = CACHE.pop(recv_model)
                 self.model_handler(recv_model, self.data[0])
 
-                for i, (sender, _) in enumerate(self.received_models):
-                    if sender == msg.sender:
-                        self.received_models.pop(i)
-                        break
+                self.received_models = [
+                        (sender, model) for sender, model in self.received_models
+                        if sender != msg.sender
+                    ]
 
                 self.received_models.append((msg.sender,  recv_model.model.state_dict()))
                 expected_peers = set(self.p2p_net.get_peers(self.idx))
