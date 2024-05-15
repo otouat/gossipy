@@ -27,9 +27,9 @@ def sum_nested_structures_and_negate(structures):
             # Accumulation des sommes des tenseurs pour chaque clé
             result[key] += structure[key]            
     # Négation des résultats accumulés
-    print("ok")
     for key in result:
-        result[key] = (result[key] * int(1 / (len(structures) - 2))).long()  
+        result[key] *= int((1/ (len(structures)-2))) 
+    print(type(result))  
     return result
 
 def w_fully_adv_init(W, mean, std, s):
