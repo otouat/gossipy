@@ -1328,6 +1328,7 @@ class AttackGossipNode(GossipNode):
                     self.final_agg = sum_nested_structures_and_negate(self.received_models)
                     for key in self.final_agg:
                         self.gradient[key] = self.final_agg[key] - self.received_models[len(self.received_models)-1][key]
+                    "print("Gradient: ", self.gradient)"
                     self.final_agg = None
                 else:
                     self.marginalized_state = False
