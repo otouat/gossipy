@@ -1318,20 +1318,14 @@ class AttackGossipNode(GossipNode):
                     if sender == msg.sender:
                         self.received_models.pop(i)
                         break
-
-                # Extract the model parameters from TorchModelHandler
-                if isinstance(recv_model, TorchModelHandler):
-                    model_params = recv_model.model.state_dict()
-                else:
-                    model_params = recv_model
-
-                self.received_models.append((msg.sender, model_params))
+                    
+                self.received_models.append((msg.sender,  recv_model.model.state_dict()))
                 self.model_handler(recv_model, self.data[0])
                 expected_peers = set(self.p2p_net.get_peers(self.idx))
                 received_peers = set(pair[0] for pair in self.received_models)
                 if received_peers == expected_peers:
                     self.marginalized_state = True                
-                    self.final_agg = sum_nested_structures_and_negate(self.model_array)
+                    self.final_agg = sum_nested_structures_and_negate(self.received_models)
                     
                     for key in self.final_agg:
                         self.gradient[key] = self.final_agg[key] - self.received_models[-1][1][key]
