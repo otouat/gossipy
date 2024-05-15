@@ -14,8 +14,8 @@ def ra_for_each_nn(simulation, attackerNode, final_agg, marginalized : bool = Fa
 
 def sum_nested_structures_and_negate(structures):
     # Vérifie que 'structures' est une liste (ou un iterable) contenant au moins un élément
-    if not structures or not all(isinstance(s, OrderedDict) for s in structures):
-        raise ValueError("Le paramètre 'structures' doit être une liste d'OrderedDicts avec des valeurs tensorielles")            
+    #if not structures or not all(isinstance(s, OrderedDict) for s in structures):
+        #raise ValueError("Le paramètre 'structures' doit être une liste d'OrderedDicts avec des valeurs tensorielles")            
     # Initialisation du résultat avec une copie profonde du premier élément pour garder les clés
     result = OrderedDict()
     for key in structures[0]:
