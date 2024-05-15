@@ -20,8 +20,8 @@ train_set, test_set = get_CIFAR10()
 
 n_classes= max(train_set[1].max().item(), test_set[1].max().item())+1
 model = resnet20(n_classes)
-n_nodes = 100
-n_rounds = 250
+n_nodes = 5
+n_rounds = 15
 n_local_epochs = 1
 batch_size = 256
 optimizer_params = {
@@ -37,9 +37,9 @@ Xte, yte = transform(test_set[0]), test_set[1]
 
 data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=0.5)
 
-data_dispatcher = CustomDataDispatcher(data_handler, n=n_nodes, eval_on_user=True, auto_assign=True)
+data_dispatcher = CustomDataDispatcher(data_handler, n=n_nodes*100, eval_on_user=True, auto_assign=True)
 
-topology = StaticP2PNetwork(data_dispatcher.size(), topology=nx.to_numpy_array(random_regular_graph(4, n_nodes, seed=42)))
+topology = StaticP2PNetwork(int(data_dispatcher.size()/100), topology=nx.to_numpy_array(random_regular_graph(4, n_nodes, seed=42)))
 
 nodes = GossipNode.generate(
     data_dispatcher=data_dispatcher,
