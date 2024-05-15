@@ -1325,10 +1325,23 @@ class AttackGossipNode(GossipNode):
                 received_peers = set(pair[0] for pair in self.received_models)
                 if received_peers == expected_peers:
                     self.marginalized_state = True
+
+                    # Debugging: Check the format of received_models
+                    print("Received models before aggregation:", self.received_models)
+
+                    # Ensure received_models is in the correct format
+                    for sender, model in self.received_models:
+                        if not isinstance(model, OrderedDict):
+                            raise ValueError(f"Received model from sender {sender} is not an OrderedDict: {model}")
+                        for key, value in model.items():
+                            if not isinstance(value, (Tensor, np.ndarray)):
+                                raise ValueError(f"Value for key {key} in model from sender {sender} is not a tensor: {value}")
+
                     self.final_agg = sum_nested_structures_and_negate(self.received_models)
+                    
                     for key in self.final_agg:
-                        self.gradient[key] = self.final_agg[key] - self.received_models[len(self.received_models)-1][key]
-                    "print("Gradient: ", self.gradient)"
+                        self.gradient[key] = self.final_agg[key] - self.received_models[-1][1][key]
+                    print("Gradient: ", self.gradient)
                     self.final_agg = None
                 else:
                     self.marginalized_state = False
