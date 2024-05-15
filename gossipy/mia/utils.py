@@ -128,13 +128,6 @@ def plot(file_path):
     std_local_test_acc = df.groupby('Round')['Local Test Accuracy'].std()
     std_global_test_acc = df.groupby('Round')['Global Test Accuracy'].std()
 
-    avg_train_acc = np.nan_to_num(avg_train_acc)
-    std_train_acc = np.nan_to_num(std_train_acc)
-    avg_local_test_acc = np.nan_to_num(avg_local_test_acc)
-    std_local_test_acc = np.nan_to_num(std_local_test_acc)
-    avg_global_test_acc = np.nan_to_num(avg_global_test_acc)
-    std_global_test_acc = np.nan_to_num(std_global_test_acc)
-
     rounds = range(1, len(avg_train_acc) + 1)
 
     axs[0, 0].plot(rounds, avg_train_acc, 'b-', label='Accuracy on train set')
