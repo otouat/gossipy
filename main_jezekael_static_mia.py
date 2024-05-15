@@ -20,16 +20,16 @@ train_set, test_set = get_CIFAR10()
 
 n_classes= max(train_set[1].max().item(), test_set[1].max().item())+1
 model = resnet20(n_classes)
-n_nodes = 5
-n_rounds = 15
-n_local_epochs = 1
+n_nodes = 16
+n_rounds = 200
+n_local_epochs = 3
 batch_size = 256
 optimizer_params = {
         "lr": 0.1,
         "momentum": 0.9,
         "weight_decay": 0.001
     }
-message = "Experiment with ResNet20 on CIFAR10 dataset. 100 nodes, 250 rounds, 1 local epochs, batch size 256, lr 0.1"
+message = "Experiment with ResNet20 on CIFAR10 dataset. 16 nodes, 3 local epochs, batch size 256, lr 0.1"
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
 Xte, yte = transform(test_set[0]), test_set[1]
