@@ -1192,7 +1192,7 @@ class AttackGossipNode(GossipNode):
         self.delta: int = randint(0, round_len) if sync else int(normal(round_len, round_len/10))
         self.p2p_net = p2p_net
         self.received_models = [] # [None] * len(p2p_net.get_peers(self.idx))
-        self.final_agg = OrderedDict()
+        self.final_agg = None
         self.gradient =  OrderedDict()
         self.marginalized_state = False
 
@@ -1314,22 +1314,19 @@ class AttackGossipNode(GossipNode):
 
             if recv_model is not None:
                 recv_model = CACHE.pop(recv_model)
-                self.model_handler(recv_model, self.data[0])
-
                 for i, (sender, _) in enumerate(self.received_models):
                     if sender == msg.sender:
                         self.received_models.pop(i)
                         break
-
+                    
                 self.received_models.append((msg.sender,  recv_model.model.state_dict()))
+                self.model_handler(recv_model, self.data[0])
                 expected_peers = set(self.p2p_net.get_peers(self.idx))
                 received_peers = set(pair[0] for pair in self.received_models)
                 if received_peers == expected_peers:
-                    self.marginalized_state = True 
-                    self.final_agg =  OrderedDict()
-                    state_dicts = [model for _, model in self.received_models]              
-                    self.final_agg = sum_nested_structures_and_negate(state_dicts)
-                    self.gradient =  OrderedDict()
+                    self.marginalized_state = True                
+                    self.final_agg = sum_nested_structures_and_negate(self.received_models)
+                    
                     for key in self.final_agg:
                         self.gradient[key] = self.final_agg[key] - self.received_models[-1][1][key]
                     print("Gradient: ", self.gradient)
