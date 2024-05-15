@@ -13,25 +13,23 @@ def ra_for_each_nn(simulation, attackerNode, final_agg, marginalized : bool = Fa
     return reconstructed
 
 def sum_nested_structures_and_negate(structures):
+    length = len(structures)
     # Vérifie que 'structures' est une liste (ou un iterable) contenant au moins un élément
     if not structures or not all(isinstance(s, OrderedDict) for s in structures):
         raise ValueError("Le paramètre 'structures' doit être une liste d'OrderedDicts avec des valeurs tensorielles")            
-
-    # Initialisation du résultat avec une copie profonde du premier élément pour garder les clés et les types
+    # Initialisation du résultat avec une copie profonde du premier élément pour garder les clés
     result = OrderedDict()
     for key in structures[0]:
-        result[key] = torch.zeros_like(structures[0][key])
+        result[key] = 0
 
     # Itération sur chaque structure pour effectuer la somme
     for structure in structures[:-1]:
         for key in structure:
             # Accumulation des sommes des tenseurs pour chaque clé
-            result[key] += structure[key]
-
+            result[key] += structure[key]            
     # Négation des résultats accumulés
     for key in result:
-        result[key] *= -1 / (len(structures) - 2)
-        
+        result[key] *= (1/ (length-2) )        
     return result
 
 def w_fully_adv_init(W, mean, std, s):
