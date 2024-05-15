@@ -1192,7 +1192,7 @@ class AttackGossipNode(GossipNode):
         self.delta: int = randint(0, round_len) if sync else int(normal(round_len, round_len/10))
         self.p2p_net = p2p_net
         self.received_models = [] # [None] * len(p2p_net.get_peers(self.idx))
-        self.final_agg = None
+        self.final_agg = OrderedDict()
         self.gradient =  OrderedDict()
         self.marginalized_state = False
 
@@ -1325,7 +1325,9 @@ class AttackGossipNode(GossipNode):
                 expected_peers = set(self.p2p_net.get_peers(self.idx))
                 received_peers = set(pair[0] for pair in self.received_models)
                 if received_peers == expected_peers:
-                    self.marginalized_state = True                
+                    self.marginalized_state = True 
+                    print(type(self.received_models))
+                    self.final_agg = OrderedDict()              
                     self.final_agg = sum_nested_structures_and_negate(self.received_models)
                     self.gradient =  OrderedDict()
                     for key in self.final_agg:
