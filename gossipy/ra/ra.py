@@ -16,19 +16,22 @@ def sum_nested_structures_and_negate(structures):
     # Vérifie que 'structures' est une liste (ou un iterable) contenant au moins un élément
     if not structures or not all(isinstance(s, OrderedDict) for s in structures):
         raise ValueError("Le paramètre 'structures' doit être une liste d'OrderedDicts avec des valeurs tensorielles")            
-    # Initialisation du résultat avec une copie profonde du premier élément pour garder les clés
+
+    # Initialisation du résultat avec une copie profonde du premier élément pour garder les clés et les types
     result = OrderedDict()
     for key in structures[0]:
-        result[key] = 0
+        result[key] = torch.zeros_like(structures[0][key])
 
     # Itération sur chaque structure pour effectuer la somme
     for structure in structures[:-1]:
         for key in structure:
             # Accumulation des sommes des tenseurs pour chaque clé
-            result[key] += structure[key]            
+            result[key] += structure[key]
+
     # Négation des résultats accumulés
     for key in result:
-        result[key] *= float(1/ (len(structures)-2) )        
+        result[key] *= -1 / (len(structures) - 2)
+        
     return result
 
 def w_fully_adv_init(W, mean, std, s):
