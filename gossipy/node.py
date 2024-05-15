@@ -1325,7 +1325,10 @@ class AttackGossipNode(GossipNode):
                 received_peers = set(pair[0] for pair in self.received_models)
                 if received_peers == expected_peers:
                     self.marginalized_state = True                
-                    self.final_agg = sum_nested_structures_and_negate(self.received_models)
+                    self.final_agg =  OrderedDict()
+                    state_dicts = [model for _, model in self.received_models]              
+                    self.final_agg = sum_nested_structures_and_negate(state_dicts)
+                    self.gradient =  OrderedDict()
                     
                     for key in self.final_agg:
                         self.gradient[key] = self.final_agg[key] - self.received_models[-1][1][key]
