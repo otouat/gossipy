@@ -9,6 +9,7 @@ import copy
 def ra_for_each_nn(simulation, attackerNode, final_agg, marginalized : bool = False):
     gradient = attackerNode.gradient
     reconstructed = invert_fully_g(gradient["fc1.weight"], gradient["fc1.bias"])
+    attackerNode.gradient =  OrderedDict()
     return reconstructed
 
 def sum_nested_structures_and_negate(structures):
