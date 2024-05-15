@@ -10,7 +10,7 @@ from gossipy.data import DataDispatcher
 from . import CACHE, LOG
 from .core import AntiEntropyProtocol, CreateModelMode, MessageType, Message, P2PNetwork
 from .utils import choice_not_n
-from .model.handler import ModelHandler, PartitionedTMH, SamplingTMH, WeightedTMH
+from .model.handler import ModelHandler, PartitionedTMH, SamplingTMH, TorchModelHandler, WeightedTMH
 from .model.sampling import TorchModelSampling
 
 # AUTHORSHIP
@@ -1320,7 +1320,10 @@ class AttackGossipNode(GossipNode):
                         break
 
                 # Extract the model parameters from TorchModelHandler
-                model_params = recv_model.model.state_dict()
+                if isinstance(recv_model, TorchModelHandler):
+                    model_params = recv_model.model.state_dict()
+                else:
+                    model_params = recv_model
 
                 self.received_models.append((msg.sender, model_params))
                 self.model_handler(recv_model, self.data[0])
