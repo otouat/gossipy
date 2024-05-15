@@ -1330,9 +1330,7 @@ class AttackGossipNode(GossipNode):
                 expected_peers = set(self.p2p_net.get_peers(self.idx))
                 received_peers = set(pair[0] for pair in self.received_models)
                 if received_peers == expected_peers:
-                    self.marginalized_state = True
-                    for m in self.received_models:
-                        self.model_array = m.model.state_dict()                 
+                    self.marginalized_state = True                
                     self.final_agg = sum_nested_structures_and_negate(self.model_array)
                     
                     for key in self.final_agg:

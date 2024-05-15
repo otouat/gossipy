@@ -16,13 +16,13 @@ def isolate_victim(model_update_buffer, victim_id):
     others = thetas
 
     # accumulate others
-    other = init_list_variables(victim[1].model.state_dict())
+    other = init_list_variables(victim[1])
     for _, model in others:
-        other = agg_sum(other, model.model.state_dict())
+        other = agg_sum(other, model)
     other = agg_div(other, n)
 
     # remove global functionality
-    victim_c = agg_sub(victim[1].model.state_dict(), other)
+    victim_c = agg_sub(victim[1], other)
     # scale back marginalized model
     victim_c = agg_div(victim_c, 1/n)
     return victim_c
