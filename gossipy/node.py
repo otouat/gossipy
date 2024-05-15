@@ -1298,7 +1298,7 @@ class AttackGossipNode(GossipNode):
             The current timestamp.
         msg : Message
             The received message.
-        
+
         Returns
         -------
         Message or `None`
@@ -1309,8 +1309,8 @@ class AttackGossipNode(GossipNode):
         recv_model: Any 
         msg_type, recv_model = msg.type, msg.value[0] if msg.value else None
         if msg_type == MessageType.PUSH or \
-           msg_type == MessageType.REPLY or \
-           msg_type == MessageType.PUSH_PULL:
+            msg_type == MessageType.REPLY or \
+            msg_type == MessageType.PUSH_PULL:
 
             if recv_model is not None:
                 recv_model = CACHE.pop(recv_model)
@@ -1319,7 +1319,10 @@ class AttackGossipNode(GossipNode):
                         self.received_models.pop(i)
                         break
 
-                self.received_models.append((msg.sender, recv_model))
+                # Extract the model parameters from TorchModelHandler
+                model_params = recv_model.model.state_dict()
+
+                self.received_models.append((msg.sender, model_params))
                 self.model_handler(recv_model, self.data[0])
                 expected_peers = set(self.p2p_net.get_peers(self.idx))
                 received_peers = set(pair[0] for pair in self.received_models)
@@ -1348,9 +1351,8 @@ class AttackGossipNode(GossipNode):
             else:
                 recv_model = CACHE.pop(recv_model)
 
-
         if msg_type == MessageType.PULL or \
-           msg_type == MessageType.PUSH_PULL:
+            msg_type == MessageType.PUSH_PULL:
             key = self.model_handler.caching(self.idx)
             return Message(t, self.idx, msg.sender, MessageType.REPLY, (key,))
         return None
