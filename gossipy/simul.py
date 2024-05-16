@@ -8,6 +8,8 @@ from rich.progress import track
 import dill
 import json
 
+from gossipy.model.utils import clear_cuda_cache
+
 from . import CACHE, LOG, CacheKey
 from .core import AntiEntropyProtocol, Message, ConstantDelay, Delay, MixingMatrix, UniformMixing, DynamicP2PNetwork
 from .data import DataDispatcher
@@ -1303,6 +1305,7 @@ class MIAGossipSimulator(GossipSimulator):
                 del rep_queues[t]
 
                 if (t + 1) % self.delta == 0:
+                    clear_cuda_cache()
                     for er in self._receivers:
                             mia_vulnerability = [mia_for_each_nn(self, n, class_specific = False) for _, n in self.nodes.items()]
                             er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)
@@ -1312,6 +1315,7 @@ class MIAGossipSimulator(GossipSimulator):
                             if any(item is not None for item in mia_mar_vulnerability):
                                 er.update_mia_vulnerability(self.n_rounds, mia_mar_vulnerability, marginalized = True)
                                 print(ra_mar_vulnerability)
+                    clear_cuda_cache()
                     if self.sampling_eval > 0:
                         sample = choice(list(self.nodes.keys()), max(int(self.n_nodes * self.sampling_eval), 1))
                         ev = [self.nodes[i].evaluate() for i in sample if self.nodes[i].has_test()]
