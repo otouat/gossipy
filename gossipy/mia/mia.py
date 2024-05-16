@@ -23,6 +23,10 @@ def mia_for_each_nn(simulation, attackerNode, class_specific: bool = False, marg
             data = node.data
             train_data, test_data = data
             device = node.model_handler.device
+
+
+
+            
             model = copy.deepcopy(node.model_handler.model)
             if marginalized:
                 model.load_state_dict(isolate_victim(attackerNode.received_models, node.idx), strict=False)

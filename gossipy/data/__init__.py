@@ -509,8 +509,49 @@ class DataDispatcher():
         return "DataDispatcher(handler=%s, n=%d, eval_on_user=%s)" \
                 %(self.data_handler, self.n, self.eval_on_user)
 
- 
 class CustomDataDispatcher(DataDispatcher):
+    def assign(self, seed: int = 42, method: str = 'uniform', **kwargs) -> None:
+        assign_handler = AssignmentHandler(seed)
+        if method == 'uniform':
+            self.tr_assignments = assign_handler.uniform(self.data_handler.ytr, self.n)
+            if self.eval_on_user:
+                self.te_assignments = assign_handler.uniform(self.data_handler.yte, self.n)
+            else:
+                self.te_assignments = [[] for _ in range(self.n)]
+        elif method == 'quantity_skew':
+            self.tr_assignments = assign_handler.quantity_skew(self.data_handler.ytr, self.n, **kwargs)
+            if self.eval_on_user:
+                self.te_assignments = assign_handler.quantity_skew(self.data_handler.yte, self.n, **kwargs)
+            else:
+                self.te_assignments = [[] for _ in range(self.n)]
+        elif method == 'classwise_quantity_skew':
+            self.tr_assignments = assign_handler.classwise_quantity_skew(self.data_handler.ytr, self.n, **kwargs)
+            if self.eval_on_user:
+                self.te_assignments = assign_handler.classwise_quantity_skew(self.data_handler.yte, self.n, **kwargs)
+            else:
+                self.te_assignments = [[] for _ in range(self.n)]
+        elif method == 'label_quantity_skew':
+            self.tr_assignments = assign_handler.label_quantity_skew(self.data_handler.ytr, self.n, **kwargs)
+            if self.eval_on_user:
+                self.te_assignments = assign_handler.label_quantity_skew(self.data_handler.yte, self.n, **kwargs)
+            else:
+                self.te_assignments = [[] for _ in range(self.n)]
+        elif method == 'label_dirichlet_skew':
+            self.tr_assignments = assign_handler.label_dirichlet_skew(self.data_handler.ytr, self.n, **kwargs)
+            if self.eval_on_user:
+                self.te_assignments = assign_handler.label_dirichlet_skew(self.data_handler.yte, self.n, **kwargs)
+            else:
+                self.te_assignments = [[] for _ in range(self.n)]
+        elif method == 'label_pathological_skew':
+            self.tr_assignments = assign_handler.label_pathological_skew(self.data_handler.ytr, self.n, **kwargs)
+            if self.eval_on_user:
+                self.te_assignments = assign_handler.label_pathological_skew(self.data_handler.yte, self.n, **kwargs)
+            else:
+                self.te_assignments = [[] for _ in range(self.n)]
+        else:
+            raise ValueError(f"Unknown method: {method}")
+        
+class OLDCustomDataDispatcher(DataDispatcher):
     def assign(self, seed: int = 42) -> None:
         self.tr_assignments = [[] for _ in range(self.n)]
         self.te_assignments = [[] for _ in range(self.n)]

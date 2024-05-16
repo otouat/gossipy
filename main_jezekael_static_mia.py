@@ -20,8 +20,8 @@ train_set, test_set = get_CIFAR10()
 
 n_classes= max(train_set[1].max().item(), test_set[1].max().item())+1
 model = resnet20(n_classes)
-n_nodes = 16
-n_rounds = 100
+n_nodes = 4
+n_rounds = 10
 n_local_epochs = 5
 batch_size = 256
 optimizer_params = {
@@ -37,11 +37,24 @@ Xte, yte = transform(test_set[0]), test_set[1]
 
 data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=0.5)
 
-data_dispatcher = CustomDataDispatcher(data_handler, n=n_nodes, eval_on_user=True, auto_assign=True)
+assignment_method = 'label_dirichlet_skew'
+assignment_params = {
+    'beta': 0.1
+}
+
+data_dispatcher = CustomDataDispatcher(
+    data_handler,
+    n=n_nodes,
+    eval_on_user=True,
+    auto_assign=False
+)
+
+# Assign data using the specified method
+data_dispatcher.assign(seed=42, method=assignment_method, **assignment_params)
 
 topology = StaticP2PNetwork(data_dispatcher.size(), topology=nx.to_numpy_array(random_regular_graph(4, n_nodes, seed=42)))
 
-nodes = AttackGossipNode.generate(
+nodes = GossipNode.generate(
     data_dispatcher=data_dispatcher,
     p2p_net=topology,
     model_proto=TorchModelHandler(

@@ -1,7 +1,5 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
-
 
 # Read the CSV file
 df = pd.read_csv(r"C:\Users\jezek\OneDrive\Documents\Python\Djack\gossipy\results\Exp_n#43\mia_results.csv")
