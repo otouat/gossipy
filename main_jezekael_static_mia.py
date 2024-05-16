@@ -14,14 +14,16 @@ from gossipy.topology import create_torus_topology, create_federated_topology, C
 from gossipy.mia.utils import log_results
 import networkx as nx
 from networkx.generators import random_regular_graph
+import os
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:256'
 
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
 train_set, test_set = get_CIFAR10()
 
 n_classes= max(train_set[1].max().item(), test_set[1].max().item())+1
 model = resnet20(n_classes)
-n_nodes = 4
-n_rounds = 10
+n_nodes = 5
+n_rounds = 20
 n_local_epochs = 5
 batch_size = 256
 optimizer_params = {
