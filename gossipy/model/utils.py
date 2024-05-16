@@ -2,12 +2,20 @@
 import gc
 import torch
 
+from gossipy.model.architecture import resnet20
 
 def clear_cuda_cache():
-    tensor = tensor.cuda()  # Move tensor to GPU
+    try:
+        tensor = tensor.cuda()
+    except Exception as e:
+        tensor = torch.tensor([1.0]).cuda()
+        print("An error occurred while clearing CUDA cache:", e)
     del tensor
-    model = model.cuda()  # Move model to GPU
-    # Perform operations with the model
-    del model  # Delete model to free up GPU memory
+    try:
+         model = model.cuda()
+    except Exception as e:
+        model = resnet20().cuda() 
+        print("An error occurred while clearing CUDA cache:", e)
+    del model
     torch.cuda.empty_cache()
     gc.collect()
