@@ -9,6 +9,14 @@ import nvidia_smi
 
 
 def clear_cuda_cache():
+    print("1: ", get_gpu_memory())
+    print(get_nvdia_memory())
+    for obj in gc.get_objects():
+        try:
+            if torch.is_tensor(obj) or (hasattr(obj, 'data') and torch.is_tensor(obj.data)):
+                print(type(obj), obj.size())
+        except:
+            pass
     try:
         # Initialize a tensor to ensure it can be moved to CUDA
         tensor = torch.tensor([1.0]).cuda()
@@ -25,9 +33,26 @@ def clear_cuda_cache():
     finally:
         del model
 
-    torch.cuda.empty_cache()
+    with torch.no_grad():
+        torch.cuda.empty_cache()
     gc.collect()
-
+    print("2: ", get_gpu_memory())
+    print(get_nvdia_memory())
+    for obj in gc.get_objects():
+        try:
+            if torch.is_tensor(obj) or (hasattr(obj, 'data') and torch.is_tensor(obj.data)):
+                print(type(obj), obj.size())
+        except:
+            pass
+def clear_cache_and_retry(func, *args, **kwargs):
+    try:
+        func(*args, **kwargs)
+    except torch.cuda.OutOfMemoryError as e:
+        print(f"CUDA out of memory: {e}")
+        print("Clearing cache and retrying...")
+        torch.cuda.empty_cache()
+        func(*args, **kwargs)
+        
 def get_nvdia_memory():
     nvidia_smi.nvmlInit()
 
@@ -43,7 +68,8 @@ def get_nvdia_memory():
     nvidia_smi.nvmlShutdown()
 
 def get_gpu_memory():
-    command = "nvidia-smi --query-gpu=memory.free --format=csv"
-    memory_free_info = sp.check_output(command.split()).decode('ascii').split('\n')[:-1][1:]
-    memory_free_values = [int(x.split()[0]) for i, x in enumerate(memory_free_info)]
-    return memory_free_values
+    print(f"Allocated: {torch.cuda.memory_allocated() / (1024 ** 2):.2f} MB")
+    print(f"Cached: {torch.cuda.memory_reserved() / (1024 ** 2):.2f} MB")
+    print(f"Max Allocated: {torch.cuda.max_memory_allocated() / (1024 ** 2):.2f} MB")
+    print(f"Max Cached: {torch.cuda.max_memory_reserved() / (1024 ** 2):.2f} MB")
+    print()

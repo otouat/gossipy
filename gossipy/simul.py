@@ -1305,11 +1305,7 @@ class MIAGossipSimulator(GossipSimulator):
                 del rep_queues[t]
 
                 if (t + 1) % self.delta == 0:
-                    print("1: ", get_gpu_memory())
-                    print(get_nvdia_memory())
                     clear_cuda_cache()
-                    print("1.5: ", get_gpu_memory())
-                    print(get_nvdia_memory())
                     for er in self._receivers:
                             mia_vulnerability = [mia_for_each_nn(self, n, class_specific = False) for _, n in self.nodes.items()]
                             er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)
@@ -1319,18 +1315,14 @@ class MIAGossipSimulator(GossipSimulator):
                             if any(item is not None for item in mia_mar_vulnerability):
                                 er.update_mia_vulnerability(self.n_rounds, mia_mar_vulnerability, marginalized = True)
                                 print(ra_mar_vulnerability)
-                    print("2: ", get_gpu_memory())
-                    print(get_nvdia_memory())
                     clear_cuda_cache()
-                    print("2.5: ", get_gpu_memory())
-                    print(get_nvdia_memory())
                     if self.sampling_eval > 0:
                         sample = choice(list(self.nodes.keys()), max(int(self.n_nodes * self.sampling_eval), 1))
-                        ev = [self.nodes[i].evaluate() for i in sample if self.nodes[i].has_test()]
-                        ev_train = [self.nodes[i].evaluate(self.nodes[i].data[0]) for i in sample]
+                        ev = [clear_cache_and_retry(self.nodes[i].evaluate()) for i in sample if self.nodes[i].has_test()]
+                        ev_train = [clear_cache_and_retry(self.nodes[i].evaluate(self.nodes[i].data[0])) for i in sample]
                     else:
-                        ev = [n.evaluate() for _, n in self.nodes.items() if n.has_test()]
-                        ev_train = [n.evaluate(n.data[0]) for _, n in self.nodes.items()]
+                        ev = [clear_cache_and_retry(n.evaluate()) for _, n in self.nodes.items() if n.has_test()]
+                        ev_train = [clear_cache_and_retry(n.evaluate(n.data[0])) for _, n in self.nodes.items()]
                     if ev:
                         self.notify_evaluation(self.n_rounds, True, ev)
                         accuracy = []
@@ -1345,9 +1337,9 @@ class MIAGossipSimulator(GossipSimulator):
 
                     if self.data_dispatcher.has_test():
                         if self.sampling_eval > 0:
-                            ev = [self.nodes[i].evaluate(self.data_dispatcher.get_eval_set()) for i in sample]
+                            ev = [clear_cache_and_retry(self.nodes[i].evaluate(self.data_dispatcher.get_eval_set())) for i in sample]
                         else:
-                            ev = [n.evaluate(self.data_dispatcher.get_eval_set()) for _, n in self.nodes.items()]
+                            ev = [clear_cache_and_retry(n.evaluate(self.data_dispatcher.get_eval_set())) for _, n in self.nodes.items()]
                             
                         if ev:
                             self.notify_evaluation(self.n_rounds, False, ev)
@@ -1358,11 +1350,7 @@ class MIAGossipSimulator(GossipSimulator):
                                 })
                             for er in self._receivers:
                                 er.update_accuracy(self.n_rounds, False, accuracy)
-                    print("3: ", get_gpu_memory())
-                    print(get_nvdia_memory())
                     clear_cuda_cache()
-                    print("3.5: ", get_gpu_memory())
-                    print(get_nvdia_memory())
 
                 self.notify_timestep(t)
 
