@@ -9,14 +9,11 @@ import nvidia_smi
 
 
 def clear_cuda_cache():
-    print("1: ", get_gpu_memory())
-    print(get_nvdia_memory())
-    for obj in gc.get_objects():
-        try:
-            if torch.is_tensor(obj) or (hasattr(obj, 'data') and torch.is_tensor(obj.data)):
-                print(type(obj), obj.size())
-        except:
-            pass
+    print("1:")
+    get_gpu_memory()
+    #get_nvdia_memory()
+    log_remaining_tensors()
+    
     try:
         # Initialize a tensor to ensure it can be moved to CUDA
         tensor = torch.tensor([1.0]).cuda()
@@ -32,18 +29,16 @@ def clear_cuda_cache():
         print("An error occurred while clearing CUDA cache:", e)
     finally:
         del model
-
+    gc.collect()
     with torch.no_grad():
         torch.cuda.empty_cache()
     gc.collect()
-    print("2: ", get_gpu_memory())
-    print(get_nvdia_memory())
-    for obj in gc.get_objects():
-        try:
-            if torch.is_tensor(obj) or (hasattr(obj, 'data') and torch.is_tensor(obj.data)):
-                print(type(obj), obj.size())
-        except:
-            pass
+    print("2:")
+    get_gpu_memory()
+    #get_nvdia_memory()
+    log_remaining_tensors()
+    
+
 def clear_cache_and_retry(func, *args, **kwargs):
     try:
         func(*args, **kwargs)
@@ -52,7 +47,7 @@ def clear_cache_and_retry(func, *args, **kwargs):
         print("Clearing cache and retrying...")
         torch.cuda.empty_cache()
         func(*args, **kwargs)
-        
+
 def get_nvdia_memory():
     nvidia_smi.nvmlInit()
 
@@ -73,3 +68,11 @@ def get_gpu_memory():
     print(f"Max Allocated: {torch.cuda.max_memory_allocated() / (1024 ** 2):.2f} MB")
     print(f"Max Cached: {torch.cuda.max_memory_reserved() / (1024 ** 2):.2f} MB")
     print()
+
+def log_remaining_tensors():
+    for obj in gc.get_objects():
+        try:
+            if torch.is_tensor(obj) or (hasattr(obj, 'data') and torch.is_tensor(obj.data)):
+                print(f"Remaining Tensor: {type(obj)}, Size: {obj.size()}")
+        except:
+            pass

@@ -1318,11 +1318,11 @@ class MIAGossipSimulator(GossipSimulator):
                     clear_cuda_cache()
                     if self.sampling_eval > 0:
                         sample = choice(list(self.nodes.keys()), max(int(self.n_nodes * self.sampling_eval), 1))
-                        ev = [clear_cache_and_retry(self.nodes[i].evaluate()) for i in sample if self.nodes[i].has_test()]
-                        ev_train = [clear_cache_and_retry(self.nodes[i].evaluate(self.nodes[i].data[0])) for i in sample]
+                        ev = [clear_cache_and_retry(lambda: self.nodes[i].evaluate()) for i in sample if self.nodes[i].has_test()]
+                        ev_train = [clear_cache_and_retry(lambda: self.nodes[i].evaluate(self.nodes[i].data[0])) for i in sample]
                     else:
-                        ev = [clear_cache_and_retry(n.evaluate()) for _, n in self.nodes.items() if n.has_test()]
-                        ev_train = [clear_cache_and_retry(n.evaluate(n.data[0])) for _, n in self.nodes.items()]
+                        ev = [clear_cache_and_retry(lambda: n.evaluate()) for _, n in self.nodes.items() if n.has_test()]
+                        ev_train = [clear_cache_and_retry(lambda: n.evaluate(n.data[0])) for _, n in self.nodes.items()]
                     if ev:
                         self.notify_evaluation(self.n_rounds, True, ev)
                         accuracy = []
@@ -1337,9 +1337,9 @@ class MIAGossipSimulator(GossipSimulator):
 
                     if self.data_dispatcher.has_test():
                         if self.sampling_eval > 0:
-                            ev = [clear_cache_and_retry(self.nodes[i].evaluate(self.data_dispatcher.get_eval_set())) for i in sample]
+                            ev = [clear_cache_and_retry(lambda: self.nodes[i].evaluate(self.data_dispatcher.get_eval_set())) for i in sample]
                         else:
-                            ev = [clear_cache_and_retry(n.evaluate(self.data_dispatcher.get_eval_set())) for _, n in self.nodes.items()]
+                            ev = [clear_cache_and_retry(lambda: n.evaluate(self.data_dispatcher.get_eval_set())) for _, n in self.nodes.items()]
                             
                         if ev:
                             self.notify_evaluation(self.n_rounds, False, ev)
