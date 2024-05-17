@@ -4,7 +4,7 @@ import torch
 import subprocess as sp
 import os
 from gossipy.model.architecture import resnet20
-import nvidia_smi
+#import nvidia_smi
 
 
 
@@ -28,6 +28,7 @@ def clear_cuda_cache():
     torch.cuda.empty_cache()
     gc.collect()
 
+"""
 def get_nvdia_memory():
     nvidia_smi.nvmlInit()
 
@@ -41,7 +42,7 @@ def get_nvdia_memory():
     print("Used memory:", info.used)
 
     nvidia_smi.nvmlShutdown()
-
+"""
 def get_gpu_memory():
     command = "nvidia-smi --query-gpu=memory.free --format=csv"
     memory_free_info = sp.check_output(command.split()).decode('ascii').split('\n')[:-1][1:]
