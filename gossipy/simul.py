@@ -8,7 +8,7 @@ from rich.progress import track
 import dill
 import json
 
-from gossipy.model.utils import clear_cuda_cache
+from gossipy.model.utils import *
 
 from . import CACHE, LOG, CacheKey
 from .core import AntiEntropyProtocol, Message, ConstantDelay, Delay, MixingMatrix, UniformMixing, DynamicP2PNetwork
@@ -1305,7 +1305,11 @@ class MIAGossipSimulator(GossipSimulator):
                 del rep_queues[t]
 
                 if (t + 1) % self.delta == 0:
+                    print("1: ", get_gpu_memory())
+                    print(get_nvdia_memory())
                     clear_cuda_cache()
+                    print("1.5: ", get_gpu_memory())
+                    print(get_nvdia_memory())
                     for er in self._receivers:
                             mia_vulnerability = [mia_for_each_nn(self, n, class_specific = False) for _, n in self.nodes.items()]
                             er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)
@@ -1315,7 +1319,11 @@ class MIAGossipSimulator(GossipSimulator):
                             if any(item is not None for item in mia_mar_vulnerability):
                                 er.update_mia_vulnerability(self.n_rounds, mia_mar_vulnerability, marginalized = True)
                                 print(ra_mar_vulnerability)
+                    print("2: ", get_gpu_memory())
+                    print(get_nvdia_memory())
                     clear_cuda_cache()
+                    print("2.5: ", get_gpu_memory())
+                    print(get_nvdia_memory())
                     if self.sampling_eval > 0:
                         sample = choice(list(self.nodes.keys()), max(int(self.n_nodes * self.sampling_eval), 1))
                         ev = [self.nodes[i].evaluate() for i in sample if self.nodes[i].has_test()]
@@ -1350,6 +1358,11 @@ class MIAGossipSimulator(GossipSimulator):
                                 })
                             for er in self._receivers:
                                 er.update_accuracy(self.n_rounds, False, accuracy)
+                    print("3: ", get_gpu_memory())
+                    print(get_nvdia_memory())
+                    clear_cuda_cache()
+                    print("3.5: ", get_gpu_memory())
+                    print(get_nvdia_memory())
 
                 self.notify_timestep(t)
 
