@@ -89,5 +89,6 @@ def log_remaining_tensors():
         try:
             if torch.is_tensor(obj) or (hasattr(obj, 'data') and torch.is_tensor(obj.data)):
                 print(f"Remaining Tensor: {type(obj)}, Size: {obj.size()}")
+                del obj
         except:
             pass
