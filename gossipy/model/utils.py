@@ -12,7 +12,7 @@ def clear_cuda_cache():
     print("1:")
     get_gpu_memory()
     #get_nvdia_memory()
-    log_remaining_tensors()
+
     
     try:
         # Initialize a tensor to ensure it can be moved to CUDA
@@ -36,7 +36,6 @@ def clear_cuda_cache():
     print("2:")
     get_gpu_memory()
     #get_nvdia_memory()
-    log_remaining_tensors()
     
 def clear_memory():
     # Manually delete references to tensors
@@ -60,7 +59,7 @@ def clear_cache_and_retry(func, *args, **kwargs):
         print(f"CUDA out of memory: {e}")
         print("Clearing cache and retrying...")
         torch.cuda.empty_cache()
-        clear_memory()
+        log_remaining_tensors()
         func(*args, **kwargs)
 
 def get_nvdia_memory():
