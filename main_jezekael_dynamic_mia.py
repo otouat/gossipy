@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 from torchvision.transforms import Compose, Normalize
 from gossipy.core import AntiEntropyProtocol, CreateModelMode, ConstantDelay, StaticP2PNetwork, UniformDynamicP2PNetwork
-from gossipy.data import CustomDataDispatcher
+from gossipy.data import CustomDataDispatcher, OLDCustomDataDispatcher
 from gossipy.data.handler import ClassificationDataHandler
 from gossipy.model.handler import TorchModelHandler
 from gossipy.node import AttackGossipNode, GossipNode, FederatedGossipNode
@@ -20,17 +20,19 @@ train_set, test_set = get_CIFAR100()
 
 n_classes= max(train_set[1].max().item(), test_set[1].max().item())+1
 model = resnet20(n_classes)
-n_nodes = 16
-n_rounds = 200
+n_nodes = 100
+n_rounds = 250
 n_local_epochs = 3
 batch_size = 256
-peer_sampling_period=10
+factors = 1
+neigbors = 4
+peer_sampling_period=1
 optimizer_params = {
         "lr": 0.1,
         "momentum": 0.9,
         "weight_decay": 0.001
     }
-message = "Experiment with ResNet20 on CIFAR10 dataset. 16 nodes, 3 local epochs, batch size 256, lr 0.1 and peer sampling period 10"
+message = f"Experiment with ResNet20 on CIFAR10 dataset. {n_nodes} nodes, {n_local_epochs} local epochs, batch size {batch_size}, lr {optimizer_params['lr']}, number of neigbors {neigbors}, and peer sampling period {peer_sampling_period}"
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
 Xte, yte = transform(test_set[0]), test_set[1]
@@ -38,9 +40,9 @@ Xte, yte = transform(test_set[0]), test_set[1]
 
 data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=0.5)
 
-data_dispatcher = CustomDataDispatcher(data_handler, n=n_nodes, eval_on_user=True, auto_assign=True)
+data_dispatcher = OLDCustomDataDispatcher(data_handler, n=n_nodes*factors, eval_on_user=True, auto_assign=True)
 
-topology = UniformDynamicP2PNetwork(data_dispatcher.size(), topology=nx.to_numpy_array(random_regular_graph(4, n_nodes, seed=42)))
+topology = UniformDynamicP2PNetwork(int(data_dispatcher.size()/factors), topology=nx.to_numpy_array(random_regular_graph(4, n_nodes, seed=42)))
 
 nodes = GossipNode.generate(
     data_dispatcher=data_dispatcher,
