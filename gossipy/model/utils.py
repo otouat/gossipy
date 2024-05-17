@@ -59,7 +59,6 @@ def clear_cache_and_retry(func, *args, **kwargs):
         print(f"CUDA out of memory: {e}")
         print("Clearing cache and retrying...")
         torch.cuda.empty_cache()
-        log_remaining_tensors()
         func(*args, **kwargs)
 
 def get_nvdia_memory():

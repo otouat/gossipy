@@ -1316,6 +1316,7 @@ class MIAGossipSimulator(GossipSimulator):
                                 er.update_mia_vulnerability(self.n_rounds, mia_mar_vulnerability, marginalized = True)
                                 print(ra_mar_vulnerability)
                     clear_cuda_cache()
+                    log_remaining_tensors()
                     if self.sampling_eval > 0:
                         sample = choice(list(self.nodes.keys()), max(int(self.n_nodes * self.sampling_eval), 1))
                         ev = [clear_cache_and_retry(lambda: self.nodes[i].evaluate()) for i in sample if self.nodes[i].has_test()]
