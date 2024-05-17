@@ -38,6 +38,20 @@ def clear_cuda_cache():
     #get_nvdia_memory()
     log_remaining_tensors()
     
+def clear_memory():
+    # Manually delete references to tensors
+    for obj in gc.get_objects():
+        try:
+            if torch.is_tensor(obj) or (hasattr(obj, 'data') and torch.is_tensor(obj.data)):
+                del obj
+        except:
+            pass
+    
+    # Collect garbage
+    gc.collect()
+    
+    # Empty the CUDA cache
+    torch.cuda.empty_cache()
 
 def clear_cache_and_retry(func, *args, **kwargs):
     try:
@@ -46,6 +60,7 @@ def clear_cache_and_retry(func, *args, **kwargs):
         print(f"CUDA out of memory: {e}")
         print("Clearing cache and retrying...")
         torch.cuda.empty_cache()
+        clear_memory()
         func(*args, **kwargs)
 
 def get_nvdia_memory():
