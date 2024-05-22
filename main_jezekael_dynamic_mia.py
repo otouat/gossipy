@@ -22,11 +22,11 @@ n_classes= max(train_set[1].max().item(), test_set[1].max().item())+1
 model = resnet20(n_classes)
 n_nodes = 100
 n_rounds = 250
-n_local_epochs = 3
+n_local_epochs = 5
 batch_size = 256
 factors = 1
 neigbors = 4
-peer_sampling_period=1
+peer_sampling_period=10
 optimizer_params = {
         "lr": 0.1,
         "momentum": 0.9,
