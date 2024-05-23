@@ -58,7 +58,7 @@ data_dispatcher.assign(seed=42, method=assignment_method, **assignment_params)
 """
 data_dispatcher = OLDCustomDataDispatcher(data_handler, n=n_nodes*factors, eval_on_user=True, auto_assign=True)
 
-topology = StaticP2PNetwork(int(data_dispatcher.size()/factors), topology=nx.to_numpy_array(random_regular_graph(4, n_nodes, seed=42)))
+topology = StaticP2PNetwork(int(data_dispatcher.size()/factors), topology=nx.to_numpy_array(random_regular_graph(neigbors, n_nodes, seed=42)))
 
 nodes = GossipNode.generate(
     data_dispatcher=data_dispatcher,

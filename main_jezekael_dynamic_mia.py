@@ -42,7 +42,7 @@ data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=0.5)
 
 data_dispatcher = OLDCustomDataDispatcher(data_handler, n=n_nodes*factors, eval_on_user=True, auto_assign=True)
 
-topology = UniformDynamicP2PNetwork(int(data_dispatcher.size()/factors), topology=nx.to_numpy_array(random_regular_graph(4, n_nodes, seed=42)))
+topology = UniformDynamicP2PNetwork(int(data_dispatcher.size()/factors), topology=nx.to_numpy_array(random_regular_graph(neigbors, n_nodes, seed=42)))
 
 nodes = GossipNode.generate(
     data_dispatcher=data_dispatcher,
