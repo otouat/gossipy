@@ -1331,8 +1331,9 @@ class AttackGossipNode(GossipNode):
                     self.gradient = OrderedDict()            
                     self.final_agg = sum_nested_structures_and_negate(state_dicts)
                     print("After")
-                    
+                    print("Length :", len(self.final_agg))
                     for key in self.final_agg:
+                        print("Stcuck here :", key)
                         self.gradient[key] = self.final_agg[key] - self.received_models[-1][1][key]
                     print("Gradient: ", self.gradient)
                     self.final_agg = OrderedDict()
