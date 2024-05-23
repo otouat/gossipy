@@ -15,6 +15,9 @@ from torch import Tensor, tensor
 from sklearn import datasets
 from sklearn.datasets import load_svmlight_file
 from sklearn.preprocessing import StandardScaler, LabelEncoder
+import torch
+import matplotlib.pyplot as plt
+import numpy as np
 
 from .. import LOG
 from ..utils import download_and_unzip, download_and_untar
@@ -885,3 +888,56 @@ def get_FEMNIST(path: str="./data") -> Tuple[Tuple[torch.Tensor, torch.Tensor, L
         tr_assignment.append(list(range(sum_tr, sum_tr + ntr)))
         te_assignment.append(list(range(sum_te, sum_te + nte)))
     return (Xtr, ytr, tr_assignment), (Xte, yte, te_assignment)
+
+def plot_class_distribution(simulator):
+    data_dispatcher = simulator.data_dispatcher
+    n_nodes = data_dispatcher.size()
+    n_classes = len(torch.unique(data_dispatcher.data_handler.ytr).numpy())
+    """
+    Plots the class distribution for each node in a federated learning setup.
+
+    Parameters:
+    -----------
+    simulator : MIAGossipSimulator
+        The simulator containing the nodes and their data.
+    data_dispatcher : CustomDataDispatcher
+        The data dispatcher that has assigned the data to nodes.
+    n_classes : int
+        The number of classes in the dataset.
+    n_nodes : int
+        The number of nodes in the simulation.
+    """
+    node_class_distributions = []
+
+    for i in range(n_nodes):
+        train_data, _ = data_dispatcher[i]
+        node_classes = train_data[1]  # Get the labels
+        class_counts = torch.bincount(node_classes, minlength=n_classes).numpy()
+        node_class_distributions.append(class_counts)
+        print(f"Node {i} class distribution: {class_counts}")
+
+    # Convert to numpy array for plotting
+    node_class_distributions = np.array(node_class_distributions)
+
+    # Plotting
+    fig, ax = plt.subplots(figsize=(10, 7))
+    im = ax.imshow(node_class_distributions, aspect='auto', cmap='viridis')
+
+    # Create colorbar
+    cbar = ax.figure.colorbar(im, ax=ax)
+    cbar.ax.set_ylabel('Class Count', rotation=-90, va="bottom")
+
+    # We want to show all ticks...
+    ax.set_xticks(np.arange(n_classes))
+    ax.set_yticks(np.arange(n_nodes))
+
+    # Label the axes
+    ax.set_xlabel('Class')
+    ax.set_ylabel('Node')
+
+    # Rotate the tick labels and set their alignment.
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+
+    # Title
+    ax.set_title("Class Distribution per Node")
+    plt.show()

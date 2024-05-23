@@ -1,4 +1,5 @@
 from __future__ import annotations
+from collections import OrderedDict
 import random
 import numpy as np
 from numpy.random import randint, normal, rand
@@ -12,6 +13,7 @@ from .core import AntiEntropyProtocol, CreateModelMode, MessageType, Message, P2
 from .utils import choice_not_n
 from .model.handler import ModelHandler, PartitionedTMH, SamplingTMH, TorchModelHandler, WeightedTMH
 from .model.sampling import TorchModelSampling
+from gossipy.attacks.ra.ra import *
 
 # AUTHORSHIP
 __version__ = "0.0.1"
@@ -1141,8 +1143,6 @@ class FederatedGossipNode(GossipNode):
                        **kwargs)
             nodes[idx] = node
         return nodes
-
-from gossipy.ra.ra import *
 
 class AttackGossipNode(GossipNode):
     def __init__(self,

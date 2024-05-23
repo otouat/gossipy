@@ -17,9 +17,9 @@ from .node import GossipNode, AttackGossipNode, All2AllGossipNode
 from .flow_control import TokenAccount
 from .model.handler import ModelHandler
 from .utils import StringEncoder
-from .mia.mia import mia_for_each_nn
-from .ra.ra import *
-from .mia.utils import log_results
+from .attacks.mia.mia import mia_for_each_nn
+from .attacks.ra.ra import *
+from .attacks.utils import log_results
 
 # AUTHORSHIP
 __version__ = "0.0.1"
@@ -1663,9 +1663,6 @@ class MIAFederatedSimulator(GossipSimulator):
         self.notify_end()
 
         return
-
-from gossipy.ra.ra import *
-
 
 class RAGossipSimulator(GossipSimulator):
     def __init__(self, 

@@ -12,7 +12,7 @@ import copy
 from typing import Tuple, Dict, List
 from sklearn.metrics import accuracy_score, roc_auc_score, recall_score, f1_score, precision_score
 import os
-from gossipy.ra.mar import *
+from gossipy.attacks.ra.mar import *
 
 def mia_for_each_nn(simulation, attackerNode, class_specific: bool = False, marginalized : bool = False):
     idx = attackerNode.idx

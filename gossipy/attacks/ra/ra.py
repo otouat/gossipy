@@ -3,7 +3,7 @@ from matplotlib import pyplot as plt
 import torch
 import numpy as np
 import math
-from gossipy.ra.mar import *
+from gossipy.attacks.ra.mar import *
 import copy
 
 def ra_for_each_nn(simulation, attackerNode, final_agg, marginalized : bool = False):
