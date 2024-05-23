@@ -890,9 +890,6 @@ def get_FEMNIST(path: str="./data") -> Tuple[Tuple[torch.Tensor, torch.Tensor, L
     return (Xtr, ytr, tr_assignment), (Xte, yte, te_assignment)
 
 def plot_class_distribution(simulator):
-    data_dispatcher = simulator.data_dispatcher
-    n_nodes = data_dispatcher.size()
-    n_classes = len(torch.unique(data_dispatcher.data_handler.ytr).numpy())
     """
     Plots the class distribution for each node in a federated learning setup.
 
@@ -900,13 +897,16 @@ def plot_class_distribution(simulator):
     -----------
     simulator : MIAGossipSimulator
         The simulator containing the nodes and their data.
-    data_dispatcher : CustomDataDispatcher
-        The data dispatcher that has assigned the data to nodes.
-    n_classes : int
-        The number of classes in the dataset.
-    n_nodes : int
-        The number of nodes in the simulation.
+        
+    Returns:
+    --------
+    fig : matplotlib.figure.Figure
+        The figure containing the plot.
     """
+    data_dispatcher = simulator.data_dispatcher
+    n_nodes = data_dispatcher.size()
+    n_classes = len(torch.unique(data_dispatcher.data_handler.ytr).numpy())
+    
     node_class_distributions = []
 
     for i in range(n_nodes):
@@ -940,4 +940,5 @@ def plot_class_distribution(simulator):
 
     # Title
     ax.set_title("Class Distribution per Node")
-    plt.show()
+    
+    return fig
