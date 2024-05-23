@@ -914,7 +914,7 @@ def plot_class_distribution(simulator):
         node_classes = train_data[1]  # Get the labels
         class_counts = torch.bincount(node_classes, minlength=n_classes).numpy()
         node_class_distributions.append(class_counts)
-        print(f"Node {i} class distribution: {class_counts}")
+        #print(f"Node {i} class distribution: {class_counts}")
 
     # Convert to numpy array for plotting
     node_class_distributions = np.array(node_class_distributions)
