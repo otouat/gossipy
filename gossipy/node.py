@@ -1328,13 +1328,22 @@ class AttackGossipNode(GossipNode):
                     state_dicts = [model for _, model in self.received_models] 
                     print("Before")
                     self.final_agg = OrderedDict()
-                    self.gradient = OrderedDict()            
+                    self.gradient = OrderedDict()
+
+                    state_dicts = [model for _, model in self.received_models]
+                    print("State dicts:", state_dicts)
+
                     self.final_agg = sum_nested_structures_and_negate(state_dicts)
-                    print("After")
-                    print("Length :", len(self.final_agg))
+                    print("After summation")
+                    print("Length:", len(self.final_agg))
+
                     for key in self.final_agg:
-                        print("Stcuck here :", key)
+                        print(f"Processing key: {key}, shape: {self.final_agg[key].shape}")
+
                         self.gradient[key] = self.final_agg[key] - self.received_models[-1][1][key]
+                        print(f"Gradient for {key}: {self.gradient[key].shape}")
+
+                    print("After gradient computation")
                     print("Gradient: ", self.gradient)
                     self.final_agg = OrderedDict()
                     self.gradient = OrderedDict()
