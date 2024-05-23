@@ -40,7 +40,22 @@ Xte, yte = transform(test_set[0]), test_set[1]
 
 data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=0.5)
 
-data_dispatcher = OLDCustomDataDispatcher(data_handler, n=n_nodes*factors, eval_on_user=True, auto_assign=True)
+assignment_method = 'label_dirichlet_skew'
+assignment_params = {
+    'beta': 0.5
+}
+
+data_dispatcher = CustomDataDispatcher(
+    data_handler,
+    n=n_nodes * factors,
+    eval_on_user=True,
+    auto_assign=False
+)
+
+# Assign data using the specified method
+data_dispatcher.assign(seed=42, method=assignment_method, **assignment_params)
+
+#data_dispatcher = OLDCustomDataDispatcher(data_handler, n=n_nodes*factors, eval_on_user=True, auto_assign=True)
 
 topology = UniformDynamicP2PNetwork(int(data_dispatcher.size()/factors), topology=nx.to_numpy_array(random_regular_graph(neigbors, n_nodes, seed=42)))
 
