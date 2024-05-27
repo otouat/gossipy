@@ -11,7 +11,7 @@ from gossipy.model.architecture import *
 from gossipy.model.resnet import *
 from gossipy.data import get_CIFAR10, get_CIFAR100
 from gossipy.topology import create_torus_topology, create_federated_topology, CustomP2PNetwork
-from gossipy.mia.utils import log_results
+from gossipy.attacks.utils import log_results
 import networkx as nx
 from networkx.generators import random_regular_graph
 
@@ -42,7 +42,7 @@ data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=0.5)
 
 assignment_method = 'label_dirichlet_skew'
 assignment_params = {
-    'beta': 0.5
+    'beta': 0.99
 }
 
 data_dispatcher = CustomDataDispatcher(
