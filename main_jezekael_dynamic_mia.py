@@ -26,23 +26,26 @@ n_local_epochs = 5
 batch_size = 256
 factors = 1
 neigbors = 4
+test_size=0.5
+beta = 0.99
 peer_sampling_period=10
 optimizer_params = {
         "lr": 0.1,
         "momentum": 0.9,
         "weight_decay": 0.001
     }
-message = f"Experiment with ResNet20 on CIFAR10 dataset. {n_nodes} nodes, {n_local_epochs} local epochs, batch size {batch_size}, lr {optimizer_params['lr']}, number of neigbors {neigbors}, and peer sampling period {peer_sampling_period}"
+
+message = f"Experiment with ResNet20 on CIFAR10 dataset (test size : {test_size}, class distribution = {beta}). {n_nodes} nodes, {n_local_epochs} local epochs, batch size {batch_size}, lr {optimizer_params['lr']}, number of neigbors {neigbors}, and peer sampling period {peer_sampling_period}"
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
 Xte, yte = transform(test_set[0]), test_set[1]
 
 
-data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=0.5)
+data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=test_size)
 
 assignment_method = 'label_dirichlet_skew'
 assignment_params = {
-    'beta': 0.99
+    'beta': beta
 }
 
 data_dispatcher = CustomDataDispatcher(
