@@ -5,11 +5,12 @@ from gossipy.core import AntiEntropyProtocol, CreateModelMode, ConstantDelay, St
 from gossipy.data import CustomDataDispatcher, OLDCustomDataDispatcher
 from gossipy.data.handler import ClassificationDataHandler
 from gossipy.model.handler import TorchModelHandler
-from gossipy.node import AttackGossipNode, GossipNode, FederatedGossipNode
-from gossipy.simul import MIAGossipSimulator, MIADynamicGossipSimulator, MIAFederatedSimulator, MIASimulationReport
+from gossipy.node import *
+from gossipy.simul import *
 from gossipy.model.architecture import *
 from gossipy.model.resnet import *
 from gossipy.data import get_CIFAR10, get_CIFAR100
+from gossipy.simul import DynamicGossipSimulator
 from gossipy.topology import create_torus_topology, create_federated_topology, CustomP2PNetwork
 from gossipy.attacks.utils import log_results
 import networkx as nx
@@ -76,7 +77,7 @@ nodes = GossipNode.generate(
     round_len=100,
     sync=False)
 
-simulator = MIADynamicGossipSimulator(
+simulator = DynamicGossipSimulator(
     nodes=nodes,
     data_dispatcher=data_dispatcher,
     delta=100,
@@ -88,7 +89,7 @@ simulator = MIADynamicGossipSimulator(
     peer_sampling_period=peer_sampling_period
 )
 
-report = MIASimulationReport()
+report = SimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
 simulator.start(n_rounds=n_rounds)
