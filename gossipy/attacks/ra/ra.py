@@ -57,8 +57,10 @@ def w_fully_adv_init(W, mean, std, s):
     W.data = torch.from_numpy(_W)
     
 def invert_fully_g(gw, gb, i=None, epsilon=0.00001):
-    b = 1. / (gb.detach().numpy()[np.newaxis,:] + epsilon)
+    b = 1. / (gb.detach().numpy()[np.newaxis, :] + epsilon)
     w = gw.detach().numpy().T
+
+    print("Shapes:", gw.shape, gb.shape, b.shape, w.shape)
 
     if not i is None:
         x = b[:, i] * w[i, :]
@@ -66,6 +68,7 @@ def invert_fully_g(gw, gb, i=None, epsilon=0.00001):
         x = (np.matmul(b, w))
         print(b.shape, w.shape, x.shape)
     return x
+
 
 def normalize_img(x):
     x += x.min()
