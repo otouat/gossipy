@@ -56,17 +56,23 @@ def w_fully_adv_init(W, mean, std, s):
 
     W.data = torch.from_numpy(_W)
     
-def invert_fully_g(gw, gb, i=None, epsilon=0.00001):
-    b = 1. / (gb.detach().numpy()[np.newaxis, :] + epsilon)
-    w = gw.detach().numpy().T
+def invert_fully_g(weight, bias):
+    # Print shapes for debugging
+    print(f"weight shape: {weight.shape}, bias shape: {bias.shape}")
+    
+    # Reshape bias if necessary
+    if bias.ndim == 1:
+        bias = bias.reshape(1, -1)  # Reshape to (1, 10)
 
-    print("Shapes:", gw.shape, gb.shape, b.shape, w.shape)
-
-    if not i is None:
-        x = b[:, i] * w[i, :]
-    else:
-        x = (np.matmul(b, w))
-        print(b.shape, w.shape, x.shape)
+    # Transpose weight to match the multiplication requirement
+    weight = weight.T  # Transpose weight to shape (64, 10)
+    
+    try:
+        x = np.matmul(bias, weight)  # Now shapes (1, 10) and (10, 64) match
+    except ValueError as e:
+        print(f"Error during matmul: {e}")
+        return None
+    
     return x
 
 
