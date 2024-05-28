@@ -1254,7 +1254,9 @@ class MIAGossipSimulator(GossipSimulator):
         LOG.info("Simulation started.")
         node_ids = np.arange(self.n_nodes)
         self.n_rounds = n_rounds
-
+        self.mia = True
+        self.mar = True
+        self.ra = False
         pbar = track(range(n_rounds * self.delta), description="Simulating...")
 
         msg_queues = DefaultDict(list)
@@ -1307,13 +1309,14 @@ class MIAGossipSimulator(GossipSimulator):
                 if (t + 1) % self.delta == 0:
 
                     for er in self._receivers:
-                            mia_vulnerability = [mia_for_each_nn(self, n, class_specific = False) for _, n in self.nodes.items()]
-                            er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)
-                            mia_mar_vulnerability = [mia_for_each_nn(self, n, class_specific=False, marginalized=True) for _, n in self.nodes.items() if isinstance(n, AttackGossipNode) and getattr(n, 'marginalized_state', False)]
-                            print("MIA MAR VULNERABILITY 1")
-                            ra_mar_vulnerability = [ra_for_each_nn(n, marginalized=True) for _, n in self.nodes.items() if isinstance(n, AttackGossipNode) and getattr(n, 'marginalized_state', False)]
-                            print("MIA MAR VULNERABILITY 2") 
-                            print(ra_mar_vulnerability)
+                            if self.mia : 
+                                mia_vulnerability = [mia_for_each_nn(self, n, class_specific = False) for _, n in self.nodes.items()]
+                                er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)
+                            if self.mar : 
+                                mia_mar_vulnerability = [mia_for_each_nn(self, n, class_specific=False, marginalized=True) for _, n in self.nodes.items() if isinstance(n, AttackGossipNode) and getattr(n, 'marginalized_state', False)]
+                            if self.ra : 
+                                ra_mar_vulnerability = [ra_for_each_nn(n, marginalized=True) for _, n in self.nodes.items() if isinstance(n, AttackGossipNode) and getattr(n, 'marginalized_state', False)]
+                                print(ra_mar_vulnerability)
                             if any(item is not None for item in mia_mar_vulnerability):
                                 er.update_mia_vulnerability(self.n_rounds, mia_mar_vulnerability, marginalized = True)
                                 print(ra_mar_vulnerability)

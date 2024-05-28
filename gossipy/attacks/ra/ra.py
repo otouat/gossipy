@@ -7,14 +7,11 @@ from gossipy.attacks.ra.mar import *
 import copy
 
 def ra_for_each_nn(victim, marginalized : bool = False):
-    print("ra_for_each_nn 1")
     gradient = victim.gradient
     if 'fc.weight' in gradient and 'fc.bias' in gradient:
         weight = gradient['fc.weight']
         bias = gradient['fc.bias']
         reconstructed = invert_fully_g(weight, bias)
-        victim.gradient =  OrderedDict()
-        print("ra_for_each_nn 2")
         print_images(reconstructed)
         return reconstructed
     else:
