@@ -9,10 +9,18 @@ import copy
 def ra_for_each_nn(victim, marginalized : bool = False):
     print("ra_for_each_nn 1")
     gradient = victim.gradient
-    reconstructed = invert_fully_g(gradient["fc.weight"], gradient["fc.bias"])
-    victim.gradient =  OrderedDict()
-    print("ra_for_each_nn 2")
-    return reconstructed
+    if 'fc.weight' in gradient and 'fc.bias' in gradient:
+        weight = gradient['fc.weight']
+        bias = gradient['fc.bias']
+        reconstructed = invert_fully_g(weight, bias)
+        victim.gradient =  OrderedDict()
+        print("ra_for_each_nn 2")
+        print_images(reconstructed)
+        return reconstructed
+    else:
+        print("Error: Missing 'fc.weight' or 'fc.bias' in gradient")
+        return None  # Or handle appropriately
+
 
 def sum_nested_structures_and_negate(structures):
     # Vérifie que 'structures' est une liste (ou un iterable) contenant au moins un élément
@@ -103,5 +111,5 @@ def print_images(reconstructed_image):
     ax_reconstructed = plt.subplot()
     ax_reconstructed.imshow(np.transpose(reconstructed_image, [1, 2, 0]))
     # ax_reconstructed.set_title("original image") 
-    plt.savefig(f'images_created2/test.png', dpi=300, bbox_inches='tight')
+    plt.savefig(f'images_created/test.png', dpi=300, bbox_inches='tight')
     plt.close()
