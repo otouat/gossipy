@@ -9,7 +9,7 @@ import copy
 def ra_for_each_nn(victim, marginalized : bool = False):
     print("ra_for_each_nn 1")
     gradient = victim.gradient
-    reconstructed = invert_fully_g(gradient["fc1.weight"], gradient["fc1.bias"])
+    reconstructed = invert_fully_g(gradient["fc.weight"], gradient["fc.bias"])
     victim.gradient =  OrderedDict()
     print("ra_for_each_nn 2")
     return reconstructed
