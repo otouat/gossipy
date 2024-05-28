@@ -1331,7 +1331,7 @@ class AttackGossipNode(GossipNode):
                     self.gradient = OrderedDict()
 
                     state_dicts = [model for _, model in self.received_models]
-                    print("State dicts:", state_dicts)
+                    #print("State dicts:", state_dicts)
 
                     self.final_agg = sum_nested_structures_and_negate(state_dicts)
                     print("After summation")
