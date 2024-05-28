@@ -9,7 +9,7 @@ from gossipy.node import GossipNode, FederatedGossipNode, AttackGossipNode
 from gossipy.simul import MIAGossipSimulator, MIADynamicGossipSimulator, MIAFederatedSimulator, MIASimulationReport
 from gossipy.model.architecture import *
 from gossipy.model.resnet import *
-from gossipy.data import get_CIFAR10, get_CIFAR100
+from gossipy.data import *
 from gossipy.topology import create_torus_topology, create_federated_topology, CustomP2PNetwork
 from gossipy.attacks.utils import log_results
 import networkx as nx
@@ -18,12 +18,12 @@ import os
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:256'
 
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
-train_set, test_set = get_CIFAR10()
+train_set, test_set = get_FEMNIST()
 
 n_classes= max(train_set[1].max().item(), test_set[1].max().item())+1
-model = resnet20(n_classes)
+model = ResNet50(n_classes)
 n_nodes = 100
-n_rounds = 250
+n_rounds = 150
 n_local_epochs = 5
 batch_size = 256
 factors = 1
@@ -33,6 +33,7 @@ optimizer_params = {
         "momentum": 0.9,
         "weight_decay": 0.001
     }
+
 message = f"Experiment with ResNet20 on CIFAR10 dataset. {n_nodes} nodes, {n_local_epochs} local epochs, batch size {batch_size}, lr {optimizer_params['lr']}, number of neigbors {neigbors}"
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
@@ -43,7 +44,7 @@ data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=0.5)
 
 assignment_method = 'label_dirichlet_skew'
 assignment_params = {
-    'beta': 0.5
+    'beta': 0.99
 }
 
 data_dispatcher = CustomDataDispatcher(
@@ -60,7 +61,7 @@ data_dispatcher.assign(seed=42, method=assignment_method, **assignment_params)
 
 topology = StaticP2PNetwork(int(data_dispatcher.size()/factors), topology=nx.to_numpy_array(random_regular_graph(neigbors, n_nodes, seed=42)))
 
-nodes = GossipNode.generate(
+nodes = AttackGossipNode.generate(
     data_dispatcher=data_dispatcher,
     p2p_net=topology,
     model_proto=TorchModelHandler(
