@@ -28,7 +28,7 @@ def log_results(Simul, report, message=""):
     # Create new subfolder
     new_folder_path = f"{base_folder_path}/Exp_n#{experiment_number}"
     os.makedirs(new_folder_path, exist_ok=True)
-
+    
     # Log file path for experiment parameters
     params_file_path = f"{new_folder_path}/simulation_params.log"
 

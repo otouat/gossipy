@@ -865,10 +865,13 @@ class DynamicGossipSimulator(GossipSimulator):
                         sample = choice(list(self.nodes.keys()),
                                         max(int(self.n_nodes * self.sampling_eval), 1))
                         ev = [self.nodes[i].evaluate() for i in sample if self.nodes[i].has_test()]
+                        print(ev)
                     else:
                         ev = [n.evaluate() for _, n in self.nodes.items() if n.has_test()]
+                        print(ev)
                     if ev:
                         self.notify_evaluation(t, True, ev)
+                        print(ev)
 
                     if self.data_dispatcher.has_test():
                         if self.sampling_eval > 0:
@@ -879,6 +882,7 @@ class DynamicGossipSimulator(GossipSimulator):
                                   for _, n in self.nodes.items()]
                         if ev:
                             self.notify_evaluation(t, False, ev)
+                        print(ev)
                 self.notify_timestep(t)
 
         except KeyboardInterrupt:
