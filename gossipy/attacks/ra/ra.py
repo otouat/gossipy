@@ -6,11 +6,11 @@ import math
 from gossipy.attacks.ra.mar import *
 import copy
 
-def ra_for_each_nn(simulation, attackerNode, final_agg, marginalized : bool = False):
+def ra_for_each_nn(victim, marginalized : bool = False):
     print("ra_for_each_nn 1")
-    gradient = attackerNode.gradient
+    gradient = victim.gradient
     reconstructed = invert_fully_g(gradient["fc1.weight"], gradient["fc1.bias"])
-    attackerNode.gradient =  OrderedDict()
+    victim.gradient =  OrderedDict()
     print("ra_for_each_nn 2")
     return reconstructed
 

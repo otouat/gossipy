@@ -1338,15 +1338,13 @@ class AttackGossipNode(GossipNode):
                     print("Length:", len(self.final_agg))
 
                     for key in self.final_agg:
-                        print(f"Processing key: {key}, shape: {self.final_agg[key].shape}")
+                        #print(f"Processing key: {key}, shape: {self.final_agg[key].shape}")
 
                         self.gradient[key] = self.final_agg[key] - self.received_models[-1][1][key]
-                        print(f"Gradient for {key}: {self.gradient[key].shape}")
+                        #print(f"Gradient for {key}: {self.gradient[key].shape}")
 
                     print("After gradient computation")
-                    print("Gradient: ", self.gradient)
-                    self.final_agg = OrderedDict()
-                    self.gradient = OrderedDict()
+                    #print("Gradient: ", self.gradient)
                     print("After AFTER")
                 else:
                     self.marginalized_state = False
