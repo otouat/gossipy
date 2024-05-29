@@ -170,13 +170,13 @@ def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], log = False
         #with profile(activities=[ProfilerActivity.CUDA], profile_memory=True, record_shapes=True) as prof:
         with torch.autocast(device_type="cuda"):
             with torch.no_grad():
-                if log:
+                """if log:
                     summary(model, input_size=(1, *x[0].shape))
                     model.eval()
                     with torch.no_grad():
                         test_input = x[0].unsqueeze(0).to(device)
                         test_output = model(test_input)
-                        print("Test output:", test_output)
+                        print("Test output:", test_output)"""
                 scores = model(x[idx].unsqueeze(0))
                 loss = torch.nn.functional.cross_entropy(scores, y[idx].unsqueeze(0))
                 if log:
