@@ -26,10 +26,12 @@ def mia_for_each_nn(simulation, attackerNode):
             device = node.model_handler.device
             
             model = copy.deepcopy(node.model_handler.model)
+            print(type(model))
             if marginalized:
                 print("Marginalized mia")
-                model.load_state_dict(isolate_victim(attackerNode.received_models, node.idx), strict=False)
+                model = copy.deepcopy(model.load_state_dict(isolate_victim(attackerNode.received_models, node.idx), strict=False))
                 model.to(device)
+                print(type(model))
                 #print(model.state_dict())
                 mia_results.append(mia_best_th(model, train_data, test_data, device, log = True))
 
