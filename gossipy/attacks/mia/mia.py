@@ -27,8 +27,10 @@ def mia_for_each_nn(simulation, attackerNode):
             
             model = copy.deepcopy(node.model_handler.model)
             if marginalized:
+                print("Marginalized mia")
                 model.load_state_dict(isolate_victim(attackerNode.received_models, node.idx), strict=False)
                 model.to(device)
+                print(model.state_dict())
                 mia_results.append(mia_best_th(model, train_data, test_data, device))
 
             elif class_specific:
@@ -72,7 +74,8 @@ def mia_best_th(model, train_data, test_data, device, nt=200):
     Ptrain = Ptrain[:n]
     Ytrain = Ytrain[:n]
     Ltrain = Ltrain[:n]
-
+    print(Ptrain)
+    print(Ltrain)
     loss_mia = search_th(Ltrain, Ltest)
 
     Etrain = compute_modified_entropy(Ptrain, Ytrain)
