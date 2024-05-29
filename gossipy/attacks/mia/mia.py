@@ -68,8 +68,8 @@ def mia_best_th(model, train_data, test_data, device, nt=200, log=False):
     if log:
         print(f"Train size: {len(train_data)}")
     model.eval()
-    Ltrain, Ptrain, Ytrain = evaluate(model, device, train_data)
-    Ltest, Ptest, Ytest = evaluate(model, device, test_data)
+    Ltrain, Ptrain, Ytrain = evaluate(model, device, train_data, log = log)
+    Ltest, Ptest, Ytest = evaluate(model, device, test_data, log = log)
     model.train()
 
     # it takes a subset of results on test set with size equal to the one of the training test 
