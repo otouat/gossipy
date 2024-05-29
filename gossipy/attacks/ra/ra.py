@@ -109,4 +109,4 @@ def print_images(reconstructed_image):
     ax_reconstructed.imshow(np.transpose(reconstructed_image, [1, 2, 0]))
     # ax_reconstructed.set_title("original image") 
     plt.savefig(f'images_created/test.png', dpi=300, bbox_inches='tight')
-    plt.close()
+    plt.show()

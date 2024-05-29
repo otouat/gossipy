@@ -1194,6 +1194,10 @@ class AttackGossipNode(GossipNode):
         self.received_models = [] # [None] * len(p2p_net.get_peers(self.idx))
         self.final_agg = OrderedDict()
         self.gradient =  OrderedDict()
+        self.mia = False
+        self.mar = False
+        self.ra = False
+        self.echo = False
         self.marginalized_state = False
 
     def init_model(self, local_train: bool=True, *args, **kwargs) -> None:
@@ -1276,6 +1280,11 @@ class AttackGossipNode(GossipNode):
 
         if protocol == AntiEntropyProtocol.PUSH:
             key = self.model_handler.caching(self.idx)
+            if(self.mar and self.echo):
+                for i, (sender, _) in enumerate(self.received_models):
+                        if sender == peer:
+                            print("ECHO ATTACK")
+                            key = self.model_handler.caching(peer)
             return Message(t, self.idx, peer, MessageType.PUSH, (key,))
         elif protocol == AntiEntropyProtocol.PULL:
             return Message(t, self.idx, peer, MessageType.PULL, None)
@@ -1314,27 +1323,29 @@ class AttackGossipNode(GossipNode):
 
             if recv_model is not None:
                 recv_model = CACHE.pop(recv_model)
-                for i, (sender, _) in enumerate(self.received_models):
-                    if sender == msg.sender:
-                        self.received_models.pop(i)
-                        break
-                    
-                self.received_models.append((msg.sender,  recv_model.model.state_dict()))
-                self.model_handler(recv_model, self.data[0])
-                expected_peers = set(self.p2p_net.get_peers(self.idx))
-                received_peers = set(pair[0] for pair in self.received_models)
-                if received_peers == expected_peers:
-                    self.marginalized_state = True
-                    state_dicts = [model for _, model in self.received_models] 
-                    self.final_agg = OrderedDict()
-                    self.gradient = OrderedDict()
-                    state_dicts = [model for _, model in self.received_models]
-                    self.final_agg = sum_nested_structures_and_negate(state_dicts)
+                if(self.mar == True):
+                    for i, (sender, _) in enumerate(self.received_models):
+                        if sender == msg.sender:
+                            self.received_models.pop(i)
+                            break
+                        
+                    self.received_models.append((msg.sender,  recv_model.model.state_dict()))
+                    self.model_handler(recv_model, self.data[0])
+                    expected_peers = set(self.p2p_net.get_peers(self.idx))
+                    received_peers = set(pair[0] for pair in self.received_models)
+                    if received_peers == expected_peers:
+                        self.marginalized_state = True
+                        if(self.ra == True):
+                            state_dicts = [model for _, model in self.received_models] 
+                            self.final_agg = OrderedDict()
+                            self.gradient = OrderedDict()
+                            state_dicts = [model for _, model in self.received_models]
+                            self.final_agg = sum_nested_structures_and_negate(state_dicts)
 
-                    for key in self.final_agg:
-                        self.gradient[key] = self.final_agg[key] - self.received_models[-1][1][key]
-                else:
-                    self.marginalized_state = False
+                            for key in self.final_agg:
+                                self.gradient[key] = self.final_agg[key] - self.received_models[-1][1][key]
+                    else:
+                        self.marginalized_state = False
             else:
                 recv_model = CACHE.pop(recv_model)
 
