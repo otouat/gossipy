@@ -26,12 +26,16 @@ def mia_for_each_nn(simulation, attackerNode):
             device = node.model_handler.device
             
             model = copy.deepcopy(node.model_handler.model)
-            print(type(model))
+            print("-------------------------------------------------------")
+            print(model.state_dict())
+            print("-------------------------------------------------------")
             if marginalized:
                 print("Marginalized mia")
                 marginalized_state = isolate_victim(attackerNode.received_models, node.idx)
                 model.load_state_dict(marginalized_state, strict=False)
-                print(type(model))
+                print("-------------------------------------------------------")
+                print(model.state_dict())
+                print("-------------------------------------------------------")
                 model.to(device)
 
                 #print(model.state_dict())
@@ -158,7 +162,7 @@ def compute_modified_entropy(p, y, epsilon=0.00001):
 def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
 
     x, y = data
-    model = model.to("cuda:0" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
     x, y = x.to(device), y.to(device)
 
     losses = []
