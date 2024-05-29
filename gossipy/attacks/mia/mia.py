@@ -74,8 +74,7 @@ def mia_best_th(model, train_data, test_data, device, nt=200):
     Ptrain = Ptrain[:n]
     Ytrain = Ytrain[:n]
     Ltrain = Ltrain[:n]
-    print(Ptrain)
-    print(Ltrain)
+
     loss_mia = search_th(Ltrain, Ltest)
 
     Etrain = compute_modified_entropy(Ptrain, Ytrain)
