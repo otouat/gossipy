@@ -29,7 +29,8 @@ def mia_for_each_nn(simulation, attackerNode):
             print(type(model))
             if marginalized:
                 print("Marginalized mia")
-                model = copy.deepcopy(model.load_state_dict(isolate_victim(attackerNode.received_models, node.idx), strict=False))
+                marginalized_state = isolate_victim(attackerNode.received_models, node.idx)
+                model.load_state_dict(marginalized_state, strict=False)
                 print(type(model))
                 model.to(device)
 
