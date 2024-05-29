@@ -26,11 +26,12 @@ def mia_for_each_nn(simulation, attackerNode):
             device = node.model_handler.device
             
             model = copy.deepcopy(node.model_handler.model)
-            print("-------------------------------------------------------")
-            print(model.state_dict())
-            print("-------------------------------------------------------")
             if marginalized:
+                
                 print("Marginalized mia")
+                print("-------------------------------------------------------")
+                print(model.state_dict())
+                print("-------------------------------------------------------")
                 marginalized_state = isolate_victim(attackerNode.received_models, node.idx)
                 model.load_state_dict(marginalized_state, strict=False)
                 print("-------------------------------------------------------")
