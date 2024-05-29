@@ -30,7 +30,7 @@ def mia_for_each_nn(simulation, attackerNode):
                 print("Marginalized mia")
                 model.load_state_dict(isolate_victim(attackerNode.received_models, node.idx), strict=False)
                 model.to(device)
-                print(model.state_dict())
+                #print(model.state_dict())
                 mia_results.append(mia_best_th(model, train_data, test_data, device))
 
             elif class_specific:
