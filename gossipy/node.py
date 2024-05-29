@@ -1335,6 +1335,7 @@ class AttackGossipNode(GossipNode):
                     expected_peers = set(self.p2p_net.get_peers(self.idx))
                     received_peers = set(pair[0] for pair in self.received_models)
                     if received_peers == expected_peers:
+                        print("node ", self.idx, " has received all the models")
                         self.marginalized_state = True
                         if(self.ra == True):
                             state_dicts = [model for _, model in self.received_models] 
