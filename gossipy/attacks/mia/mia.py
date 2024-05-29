@@ -16,7 +16,7 @@ from gossipy.attacks.ra.mar import *
 
 def mia_for_each_nn(simulation, attackerNode):
     class_specific = attackerNode.class_specific
-    marginalized = attackerNode.marginalized
+    marginalized = attackerNode.marginalized_state
     nn = sorted(attackerNode.p2p_net.get_peers(attackerNode.idx), key=lambda x: int(x))
     mia_results = [[], []] if class_specific else []
     for node in simulation.nodes.values():
