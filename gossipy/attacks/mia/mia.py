@@ -29,17 +29,9 @@ def mia_for_each_nn(simulation, attackerNode):
             if marginalized:
 
                 print("Marginalized mia")
-                print("-------------------------------------------------------")
-                inspect_model(model)
-                model2 = copy.deepcopy(model)
-                print("-------------------------------------------------------")
                 marginalized_state = isolate_victim(attackerNode.received_models, node.idx)
                 model.load_state_dict(marginalized_state, strict=False)
-                print("-------------------------------------------------------")
-                inspect_model(model)
-                print("-------------------------------------------------------")
                 model.to(device)
-                check_model_initialization(model2, model)
                 #print(model.state_dict())
                 mia_results.append(mia_best_th(model, train_data, test_data, device, log = True))
 
@@ -73,7 +65,8 @@ def mia_best_th(model, train_data, test_data, device, nt=200, log=False):
             R[i] = acc
 
         return R.max()
-
+    if log:
+        print(f"Train size: {len(train_data)}, Value: {train_data}")
     model.eval()
     Ltrain, Ptrain, Ytrain = evaluate(model, device, train_data)
     Ltest, Ptest, Ytest = evaluate(model, device, test_data)
@@ -226,9 +219,9 @@ def inspect_model(model):
 def check_model_initialization(original_model, marginalized_model):
     # Print state dictionaries of original and marginalized models
     print("Original Model State Dictionary:")
-    print(original_model.state_dict())
+    #print(original_model.state_dict())
     print("Marginalized Model State Dictionary:")
-    print(marginalized_model.state_dict())
+    #print(marginalized_model.state_dict())
     
     # Compare model architectures
     if original_model.__class__ != marginalized_model.__class__:
