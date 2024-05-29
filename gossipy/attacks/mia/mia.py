@@ -27,18 +27,19 @@ def mia_for_each_nn(simulation, attackerNode):
             
             model = copy.deepcopy(node.model_handler.model)
             if marginalized:
-                
+
                 print("Marginalized mia")
                 print("-------------------------------------------------------")
-                print(model.state_dict())
+                inspect_model(model)
+                model2 = copy.deepcopy(model)
                 print("-------------------------------------------------------")
                 marginalized_state = isolate_victim(attackerNode.received_models, node.idx)
                 model.load_state_dict(marginalized_state, strict=False)
                 print("-------------------------------------------------------")
-                print(model.state_dict())
+                inspect_model(model)
                 print("-------------------------------------------------------")
                 model.to(device)
-
+                check_model_initialization(model2, model)
                 #print(model.state_dict())
                 mia_results.append(mia_best_th(model, train_data, test_data, device, log = True))
 
@@ -214,3 +215,25 @@ def assign_model_params(source_model, target_model):
     target_model.load_state_dict(source_state_dict, strict=False)
     target_model.to(device)
 
+def inspect_model(model):
+    # Print model architecture
+    print(model)
+    # Print model parameters
+    print("Model Parameters:")
+    for name, param in model.named_parameters():
+        print(f"Parameter name: {name}, Size: {param.size()}")
+
+def check_model_initialization(original_model, marginalized_model):
+    # Print state dictionaries of original and marginalized models
+    print("Original Model State Dictionary:")
+    print(original_model.state_dict())
+    print("Marginalized Model State Dictionary:")
+    print(marginalized_model.state_dict())
+    
+    # Compare model architectures
+    if original_model.__class__ != marginalized_model.__class__:
+        print("Error: Model classes are different.")
+    elif original_model.state_dict().keys() != marginalized_model.state_dict().keys():
+        print("Error: Model state dictionaries do not match.")
+    else:
+        print("Model initialization successful. State dictionaries match.")
