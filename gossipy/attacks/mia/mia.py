@@ -31,7 +31,7 @@ def mia_for_each_nn(simulation, attackerNode):
                 model.load_state_dict(isolate_victim(attackerNode.received_models, node.idx), strict=False)
                 model.to(device)
                 #print(model.state_dict())
-                mia_results.append(mia_best_th(model, train_data, test_data, device))
+                mia_results.append(mia_best_th(model, train_data, test_data, device, log = True))
 
             elif class_specific:
                 num_classes = max(train_data[1].max().item(), test_data[1].max().item())+1
@@ -50,7 +50,7 @@ def mia_for_each_nn(simulation, attackerNode):
     }
     return mia_results
 
-def mia_best_th(model, train_data, test_data, device, nt=200):
+def mia_best_th(model, train_data, test_data, device, nt=200, log=False):
     
     def search_th(train, test):
         thrs = np.linspace(min(train.min(), test.min()), max(train.max(), test.max()), nt)
@@ -74,7 +74,8 @@ def mia_best_th(model, train_data, test_data, device, nt=200):
     Ptrain = Ptrain[:n]
     Ytrain = Ytrain[:n]
     Ltrain = Ltrain[:n]
-
+    if log:
+        print(f"Train size: {len(Ltrain)}, Value: {Ltrain}")
     loss_mia = search_th(Ltrain, Ltest)
 
     Etrain = compute_modified_entropy(Ptrain, Ytrain)
