@@ -66,7 +66,7 @@ def mia_best_th(model, train_data, test_data, device, nt=200, log=False):
 
         return R.max()
     if log:
-        print(f"Train size: {len(train_data)}, Value: {train_data}")
+        print(f"Train size: {len(train_data)}")
     model.eval()
     Ltrain, Ptrain, Ytrain = evaluate(model, device, train_data)
     Ltest, Ptest, Ytest = evaluate(model, device, test_data)
@@ -78,7 +78,7 @@ def mia_best_th(model, train_data, test_data, device, nt=200, log=False):
     Ytrain = Ytrain[:n]
     Ltrain = Ltrain[:n]
     if log:
-        print(f"Train size: {len(Ltrain)}, Value: {Ltrain}")
+        print(f"Loss size: {len(Ltrain)}, Value: {Ltrain}")
     loss_mia = search_th(Ltrain, Ltest)
 
     Etrain = compute_modified_entropy(Ptrain, Ytrain)
@@ -154,7 +154,7 @@ def compute_modified_entropy(p, y, epsilon=0.00001):
 
     return entropy
 
-def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], log = False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
 
     x, y = data
     model = model.to(device)
@@ -170,6 +170,9 @@ def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor]) -> Tuple[np
             with torch.no_grad():
                 scores = model(x[idx].unsqueeze(0))
                 loss = torch.nn.functional.cross_entropy(scores, y[idx].unsqueeze(0))
+                if log:
+                    print(f"scores: {len(scores)}, Value: {scores}")
+                    print(f"loss: {len(loss)}, Value: {loss}")
 
                 # Collect probability scores instead of class predictions
                 prob_scores = torch.nn.functional.softmax(scores, dim=-1).cpu().numpy()
