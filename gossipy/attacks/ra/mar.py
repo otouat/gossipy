@@ -25,6 +25,7 @@ def isolate_victim(model_update_buffer, victim_id):
     victim_c = agg_sub(victim[1], other)
     # scale back marginalized model
     victim_c = agg_div(victim_c, 1/n)
+    print(victim_c)
     return victim_c
 
 def assign_list_variables(A, B):

@@ -14,9 +14,10 @@ from sklearn.metrics import accuracy_score, roc_auc_score, recall_score, f1_scor
 import os
 from gossipy.attacks.ra.mar import *
 
-def mia_for_each_nn(simulation, attackerNode, class_specific: bool = False, marginalized : bool = False):
-    idx = attackerNode.idx
-    nn = sorted(attackerNode.p2p_net.get_peers(idx), key=lambda x: int(x))
+def mia_for_each_nn(simulation, attackerNode):
+    class_specific = attackerNode.class_specific
+    marginalized = attackerNode.marginalized
+    nn = sorted(attackerNode.p2p_net.get_peers(attackerNode.idx), key=lambda x: int(x))
     mia_results = [[], []] if class_specific else []
     for node in simulation.nodes.values():
         if node.idx in nn:
