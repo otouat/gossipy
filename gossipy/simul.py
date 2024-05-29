@@ -1323,7 +1323,6 @@ class MIAGossipSimulator(GossipSimulator):
                                 print(ra_mar_vulnerability)
                             if any(item is not None for item in mia_mar_vulnerability):
                                 er.update_mia_vulnerability(self.n_rounds, mia_mar_vulnerability, marginalized = True)
-                                print(ra_mar_vulnerability)
 
                     if self.sampling_eval > 0:
                         sample = choice(list(self.nodes.keys()), max(int(self.n_nodes * self.sampling_eval), 1))

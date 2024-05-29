@@ -23,7 +23,7 @@ train_set, test_set = get_CIFAR10()
 n_classes= max(train_set[1].max().item(), test_set[1].max().item())+1
 model = resnet20(n_classes)
 n_nodes = 100
-n_rounds = 150
+n_rounds = 250
 n_local_epochs = 5
 batch_size = 256
 factors = 1
@@ -75,6 +75,10 @@ nodes = AttackGossipNode.generate(
         local_epochs= n_local_epochs),
     round_len=100,
     sync=False)
+
+nodes[0].mia = True
+nodes[0].mar = True
+nodes[0].echo = True
 
 simulator = MIAGossipSimulator(
     nodes = nodes,
