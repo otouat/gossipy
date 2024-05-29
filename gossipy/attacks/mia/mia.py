@@ -13,6 +13,7 @@ from typing import Tuple, Dict, List
 from sklearn.metrics import accuracy_score, roc_auc_score, recall_score, f1_score, precision_score
 import os
 from gossipy.attacks.ra.mar import *
+from torchsummary import summary
 
 def mia_for_each_nn(simulation, attackerNode):
     class_specific = attackerNode.class_specific
@@ -29,6 +30,7 @@ def mia_for_each_nn(simulation, attackerNode):
             if marginalized:
 
                 print("Marginalized mia")
+
                 marginalized_state = isolate_victim(attackerNode.received_models, node.idx)
                 model.load_state_dict(marginalized_state, strict=False)
                 model.to(device)
@@ -168,6 +170,13 @@ def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], log = False
         #with profile(activities=[ProfilerActivity.CUDA], profile_memory=True, record_shapes=True) as prof:
         with torch.autocast(device_type="cuda"):
             with torch.no_grad():
+                if log:
+                    summary(model, input_size=(1, *x[0].shape))
+                    model.eval()
+                    with torch.no_grad():
+                        test_input = x[0].unsqueeze(0).to(device)
+                        test_output = model(test_input)
+                        print("Test output:", test_output)
                 scores = model(x[idx].unsqueeze(0))
                 loss = torch.nn.functional.cross_entropy(scores, y[idx].unsqueeze(0))
                 if log:
