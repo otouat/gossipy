@@ -1465,10 +1465,10 @@ class MIADynamicGossipSimulator(GossipSimulator):
                 if (t + 1) % self.delta == 0:
                     for er in self._receivers:
                             if self.mia : 
-                                mia_vulnerability = [mia_for_each_nn(self, n, class_specific = False) for _, n in self.nodes.items()]
+                                mia_vulnerability = [mia_for_each_nn(self, n) for _, n in self.nodes.items()]
                                 er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)
                             if self.mar : 
-                                mia_mar_vulnerability = [mia_for_each_nn(self, n, class_specific=False, marginalized=True) for _, n in self.nodes.items() if isinstance(n, AttackGossipNode) and getattr(n, 'marginalized_state', False)]
+                                mia_mar_vulnerability = [mia_for_each_nn(self, n) for _, n in self.nodes.items() if isinstance(n, AttackGossipNode) and getattr(n, 'marginalized_state', False)]
                                 if any(item is not None for item in mia_mar_vulnerability):
                                     er.update_mia_vulnerability(self.n_rounds, mia_mar_vulnerability, marginalized = True)
 
