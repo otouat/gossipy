@@ -33,20 +33,17 @@ def mia_for_each_nn(simulation, attackerNode):
                 model.load_state_dict(marginalized_state, strict=False)
                 model.to(device)
                 mia_results.append(mia_best_th(model, train_data, test_data, device, log=True))
-
             elif class_specific:
-                num_classes = max(train_data[1].max().item(), test_data[1].max().item())+1
-                results= mia_best_th_class(model, train_data, test_data, num_classes, device)
+                num_classes = max(train_data[1].max().item(), test_data[1].max().item()) + 1
+                results = mia_best_th_class(model, train_data, test_data, num_classes, device)
                 mia_results[0].append(results[0])
                 mia_results[1].append(results[1])
-
             else:
                 mia_results.append(mia_best_th(model, train_data, test_data, device))
-
-    mia_results ={
+    
+    mia_results = {
         "loss_mia": np.mean(mia_results[0]),
         "entropy_mia": np.mean(mia_results[1])
-    
     }
     return mia_results
 
@@ -178,10 +175,14 @@ def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], log = False
                         print("Test output:", test_output)"""
                 scores = model(input_tensor)
                 loss = torch.nn.functional.cross_entropy(scores, y[idx].unsqueeze(0))
-                if log:
-                    print(f"scores: {scores.shape}, Value: {scores}")
-                    print(f"loss: {loss.item()}")
-
+                #if log:
+                    #print(f"scores: {scores.shape}, Value: {scores}")
+                    #print(f"loss: {loss.item()}")
+                              # Detect NaNs in scores and loss
+                if torch.isnan(scores).any():
+                    print("NaN detected in scores")
+                if torch.isnan(loss).any():
+                    print("NaN detected in loss")
                 # Collect probability scores instead of class predictions
                 prob_scores = torch.nn.functional.softmax(scores, dim=-1).cpu().numpy()
                 label = y[idx].cpu().numpy()
