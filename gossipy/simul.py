@@ -1259,7 +1259,7 @@ class MIAGossipSimulator(GossipSimulator):
         node_ids = np.arange(self.n_nodes)
         self.n_rounds = n_rounds
         self.mia = True
-        self.mar = True
+        self.mar = False
         self.ra = False
         pbar = track(range(n_rounds * self.delta), description="Simulating...")
 

@@ -51,9 +51,9 @@ class CIFAR10Net(TorchModel):
         return "CIFAR10Net(size=%d)" %self.get_size()
     
 n_classes= max(train_set[1].max().item(), test_set[1].max().item())+1
-model = CIFAR10Net()
-n_nodes = 10
-n_rounds = 50
+model = resnet20()
+n_nodes = 100
+n_rounds = 250
 n_local_epochs = 3
 batch_size = 256
 factors = 1
@@ -66,7 +66,7 @@ optimizer_params = {
     "weight_decay": 0.001
 }
 
-message = f"Experiment with ResNet20 on FEMNIST dataset (test size : {test_size}, class distribution = {beta}). {n_nodes} nodes, {n_local_epochs} local epochs, batch size {batch_size}, lr {optimizer_params['lr']}, number of neigbors {neigbors}"
+message = f"Experiment with ResNet20 on CIFAR10 dataset (test size : {test_size}, class distribution = {beta}). {n_nodes} nodes, {n_local_epochs} local epochs, batch size {batch_size}, lr {optimizer_params['lr']}, number of neigbors {neigbors}"
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
 Xte, yte = transform(test_set[0]), test_set[1]
@@ -107,7 +107,7 @@ nodes = AttackGossipNode.generate(
     sync=False)
 
 nodes[0].mia = True
-nodes[0].mar = True
+#nodes[0].mar = True
 nodes[0].echo = True
 
 simulator = MIAGossipSimulator(
