@@ -51,7 +51,7 @@ class CIFAR10Net(TorchModel):
         return "CIFAR10Net(size=%d)" %self.get_size()
     
 n_classes = max(train_set[1].max().item(), test_set[1].max().item())+1
-model = resnet20(n_classes)
+model = CIFAR10Net()
 n_nodes = 100
 n_rounds = 250
 n_local_epochs = 3
@@ -107,8 +107,8 @@ nodes = AttackGossipNode.generate(
     sync=False)
 
 nodes[0].mia = True
-#nodes[0].mar = True
-nodes[0].echo = True
+nodes[0].mar = True
+#nodes[0].echo = True
 
 simulator = MIAGossipSimulator(
     nodes = nodes,
