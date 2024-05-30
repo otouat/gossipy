@@ -1,7 +1,5 @@
-from collections import OrderedDict
 import torch
-import numpy as np
-import math
+from collections import OrderedDict
 
 def isolate_victim(model_update_buffer, victim_id):
     """ Computes marginalized model  """
@@ -9,10 +7,14 @@ def isolate_victim(model_update_buffer, victim_id):
     # Received model updates for the round
     thetas = model_update_buffer.copy()
     n = len(thetas)
+    victim = None
     for i, (num, _) in enumerate(thetas):
         if num == victim_id:
             victim = thetas.pop(i)
             break
+    if victim is None:
+        raise ValueError(f"Victim ID {victim_id} not found in the model update buffer.")
+    
     others = thetas
 
     # accumulate others
@@ -21,50 +23,48 @@ def isolate_victim(model_update_buffer, victim_id):
         other = agg_sum(other, model)
     other = agg_div(other, n)
 
+    # Check for NaNs after aggregation
+    if any(torch.isnan(param).any() for param in other.values()):
+        print("NaN detected after aggregation of others")
+
     # remove global functionality
     victim_c = agg_sub(victim[1], other)
+    # Check for NaNs after subtraction
+    if any(torch.isnan(param).any() for param in victim_c.values()):
+        print("NaN detected after subtraction")
+
     # scale back marginalized model
     victim_c = agg_div(victim_c, 1/n)
-    #print(victim_c)
+    # Check for NaNs after scaling
+    if any(torch.isnan(param).any() for param in victim_c.values()):
+        print("NaN detected after scaling")
+
     return victim_c
 
-def assign_list_variables(A, B):
-    state_dict = A
-    B = []
-    for key in state_dict:
-        tensor_value = state_dict[key]
-        B.append(tensor_value)
-    return B
-
 def init_list_variables(A):
-    n = len(A)
     B = OrderedDict()
     for key in A:
-        B[key] = 0
+        B[key] = torch.zeros_like(A[key], dtype=torch.float32)  # Use higher precision
     return B
 
 def agg_sum(A, B):
-    assert(len(A) == len(B))
-    n = len(A) 
+    assert len(A) == len(B)
     C = OrderedDict()
     for key in A:
-        C[key] = A[key] + B[key]
+        C[key] = A[key].to(torch.float32) + B[key].to(torch.float32)  # Ensure higher precision
     return C
 
 def agg_sub(A, B):
-    assert(len(A) == len(B))
-    n = len(A) 
+    assert len(A) == len(B)
     C = OrderedDict()
     for key in A:
-        C[key] = A[key] - B[key]
-        
+        C[key] = A[key].to(torch.float32) - B[key].to(torch.float32)  # Ensure higher precision
     return C
 
 def agg_div(A, alpha):
-    n = len(A) 
     C = OrderedDict()
     for key in A:
-        C[key] = A[key] / alpha
+        C[key] = A[key].to(torch.float32) / alpha  # Ensure higher precision
     return C
 
 def agg_neg(A):

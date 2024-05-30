@@ -28,14 +28,11 @@ def mia_for_each_nn(simulation, attackerNode):
             
             model = copy.deepcopy(node.model_handler.model)
             if marginalized:
-
                 print("Marginalized mia")
-
                 marginalized_state = isolate_victim(attackerNode.received_models, node.idx)
                 model.load_state_dict(marginalized_state, strict=False)
                 model.to(device)
-                #print(model.state_dict())
-                mia_results.append(mia_best_th(model, train_data, test_data, device, log = True))
+                mia_results.append(mia_best_th(model, train_data, test_data, device, log=True))
 
             elif class_specific:
                 num_classes = max(train_data[1].max().item(), test_data[1].max().item())+1
@@ -45,7 +42,6 @@ def mia_for_each_nn(simulation, attackerNode):
 
             else:
                 mia_results.append(mia_best_th(model, train_data, test_data, device))
-            
 
     mia_results ={
         "loss_mia": np.mean(mia_results[0]),
