@@ -95,4 +95,4 @@ simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
 simulator.start(n_rounds=n_rounds)
 
-#log_results(simulator, report, message)
+log_results(simulator, report, message)
