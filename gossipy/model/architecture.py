@@ -29,13 +29,24 @@ class ResNet20(TorchModel):
 
     def forward(self, x):
         x = self.conv1(x)
+        if torch.isnan(x).any():
+            print("NaN detected after conv1")
         x = self.layer1(x)
+        if torch.isnan(x).any():
+            print("NaN detected after layer1")
         x = self.layer2(x)
+        if torch.isnan(x).any():
+            print("NaN detected after layer2")
         x = self.layer3(x)
+        if torch.isnan(x).any():
+            print("NaN detected after layer3")
         x = self.avgpool(x)  # Use the avgpool layer here
+        if torch.isnan(x).any():
+            print("NaN detected after avgpool")
         x = x.view(x.size(0), -1)
         x = self.fc(x)
-
+        if torch.isnan(x).any():
+            print("NaN detected after fc")
         return x
 
     def init_weights(self):  # Rename the method

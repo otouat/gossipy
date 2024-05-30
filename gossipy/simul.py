@@ -1363,7 +1363,7 @@ class MIAGossipSimulator(GossipSimulator):
                 self.notify_timestep(t)
 
         except KeyboardInterrupt:
-            log_results(self, self._receivers[0], "")
+            #log_results(self, self._receivers[0], "")
             LOG.warning("Simulation interrupted by user.")
 
         pbar.close()

@@ -168,8 +168,8 @@ def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], log = False
 
     for idx in range(len(x)):
         input_tensor = x[idx].unsqueeze(0)  # Ensure the input tensor has shape [1, channels, height, width]
-        if log:
-            print(f"Input tensor shape: {input_tensor.shape}")
+        #if log:
+            #print(f"Input tensor shape: {input_tensor.shape}")
         #with profile(activities=[ProfilerActivity.CUDA], profile_memory=True, record_shapes=True) as prof:
         with torch.autocast(device_type="cuda"):
             with torch.no_grad():
