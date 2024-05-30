@@ -18,7 +18,7 @@ from networkx.generators import random_regular_graph
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
 train_set, test_set = get_CIFAR10()
 
-n_classes= max(train_set[1].max().item(), test_set[1].max().item())+1
+n_classes = max(train_set[1].max().item(), test_set[1].max().item())+1
 model = resnet20(n_classes)
 n_nodes = 100
 n_rounds = 150

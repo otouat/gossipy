@@ -50,8 +50,8 @@ class CIFAR10Net(TorchModel):
     def __repr__(self) -> str:
         return "CIFAR10Net(size=%d)" %self.get_size()
     
-n_classes= max(train_set[1].max().item(), test_set[1].max().item())+1
-model = resnet20()
+n_classes = max(train_set[1].max().item(), test_set[1].max().item())+1
+model = resnet20(n_classes)
 n_nodes = 100
 n_rounds = 250
 n_local_epochs = 3

@@ -76,6 +76,9 @@ class ResNet20(nn.Module):
                 nn.init.constant_(m.bias, 0)
         self.apply(_init)
 
+    def __repr__(self) -> str:
+        return "Resnet20(size=%d)" %self.get_size()
+
 def resnet20(num_classes):
     return ResNet20(num_classes=num_classes)
 
