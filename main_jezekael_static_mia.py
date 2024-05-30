@@ -53,10 +53,10 @@ class CIFAR10Net(TorchModel):
 n_classes= max(train_set[1].max().item(), test_set[1].max().item())+1
 model = CIFAR10Net()
 n_nodes = 10
-n_rounds = 20
+n_rounds = 50
 n_local_epochs = 3
 batch_size = 256
-factors = 25
+factors = 1
 neigbors = 4
 test_size=0.5
 beta = 0.99
