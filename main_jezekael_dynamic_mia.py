@@ -22,13 +22,13 @@ n_classes= max(train_set[1].max().item(), test_set[1].max().item())+1
 model = resnet20(n_classes)
 n_nodes = 100
 n_rounds = 150
-n_local_epochs = 5
+n_local_epochs = 3
 batch_size = 256
 factors = 1
 neigbors = 4
 test_size=0.5
 beta = 0.99
-peer_sampling_period=10
+peer_sampling_period=5
 optimizer_params = {
         "lr": 0.1,
         "momentum": 0.9,
@@ -62,7 +62,7 @@ data_dispatcher.assign(seed=42, method=assignment_method, **assignment_params)
 
 topology = UniformDynamicP2PNetwork(int(data_dispatcher.size()/factors), topology=nx.to_numpy_array(random_regular_graph(neigbors, n_nodes, seed=42)))
 
-nodes = GossipNode.generate(
+nodes = AttackGossipNode.generate(
     data_dispatcher=data_dispatcher,
     p2p_net=topology,
     model_proto=TorchModelHandler(
@@ -75,6 +75,10 @@ nodes = GossipNode.generate(
         local_epochs= n_local_epochs),
     round_len=100,
     sync=False)
+
+nodes[0].mia = True
+#nodes[0].mar = True
+nodes[0].echo = True
 
 simulator = MIADynamicGossipSimulator(
     nodes=nodes,

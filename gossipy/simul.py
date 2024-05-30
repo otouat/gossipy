@@ -1257,7 +1257,6 @@ class MIAGossipSimulator(GossipSimulator):
             "The simulator is not inizialized. Please, call the method 'init_nodes'."
         LOG.info("Simulation started.")
         node_ids = np.arange(self.n_nodes)
-        self.n_rounds = n_rounds
         self.mia = True
         self.mar = False
         self.ra = False
@@ -1388,6 +1387,9 @@ class MIADynamicGossipSimulator(GossipSimulator):
                          sampling_eval)
         self.peer_sampling_period = peer_sampling_period
         self.attackerNode = self.nodes[int(random() * len(self.nodes))]
+        self.mia = True
+        self.mar = False
+        self.ra = False
 
     def start(self, n_rounds: int = 100) -> None:
         """Starts the simulation.
@@ -1462,11 +1464,13 @@ class MIADynamicGossipSimulator(GossipSimulator):
 
                 if (t + 1) % self.delta == 0:
                     for er in self._receivers:
-                            mia_vulnerability = [mia_for_each_nn(self, n, class_specific = False) for _, n in self.nodes.items()]
-                            er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)
-                            mia_mar_vulnerability = [mia_for_each_nn(self, n, class_specific=False, marginalized=True) for _, n in self.nodes.items() if isinstance(n, AttackGossipNode) and getattr(n, 'marginalized_state', False)]
-                            if any(item is not None for item in mia_mar_vulnerability):
-                                er.update_mia_vulnerability(self.n_rounds, mia_mar_vulnerability, marginalized = True)
+                            if self.mia : 
+                                mia_vulnerability = [mia_for_each_nn(self, n, class_specific = False) for _, n in self.nodes.items()]
+                                er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)
+                            if self.mar : 
+                                mia_mar_vulnerability = [mia_for_each_nn(self, n, class_specific=False, marginalized=True) for _, n in self.nodes.items() if isinstance(n, AttackGossipNode) and getattr(n, 'marginalized_state', False)]
+                                if any(item is not None for item in mia_mar_vulnerability):
+                                    er.update_mia_vulnerability(self.n_rounds, mia_mar_vulnerability, marginalized = True)
 
                     if self.sampling_eval > 0:
                         sample = choice(list(self.nodes.keys()), max(int(self.n_nodes * self.sampling_eval), 1))
