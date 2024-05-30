@@ -3,7 +3,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 from gossipy.model import TorchModel
 
-class ResNet20(TorchModel):
+import torch
+import torch.nn as nn
+from collections import OrderedDict
+
+class ResNet20(nn.Module):
     def __init__(self, num_classes=10):
         super(ResNet20, self).__init__()
         self.in_planes = 16
@@ -29,25 +33,36 @@ class ResNet20(TorchModel):
 
     def forward(self, x):
         x = self.conv1(x)
-        log = False
         if torch.isnan(x).any():
             print("NaN detected after conv1")
+        else:
+            print("No NaN detected after conv1")
         x = self.layer1(x)
         if torch.isnan(x).any():
             print("NaN detected after layer1")
+        else:
+            print("No NaN detected after layer1")
         x = self.layer2(x)
-        if torch.isnan(x).any() and log:
+        if torch.isnan(x).any():
             print("NaN detected after layer2")
+        else:
+            print("No NaN detected after layer2")
         x = self.layer3(x)
-        if torch.isnan(x).any() and log:
+        if torch.isnan(x).any():
             print("NaN detected after layer3")
-        x = self.avgpool(x)  # Use the avgpool layer here
-        if torch.isnan(x).any() and log:
+        else:
+            print("No NaN detected after layer3")
+        x = self.avgpool(x)
+        if torch.isnan(x).any():
             print("NaN detected after avgpool")
+        else:
+            print("No NaN detected after avgpool")
         x = x.view(x.size(0), -1)
         x = self.fc(x)
-        if torch.isnan(x).any() and log:
+        if torch.isnan(x).any():
             print("NaN detected after fc")
+        else:
+            print("No NaN detected after fc")
         return x
 
     def init_weights(self):  # Rename the method
@@ -59,11 +74,11 @@ class ResNet20(TorchModel):
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
-
         self.apply(_init)
 
 def resnet20(num_classes):
     return ResNet20(num_classes=num_classes)
+
 
 class ResNet9(TorchModel):
     def __init__(self, num_classes=10):

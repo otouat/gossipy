@@ -1,6 +1,16 @@
 import torch
+import torch.nn as nn
 from collections import OrderedDict
+import numpy as np
+import copy
 
+# Enhanced NaN check function
+def check_for_nans(state_dict, label):
+    for key, value in state_dict.items():
+        if torch.isnan(value).any():
+            print(f"NaN detected in {label} at {key}")
+
+# Enhanced isolate_victim function with NaN checks
 def isolate_victim(model_update_buffer, victim_id):
     """ Computes marginalized model  """
     
@@ -24,20 +34,17 @@ def isolate_victim(model_update_buffer, victim_id):
     other = agg_div(other, n)
 
     # Check for NaNs after aggregation
-    if any(torch.isnan(param).any() for param in other.values()):
-        print("NaN detected after aggregation of others")
+    check_for_nans(other, "aggregation of others")
 
     # remove global functionality
     victim_c = agg_sub(victim[1], other)
     # Check for NaNs after subtraction
-    if any(torch.isnan(param).any() for param in victim_c.values()):
-        print("NaN detected after subtraction")
+    check_for_nans(victim_c, "subtraction")
 
     # scale back marginalized model
     victim_c = agg_div(victim_c, 1/n)
     # Check for NaNs after scaling
-    if any(torch.isnan(param).any() for param in victim_c.values()):
-        print("NaN detected after scaling")
+    check_for_nans(victim_c, "scaling")
 
     return victim_c
 
