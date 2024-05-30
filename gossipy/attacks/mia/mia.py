@@ -57,6 +57,8 @@ def mia_best_th(model, train_data, test_data, device, nt=200, log=False):
             tp = (train < th).sum()
             tn = (test >= th).sum()
             acc = (tp + tn) / (len(train) + len(test))  # Correcting the calculation for accuracy
+            if log:
+                print(f"Acc: {acc}")
             R[i] = acc
 
         return R.max()
@@ -75,12 +77,13 @@ def mia_best_th(model, train_data, test_data, device, nt=200, log=False):
     if log:
         print(f"Loss size: {len(Ltrain)}, Value: {Ltrain}")
     loss_mia = search_th(Ltrain, Ltest)
-
+    
     Etrain = compute_modified_entropy(Ptrain, Ytrain)
     Etest = compute_modified_entropy(Ptest, Ytest)
-
     ent_mia = search_th(Etrain, Etest)
-
+        
+    if log:
+        print(f"Loss_mia: {loss_mia}, Ent_mia: {ent_mia}")
     #print(f" Loss: {loss_mia}, Enthropy: {ent_mia}")
 
     return loss_mia, ent_mia
