@@ -167,6 +167,9 @@ def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], log = False
     labels = []
 
     for idx in range(len(x)):
+        input_tensor = x[idx].unsqueeze(0)  # Ensure the input tensor has shape [1, channels, height, width]
+        if log:
+            print(f"Input tensor shape: {input_tensor.shape}")
         #with profile(activities=[ProfilerActivity.CUDA], profile_memory=True, record_shapes=True) as prof:
         with torch.autocast(device_type="cuda"):
             with torch.no_grad():
@@ -177,11 +180,11 @@ def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], log = False
                         test_input = x[0].unsqueeze(0).to(device)
                         test_output = model(test_input)
                         print("Test output:", test_output)"""
-                scores = model(x[idx].unsqueeze(0))
+                scores = model(input_tensor)
                 loss = torch.nn.functional.cross_entropy(scores, y[idx].unsqueeze(0))
                 if log:
-                    print(f"scores: {len(scores)}, Value: {scores}")
-                    print(f"loss: {len(loss)}, Value: {loss}")
+                    print(f"scores: {scores.shape}, Value: {scores}")
+                    print(f"loss: {loss.item()}")
 
                 # Collect probability scores instead of class predictions
                 prob_scores = torch.nn.functional.softmax(scores, dim=-1).cpu().numpy()
