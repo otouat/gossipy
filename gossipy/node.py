@@ -1448,7 +1448,7 @@ class FederatedAttackGossipNode(GossipNode):
                  model_handler: ModelHandler, #object that handles the model learning/inference
                  p2p_net: P2PNetwork,
                  sync: bool=True):
-        r"""Class that represents a generic node in a gossip network.
+        """Class that represents a generic node in a gossip network.
 
         A node is identified by its index and it is initialized with a fixed delay :math:`\Delta` that
         represents the idle time. The node can be either synchronous or asynchronous. In the former case,
@@ -1490,7 +1490,15 @@ class FederatedAttackGossipNode(GossipNode):
         self.delta: int = randint(0, round_len) if sync else int(normal(round_len, round_len/10))
         self.p2p_net = p2p_net
         self.node_selected = []
-        self.received_models = []
+        self.received_models = [] # [None] * len(p2p_net.get_peers(self.idx))
+        self.final_agg = OrderedDict()
+        self.gradient =  OrderedDict()
+        self.mia = False
+        self.class_specific = False
+        self.mar = False
+        self.ra = False
+        self.echo = False
+        self.marginalized_state = False
 
     def init_model(self, local_train: bool=True, *args, **kwargs) -> None:
         """Initializes the local model.
