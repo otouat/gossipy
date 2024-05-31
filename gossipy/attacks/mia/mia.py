@@ -47,6 +47,11 @@ def mia_for_each_nn(simulation, attackerNode):
     }
     return mia_results
 
+def check_for_nans_in_model(model):
+    for name, param in model.items():
+        if torch.isnan(param).any() or torch.isinf(param).any():
+            print(f"NaN or Inf detected in {name}")
+            
 def mia_best_th(model, train_data, test_data, device, nt=200, log=False):
     
     def search_th(train, test):

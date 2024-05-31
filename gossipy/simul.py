@@ -1509,7 +1509,7 @@ class MIADynamicGossipSimulator(GossipSimulator):
                 self.notify_timestep(t)
 
         except KeyboardInterrupt:
-            log_results(self, self._receivers[0], "")
+            #log_results(self, self._receivers[0], "")
             LOG.warning("Simulation interrupted by user.")
 
         pbar.close()
@@ -1524,6 +1524,9 @@ class MIAFederatedSimulator(GossipSimulator):
             super().__init__(nodes, data_dispatcher, delta, protocol, drop_prob,
                             online_prob, delay, sampling_eval)
             self.attackerNode = self.nodes[0]
+            self.mia = True
+            self.mar = True
+            self.ra = False
 
     def init_nodes(self, seed:int=98765) -> None:
         """Initializes the nodes.
@@ -1627,8 +1630,13 @@ class MIAFederatedSimulator(GossipSimulator):
 
                 if (t + 1) % self.delta == 0:
                     for er in self._receivers:
-                            mia_vulnerability = [mia_for_each_nn(self, n, class_specific = False) for _, n in self.nodes.items()]
-                            er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)
+                            if self.mia:
+                                mia_vulnerability = [mia_for_each_nn(self, n, class_specific = False) for _, n in self.nodes.items()]
+                                er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)
+                            if self.mar : 
+                                mia_mar_vulnerability = [mia_for_each_nn(self, n) for _, n in self.nodes.items() if isinstance(n, AttackGossipNode) and getattr(n, 'marginalized_state', False)]
+                                if any(item is not None for item in mia_mar_vulnerability):
+                                    er.update_mia_vulnerability(self.n_rounds, mia_mar_vulnerability, marginalized = True)
 
                     if self.sampling_eval > 0:
                         node_ids = [node_id for node_id in self.nodes.keys() if node_id != "server_state"]
@@ -1669,7 +1677,7 @@ class MIAFederatedSimulator(GossipSimulator):
                 self.notify_timestep(t)
 
         except KeyboardInterrupt:
-            log_results(self, self._receivers[0], "")
+            #log_results(self, self._receivers[0], "")
             LOG.warning("Simulation interrupted by user.")
 
         pbar.close()
