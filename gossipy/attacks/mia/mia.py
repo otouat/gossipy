@@ -32,7 +32,7 @@ def mia_for_each_nn(simulation, attackerNode):
                 marginalized_state = isolate_victim(attackerNode.received_models, node.idx)
                 model.load_state_dict(marginalized_state, strict=False)
                 model.to(device)
-                mia_results.append(mia_best_th(model, train_data, test_data, device, log=False))
+                mia_results.append(mia_best_th(model, train_data, test_data, device, log=True))
             elif class_specific:
                 num_classes = max(train_data[1].max().item(), test_data[1].max().item()) + 1
                 results = mia_best_th_class(model, train_data, test_data, num_classes, device)
