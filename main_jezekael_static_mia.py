@@ -52,11 +52,11 @@ class CIFAR10Net(TorchModel):
     
 n_classes = max(train_set[1].max().item(), test_set[1].max().item())+1
 model = resnet20(n_classes)
-n_nodes = 5
-n_rounds = 25
-n_local_epochs = 3
+n_nodes = 100
+n_rounds = 150
+n_local_epochs = 5
 batch_size = 256
-factors = 2
+factors = 1
 neigbors = 4
 test_size=0.5
 beta = 0.99
@@ -66,7 +66,7 @@ optimizer_params = {
     "weight_decay": 0.001
 }
 
-message = f"Experiment with ResNet20 on CIFAR10 dataset (test size : {test_size}, class distribution = {beta}). {n_nodes} nodes, {n_local_epochs} local epochs, batch size {batch_size}, lr {optimizer_params['lr']}, number of neigbors {neigbors}"
+message = f"Experiment with ResNet20 on CIFAR10 dataset (test size : {test_size}, class distribution = {beta}). | Attacks: MIA: True, MAR: FAlSE, ECHO: TRUE | {n_nodes} nodes, {n_local_epochs} local epochs, batch size {batch_size}, lr {optimizer_params['lr']}, number of neigbors {neigbors}"
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
 Xte, yte = transform(test_set[0]), test_set[1]

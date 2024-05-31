@@ -1525,7 +1525,7 @@ class MIAFederatedSimulator(GossipSimulator):
                             online_prob, delay, sampling_eval)
             self.attackerNode = self.nodes[0]
             self.mia = True
-            self.mar = True
+            self.mar = False
             self.ra = False
 
     def init_nodes(self, seed:int=98765) -> None:
