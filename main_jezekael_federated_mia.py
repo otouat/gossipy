@@ -5,7 +5,7 @@ from gossipy.core import AntiEntropyProtocol, CreateModelMode, ConstantDelay, St
 from gossipy.data import CustomDataDispatcher, OLDCustomDataDispatcher
 from gossipy.data.handler import ClassificationDataHandler
 from gossipy.model.handler import TorchModelHandler
-from gossipy.node import GossipNode, FederatedGossipNode
+from gossipy.node import FederatedAttackGossipNode, GossipNode, FederatedGossipNode
 from gossipy.simul import MIAGossipSimulator, MIADynamicGossipSimulator, MIAFederatedSimulator, MIASimulationReport
 from gossipy.model.architecture import *
 from gossipy.model.resnet import *
@@ -40,7 +40,7 @@ data_dispatcher = OLDCustomDataDispatcher(data_handler, n=n_nodes, eval_on_user=
 topology = create_federated_topology(n_nodes)
 network = CustomP2PNetwork(topology)
 
-nodes = FederatedGossipNode.generate(
+nodes = FederatedAttackGossipNode.generate(
     data_dispatcher=data_dispatcher,
     p2p_net=network,
     model_proto=TorchModelHandler(

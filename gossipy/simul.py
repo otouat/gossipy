@@ -13,7 +13,7 @@ from gossipy.model.utils import *
 from . import CACHE, LOG, CacheKey
 from .core import AntiEntropyProtocol, Message, ConstantDelay, Delay, MixingMatrix, UniformMixing, DynamicP2PNetwork
 from .data import DataDispatcher
-from .node import GossipNode, AttackGossipNode, All2AllGossipNode
+from .node import FederatedAttackGossipNode, GossipNode, AttackGossipNode, All2AllGossipNode
 from .flow_control import TokenAccount
 from .model.handler import ModelHandler
 from .utils import StringEncoder
@@ -1634,7 +1634,7 @@ class MIAFederatedSimulator(GossipSimulator):
                                 mia_vulnerability = [mia_for_each_nn(self, n) for _, n in self.nodes.items()]
                                 er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)
                             if self.mar : 
-                                mia_mar_vulnerability = [mia_for_each_nn(self, n) for _, n in self.nodes.items() if isinstance(n, AttackGossipNode) and getattr(n, 'marginalized_state', False)]
+                                mia_mar_vulnerability = [mia_for_each_nn(self, n) for _, n in self.nodes.items() if isinstance(n, FederatedAttackGossipNode) and getattr(n, 'marginalized_state', False)]
                                 if any(item is not None for item in mia_mar_vulnerability):
                                     er.update_mia_vulnerability(self.n_rounds, mia_mar_vulnerability, marginalized = True)
 

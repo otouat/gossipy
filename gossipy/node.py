@@ -1324,6 +1324,7 @@ class AttackGossipNode(GossipNode):
 
             if recv_model is not None:
                 recv_model = CACHE.pop(recv_model)
+                self.model_handler(recv_model, self.data[0])
                 if(self.mar == True):
                     for i, (sender, _) in enumerate(self.received_models):
                         if sender == msg.sender:
