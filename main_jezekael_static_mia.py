@@ -108,7 +108,7 @@ nodes = AttackGossipNode.generate(
 
 nodes[0].mia = True
 #nodes[0].mar = True
-#nodes[0].echo = True
+nodes[0].echo = True
 
 simulator = MIAGossipSimulator(
     nodes = nodes,

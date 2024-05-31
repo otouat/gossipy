@@ -1281,7 +1281,7 @@ class AttackGossipNode(GossipNode):
 
         if protocol == AntiEntropyProtocol.PUSH:
             key = self.model_handler.caching(self.idx)
-            if(self.mar and self.echo):
+            if(self.echo):
                 for i, (sender, _) in enumerate(self.received_models):
                         if sender == peer:
                             print("ECHO ATTACK")
