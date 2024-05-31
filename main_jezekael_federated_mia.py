@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 from torchvision.transforms import Compose, Normalize
 from gossipy.core import AntiEntropyProtocol, CreateModelMode, ConstantDelay, StaticP2PNetwork
-from gossipy.data import CustomDataDispatcher
+from gossipy.data import CustomDataDispatcher, OLDCustomDataDispatcher
 from gossipy.data.handler import ClassificationDataHandler
 from gossipy.model.handler import TorchModelHandler
 from gossipy.node import GossipNode, FederatedGossipNode
@@ -18,38 +18,24 @@ train_set, test_set = get_CIFAR10()
 
 n_classes= max(train_set[1].max().item(), test_set[1].max().item())+1
 model = resnet20(n_classes)
-n_nodes = 5
-n_rounds = 25
-n_local_epochs = 3
+n_nodes = 100
+n_rounds = 150
+n_local_epochs = 5
 batch_size = 256
-factors = 2
-neigbors = 4
-test_size=0.5
-beta = 0.99
 optimizer_params = {
-    "lr": 0.1,
-    "momentum": 0.9,
-    "weight_decay": 0.001
-}
-
-message = f"Experiment with ResNet20 on CIFAR10 dataset (test size : {test_size}, class distribution = {beta}). {n_nodes} nodes, {n_local_epochs} local epochs, batch size {batch_size}, lr {optimizer_params['lr']}, number of neigbors {neigbors}"
+        "lr": 0.1,
+        "momentum": 0.9,
+        "weight_decay": 0.001
+    }
+message = "Experiment with ResNet20 on CIFAR10 dataset. 100 nodes, 250 rounds, 5 local epochs, batch size 256, lr 0.1"
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
 Xte, yte = transform(test_set[0]), test_set[1]
 
-data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=test_size)
 
-assignment_method = 'label_dirichlet_skew'
-assignment_params = {
-    'beta': beta
-}
+data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=0.5)
 
-data_dispatcher = CustomDataDispatcher(
-    data_handler,
-    n=n_nodes * factors,
-    eval_on_user=True,
-    auto_assign=False
-)
+data_dispatcher = OLDCustomDataDispatcher(data_handler, n=n_nodes, eval_on_user=True, auto_assign=True)
 
 topology = create_federated_topology(n_nodes)
 network = CustomP2PNetwork(topology)
