@@ -62,11 +62,14 @@ def mia_best_th(model, train_data, test_data, device, nt=200, log=False):
             R[i] = acc
 
         return R.max()
-    if log:
-        print(f"Train size: {len(train_data)}")
+
     model.eval()
     Ltrain, Ptrain, Ytrain = evaluate(model, device, train_data, log = log)
     Ltest, Ptest, Ytest = evaluate(model, device, test_data, log = log)
+    if log:
+        print(f"Train size: {len(train_data)}")
+        print("Mean loss train: ", np.mean(Ltrain))
+        print("Mean loss test: ", np.mean(Ltest))
     model.train()
 
     # it takes a subset of results on test set with size equal to the one of the training test 
@@ -74,8 +77,6 @@ def mia_best_th(model, train_data, test_data, device, nt=200, log=False):
     Ptrain = Ptrain[:n]
     Ytrain = Ytrain[:n]
     Ltrain = Ltrain[:n]
-    if log:
-        print(f"Loss size: {len(Ltrain)}, Value: {Ltrain}")
     loss_mia = search_th(Ltrain, Ltest)
     
     Etrain = compute_modified_entropy(Ptrain, Ytrain)
