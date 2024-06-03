@@ -6,7 +6,7 @@ from gossipy.data import CustomDataDispatcher, OLDCustomDataDispatcher
 from gossipy.data.handler import ClassificationDataHandler
 from gossipy.model.handler import TorchModelHandler
 from gossipy.node import GossipNode, FederatedGossipNode, AttackGossipNode
-from gossipy.simul import MIAGossipSimulator, MIADynamicGossipSimulator, MIAFederatedSimulator, MIASimulationReport
+from gossipy.simul import AttackGossipSimulator, AttackSimulationReport, MIAGossipSimulator, MIADynamicGossipSimulator, MIAFederatedSimulator, MIASimulationReport
 from gossipy.model.architecture import *
 from gossipy.model.resnet import *
 from gossipy.data import *
@@ -64,6 +64,7 @@ p_attacker = 0.25
 mia = True
 mar = False
 echo = True
+ra = False
 optimizer_params = {
     "lr": 0.1,
     "momentum": 0.9,
@@ -112,11 +113,11 @@ nodes = AttackGossipNode.generate(
 
 for i in range(1, n_nodes):
     if i % int(1/(p_attacker)) == 0:
-        nodes[i].mar = True
-        nodes[i].mar = False
-        nodes[i].echo = True
+        nodes[i].mia = mia
+        nodes[i].mar = mar
+        nodes[i].echo = echo
 
-simulator = MIAGossipSimulator(
+simulator = AttackGossipSimulator(
     nodes = nodes,
     data_dispatcher=data_dispatcher,
     delta=100,
@@ -124,9 +125,12 @@ simulator = MIAGossipSimulator(
     online_prob=1,  # Approximates the average online rate of the STUNner's smartphone traces
     drop_prob=0,  # 0.1 Simulate the possibility of message dropping,
     sampling_eval=0,
+    mia=mia,
+    mar=mar,
+    ra=ra
 )
 
-report = MIASimulationReport()
+report = AttackSimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
 simulator.start(n_rounds=n_rounds)

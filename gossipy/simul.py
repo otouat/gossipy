@@ -269,7 +269,7 @@ class SimulationReport(SimulationEventReceiver):
     def update_timestep(self, t: int):
         pass
 
-class MIASimulationReport(SimulationEventReceiver):
+class AttackSimulationReport(SimulationEventReceiver):
     _sent_messages: int
     _total_size: int
     _failed_messages: int
@@ -1239,7 +1239,7 @@ class All2AllGossipSimulator(GossipSimulator):
         self.notify_end()
         return
 
-class MIAGossipSimulator(GossipSimulator):
+class AttackGossipSimulator(GossipSimulator):
     def __init__(self, 
                  nodes: Dict[int, GossipNode], 
                  data_dispatcher: DataDispatcher,
@@ -1248,18 +1248,18 @@ class MIAGossipSimulator(GossipSimulator):
                  drop_prob: float = 0., 
                  online_prob: float = 1.,
                  delay: Delay = ConstantDelay(0), 
-                 sampling_eval: float = 0.):
+                 sampling_eval: float = 0.,
+                 mia: bool = False,
+                 mar: bool = False,
+                 ra: bool = False):
             super().__init__(nodes, data_dispatcher, delta, protocol, drop_prob,
-                            online_prob, delay, sampling_eval)
+                            online_prob, delay, sampling_eval, mia, mar, ra)
 
     def start(self, n_rounds: int = 100, attackerNode: int = 0) -> None:
         assert self.initialized, \
             "The simulator is not inizialized. Please, call the method 'init_nodes'."
         LOG.info("Simulation started.")
         node_ids = np.arange(self.n_nodes)
-        self.mia = True
-        self.mar = False
-        self.ra = False
         pbar = track(range(n_rounds * self.delta), description="Simulating...")
 
         msg_queues = DefaultDict(list)
@@ -1369,7 +1369,7 @@ class MIAGossipSimulator(GossipSimulator):
         self.notify_end()
         return
     
-class MIADynamicGossipSimulator(GossipSimulator):
+class AttackDynamicGossipSimulator(GossipSimulator):
     def __init__(self,
                  nodes: Dict[int, GossipNode],
                  data_dispatcher: DataDispatcher,
@@ -1379,17 +1379,16 @@ class MIADynamicGossipSimulator(GossipSimulator):
                  online_prob: float = 1.,  # [0,1] - probability of a node to be online
                  delay: Delay = ConstantDelay(0),
                  sampling_eval: float = 0.,  # [0, 1] - percentage of nodes to evaluate
-                 peer_sampling_period: int = 0  # peer_sampling period
-                 ):
+                 peer_sampling_period: int = 0,  # peer_sampling period
+                 mia: bool = False,
+                 mar: bool = False,
+                 ra: bool = False):
 
         assert 0 < peer_sampling_period <= delta
         super().__init__(nodes, data_dispatcher, delta, protocol, drop_prob, online_prob, delay,
-                         sampling_eval)
+                         sampling_eval, mia, mar, ra)
         self.peer_sampling_period = peer_sampling_period
         self.attackerNode = self.nodes[int(random() * len(self.nodes))]
-        self.mia = True
-        self.mar = False
-        self.ra = False
 
     def start(self, n_rounds: int = 100) -> None:
         """Starts the simulation.
@@ -1516,17 +1515,17 @@ class MIADynamicGossipSimulator(GossipSimulator):
         self.notify_end()
         return
 
-class MIAFederatedSimulator(GossipSimulator):
+class AttackFederatedSimulator(GossipSimulator):
     def __init__(self, nodes: Dict[int, GossipNode], data_dispatcher: DataDispatcher,
             delta: int, protocol: AntiEntropyProtocol,
             drop_prob: float = 0., online_prob: float = 1.,
-            delay: Delay = ConstantDelay(0), sampling_eval: float = 0.):
+            delay: Delay = ConstantDelay(0), sampling_eval: float = 0.,
+            mia: bool = False,
+            mar: bool = False,
+            ra: bool = False):
             super().__init__(nodes, data_dispatcher, delta, protocol, drop_prob,
-                            online_prob, delay, sampling_eval)
+                            online_prob, delay, sampling_eval, mia, mar, ra)
             self.attackerNode = self.nodes[0]
-            self.mia = True
-            self.mar = False
-            self.ra = False
 
     def init_nodes(self, seed:int=98765) -> None:
         """Initializes the nodes.
