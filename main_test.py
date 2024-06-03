@@ -64,7 +64,8 @@ beta = 0.99
 p_attacker = 1.0
 mia = True
 mar = False
-echo = False
+echo = True
+ra = False
 optimizer_params = {
     "lr": 0.1,
     "momentum": 0.9,
@@ -117,9 +118,9 @@ nodes = AttackGossipNode.generate(
 
 for i in range(1, n_nodes):
     if i % int(1/(p_attacker)) == 0:
-        nodes[i].mar = True
-        nodes[i].mar = False
-        nodes[i].echo = False
+        nodes[i].mia = mia
+        nodes[i].mar = mar
+        nodes[i].echo = echo
 
 simulator = MIAGossipSimulator(
     nodes = nodes,
@@ -129,6 +130,9 @@ simulator = MIAGossipSimulator(
     online_prob=1,  # Approximates the average online rate of the STUNner's smartphone traces
     drop_prob=0,  # 0.1 Simulate the possibility of message dropping,
     sampling_eval=0,
+    mia=mia,
+    mar=mar,
+    ra=ra
 )
 
 report = MIASimulationReport()
