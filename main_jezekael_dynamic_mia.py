@@ -6,7 +6,7 @@ from gossipy.data import CustomDataDispatcher, OLDCustomDataDispatcher
 from gossipy.data.handler import ClassificationDataHandler
 from gossipy.model.handler import TorchModelHandler
 from gossipy.node import AttackGossipNode, GossipNode, FederatedGossipNode
-from gossipy.simul import AttackDynamicGossipSimulator, AttackSimulationReport, MIAGossipSimulator, MIADynamicGossipSimulator, MIAFederatedSimulator, MIASimulationReport
+from gossipy.simul import AttackDynamicGossipSimulator, AttackSimulationReport
 from gossipy.model.architecture import *
 from gossipy.model.resnet import *
 from gossipy.data import get_CIFAR10, get_CIFAR100
