@@ -5,9 +5,9 @@ from torchvision.transforms import Compose, Normalize
 from gossipy.core import AntiEntropyProtocol, CreateModelMode, ConstantDelay, StaticP2PNetwork
 from gossipy.data import CustomDataDispatcher, OLDCustomDataDispatcher
 from gossipy.data.handler import ClassificationDataHandler
-from gossipy.model.handler import NewTorchModelHandler, TorchModelHandler
+from gossipy.model.handler import TorchModelHandler
 from gossipy.node import GossipNode, FederatedGossipNode, AttackGossipNode
-from gossipy.simul import MIAGossipSimulator, MIADynamicGossipSimulator, MIAFederatedSimulator, MIASimulationReport
+from gossipy.simul import AttackGossipSimulator, AttackSimulationReport
 from gossipy.model.architecture import *
 from gossipy.model.resnet import *
 from gossipy.data import *
@@ -52,7 +52,7 @@ class CIFAR10Net(TorchModel):
         return "CIFAR10Net(size=%d)" %self.get_size()
     
 n_classes = max(train_set[1].max().item(), test_set[1].max().item())+1
-model = NewResNet20(n_classes)
+model = resnet20(n_classes)
 n_nodes = 10
 n_rounds = 25
 n_local_epochs = 3
@@ -103,16 +103,14 @@ topology = StaticP2PNetwork(int(data_dispatcher.size()/factors), topology=nx.to_
 nodes = AttackGossipNode.generate(
     data_dispatcher=data_dispatcher,
     p2p_net=topology,
-    model_proto=NewTorchModelHandler(
+    model_proto=TorchModelHandler(
         net=model,
         optimizer=torch.optim.SGD,
         optimizer_params = optimizer_params,
         criterion = F.cross_entropy,
         create_model_mode= CreateModelMode.MERGE_UPDATE,
         batch_size= batch_size,
-        local_epochs= n_local_epochs,
-        scheduler=scheduler,
-        scheduler_params=scheduler_params),
+        local_epochs= n_local_epochs),
     round_len=100,
     sync=False)
 
@@ -122,7 +120,7 @@ for i in range(1, n_nodes):
         nodes[i].mar = mar
         nodes[i].echo = echo
 
-simulator = MIAGossipSimulator(
+simulator = AttackGossipSimulator(
     nodes = nodes,
     data_dispatcher=data_dispatcher,
     delta=100,
@@ -135,7 +133,7 @@ simulator = MIAGossipSimulator(
     ra=ra
 )
 
-report = MIASimulationReport()
+report = AttackSimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
 simulator.start(n_rounds=n_rounds)
