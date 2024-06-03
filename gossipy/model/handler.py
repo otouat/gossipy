@@ -187,7 +187,7 @@ class ModelHandler(Sizeable, ModelEqualityMixin, ABC):
     def __str__(self) -> str:
         return f"{self.__class__.__name__}(model={str(self.model)}_{self.n_updates}, mode={self.mode})"
      
-class TorchModelHandler(ModelHandler):
+class OLDTorchModelHandler(ModelHandler):
     def __init__(self,
                  net: TorchModel,
                  optimizer: torch.optim.Optimizer,
@@ -735,7 +735,7 @@ class WeightedTMH(TorchModelHandler):
 
 import torch.optim.lr_scheduler as lr_scheduler
 
-class ImprovedTorchModelHandler(ModelHandler):
+class TorchModelHandler(ModelHandler):
     def __init__(self,
                  net: TorchModel,
                  optimizer: torch.optim.Optimizer,
@@ -778,7 +778,7 @@ class ImprovedTorchModelHandler(ModelHandler):
             The parameters of the scheduler.
         """
 
-        super(ImprovedTorchModelHandler, self).__init__(create_model_mode)
+        super(TorchModelHandler, self).__init__(create_model_mode)
         self.model = copy.deepcopy(net) if copy_model else net
         self.optimizer = optimizer(self.model.parameters(), **optimizer_params)
         self.criterion = criterion
