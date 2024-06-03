@@ -5,7 +5,7 @@ from torchvision.transforms import Compose, Normalize
 from gossipy.core import AntiEntropyProtocol, CreateModelMode, ConstantDelay, StaticP2PNetwork
 from gossipy.data import CustomDataDispatcher, OLDCustomDataDispatcher
 from gossipy.data.handler import ClassificationDataHandler
-from gossipy.model.handler import TorchModelHandler
+from gossipy.model.handler import NewTorchModelHandler, TorchModelHandler
 from gossipy.node import GossipNode, FederatedGossipNode, AttackGossipNode
 from gossipy.simul import AttackGossipSimulator, AttackSimulationReport
 from gossipy.model.architecture import *
@@ -103,14 +103,16 @@ topology = StaticP2PNetwork(int(data_dispatcher.size()/factors), topology=nx.to_
 nodes = AttackGossipNode.generate(
     data_dispatcher=data_dispatcher,
     p2p_net=topology,
-    model_proto=TorchModelHandler(
+    model_proto=NewTorchModelHandler(
         net=model,
         optimizer=torch.optim.SGD,
         optimizer_params = optimizer_params,
         criterion = F.cross_entropy,
         create_model_mode= CreateModelMode.MERGE_UPDATE,
         batch_size= batch_size,
-        local_epochs= n_local_epochs),
+        local_epochs= n_local_epochs,
+        scheduler=scheduler,
+        scheduler_params=scheduler_params),
     round_len=100,
     sync=False)
 
