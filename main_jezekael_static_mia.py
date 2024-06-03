@@ -106,9 +106,11 @@ nodes = AttackGossipNode.generate(
     round_len=100,
     sync=False)
 
-nodes[0].mia = True
-#nodes[0].mar = True
-nodes[0].echo = True
+for i in range(1, nodes.size()):
+    if i % 4 == 0:
+        nodes[i].mar = True
+        nodes[i].mar = False
+        nodes[i].echo = True
 
 simulator = MIAGossipSimulator(
     nodes = nodes,
