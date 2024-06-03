@@ -53,18 +53,18 @@ class CIFAR10Net(TorchModel):
     
 n_classes = max(train_set[1].max().item(), test_set[1].max().item())+1
 model = resnet20(n_classes)
-n_nodes = 100
-n_rounds = 150
-n_local_epochs = 5
+n_nodes = 10
+n_rounds = 25
+n_local_epochs = 3
 batch_size = 256
-factors = 1
+factors = 10
 neigbors = 4
 test_size=0.5
 beta = 0.99
-p_attacker = 0.25
+p_attacker = 1.0
 mia = True
 mar = False
-echo = True
+echo = False
 optimizer_params = {
     "lr": 0.1,
     "momentum": 0.9,
