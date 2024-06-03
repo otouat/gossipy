@@ -1252,8 +1252,11 @@ class AttackGossipSimulator(GossipSimulator):
                  mia: bool = False,
                  mar: bool = False,
                  ra: bool = False):
+            self.mia = mia
+            self.mar = mar
+            self.ra = ra
             super().__init__(nodes, data_dispatcher, delta, protocol, drop_prob,
-                            online_prob, delay, sampling_eval, mia, mar, ra)
+                            online_prob, delay, sampling_eval)
 
     def start(self, n_rounds: int = 100, attackerNode: int = 0) -> None:
         assert self.initialized, \
@@ -1383,11 +1386,13 @@ class AttackDynamicGossipSimulator(GossipSimulator):
                  mia: bool = False,
                  mar: bool = False,
                  ra: bool = False):
-
         assert 0 < peer_sampling_period <= delta
         super().__init__(nodes, data_dispatcher, delta, protocol, drop_prob, online_prob, delay,
-                         sampling_eval, mia, mar, ra)
+                         sampling_eval)
         self.peer_sampling_period = peer_sampling_period
+        self.mia = mia
+        self.mar = mar
+        self.ra = ra
         self.attackerNode = self.nodes[int(random() * len(self.nodes))]
 
     def start(self, n_rounds: int = 100) -> None:
@@ -1524,8 +1529,11 @@ class AttackFederatedSimulator(GossipSimulator):
             mar: bool = False,
             ra: bool = False):
             super().__init__(nodes, data_dispatcher, delta, protocol, drop_prob,
-                            online_prob, delay, sampling_eval, mia, mar, ra)
+                            online_prob, delay, sampling_eval)
             self.attackerNode = self.nodes[0]
+            self.mia = mia
+            self.mar = mar
+            self.ra = ra
 
     def init_nodes(self, seed:int=98765) -> None:
         """Initializes the nodes.
