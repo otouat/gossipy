@@ -62,7 +62,7 @@ def mia_best_th(model, train_data, test_data, device, nt=200, log=False):
             tp = (train < th).sum()
             tn = (test >= th).sum()
             acc = (tp + tn) / (len(train) + len(test))  # Correcting the calculation for accuracy
-            if log:
+            if log and False:
                 print(f"Acc: {acc}")
             R[i] = acc
 
@@ -71,7 +71,7 @@ def mia_best_th(model, train_data, test_data, device, nt=200, log=False):
     model.eval()
     Ltrain, Ptrain, Ytrain = evaluate(model, device, train_data, log = log)
     Ltest, Ptest, Ytest = evaluate(model, device, test_data, log = log)
-    if log:
+    if log and False:
         print(f"Train size: {len(train_data)}")
         print("Mean loss train: ", np.mean(Ltrain))
         print("Mean loss test: ", np.mean(Ltest))

@@ -52,7 +52,6 @@ def log_results(Simul, report, message=""):
             print("---------------MAR ITEMS----------------")
             print(report.get_mia_vulnerability(True).items())
             print("---------------MAR GET----------------")
-            
             print(marginalized_mia_vulnerabilities)
             local_accuracies = report.get_accuracy(True).get(node_id, [])
             global_accuracies = report.get_accuracy(False).get(node_id, [])
