@@ -20,8 +20,9 @@ train_set, test_set = get_CIFAR10()
 
 n_classes = max(train_set[1].max().item(), test_set[1].max().item())+1
 model = resnet20(n_classes)
+model = resnet20(n_classes)
 n_nodes = 100
-n_rounds = 150
+n_rounds = 200
 n_local_epochs = 5
 batch_size = 256
 factors = 1
@@ -82,9 +83,9 @@ nodes = AttackGossipNode.generate(
     sync=False)
 
 for i in range(1, n_nodes):
+    nodes[i].mia = mia
+    nodes[i].mar = mar
     if i % int(1/(p_attacker)) == 0:
-        nodes[i].mia = mia
-        nodes[i].mar = mar
         nodes[i].echo = echo
 
 simulator = AttackDynamicGossipSimulator(
