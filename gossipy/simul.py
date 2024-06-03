@@ -360,16 +360,11 @@ class AttackSimulationReport(SimulationEventReceiver):
 
     def update_mia_vulnerability(self, round: int, mia: List[Dict[str, float]], marginalized: bool = False) -> None:
         if marginalized:
-            print("1")
             for i, node_ev in enumerate(mia):
-                print("2")
                 if i not in self._marginalized_mia_vulnerability:
-                    print("3")
                     self._marginalized_mia_vulnerability[i] = []
                     print
                 self._marginalized_mia_vulnerability[i].append((round, node_ev))
-            print("---------------MAR VULNERABILITY in report ----------------")
-            print(self._marginalized_mia_vulnerability)
         else:
             for i, node_ev in enumerate(mia):
                 if i not in self._local_mia_vulnerability:

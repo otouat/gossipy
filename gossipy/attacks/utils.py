@@ -48,11 +48,6 @@ def log_results(Simul, report, message=""):
         writer.writerow(['Node', 'Round', 'Loss MIA', 'Entropy MIA', 'Marginalized Loss MIA', 'Marginalized Entropy MIA', 'Train Accuracy', 'Local Test Accuracy', 'Global Test Accuracy'])
         for node_id, mia_vulnerabilities in report.get_mia_vulnerability(False).items():
             marginalized_mia_vulnerabilities = report.get_mia_vulnerability(True).get(node_id, [])
-            
-            print("---------------MAR ITEMS----------------")
-            print(report.get_mia_vulnerability(True).items())
-            print("---------------MAR GET----------------")
-            print(marginalized_mia_vulnerabilities)
             local_accuracies = report.get_accuracy(True).get(node_id, [])
             global_accuracies = report.get_accuracy(False).get(node_id, [])
 
