@@ -39,7 +39,8 @@ __all__ = [
     "SamplingTMH",
     "PartitionedTMH",
     "MFModelHandler",
-    "KMeansHandler"
+    "KMeansHandler",
+    "NewTorchModelHandler"
 ]
 
 # Undocumented class
@@ -187,7 +188,7 @@ class ModelHandler(Sizeable, ModelEqualityMixin, ABC):
     def __str__(self) -> str:
         return f"{self.__class__.__name__}(model={str(self.model)}_{self.n_updates}, mode={self.mode})"
      
-class OLDTorchModelHandler(ModelHandler):
+class TorchModelHandler(ModelHandler):
     def __init__(self,
                  net: TorchModel,
                  optimizer: torch.optim.Optimizer,
@@ -352,175 +353,6 @@ class OLDTorchModelHandler(ModelHandler):
         self.model.eval()
         self.model = self.model.to(self.device)
         #self.model = self.model.to("cpu")
-        scores = self.model(x)
-
-        if y.dim() == 1:
-            y_true = y.cpu().numpy().flatten()
-        else:
-            y_true = torch.argmax(y, dim=-1).cpu().numpy().flatten()
-
-        pred = torch.argmax(scores, dim=-1)
-        y_pred = pred.cpu().numpy().flatten()
-        
-        res = {
-            "accuracy": accuracy_score(y_true, y_pred),
-            "precision": precision_score(y_true, y_pred, zero_division=0, average="macro"),
-            "recall": recall_score(y_true, y_pred, zero_division=0, average="macro"),
-            "f1_score": f1_score(y_true, y_pred, zero_division=0, average="macro")
-        }
-
-        if scores.shape[1] == 2:
-            auc_scores = scores[:, 1].detach().cpu().numpy().flatten()
-            if len(set(y_true)) == 2:
-                res["auc"] = roc_auc_score(y_true, auc_scores).astype(float)
-            else:
-                res["auc"] = 0.5
-                LOG.warning("# of classes != 2. AUC is set to 0.5.")
-        self.model = self.model.to("cpu")
-        return res
-
-import torch.optim.lr_scheduler as lr_scheduler
-
-class TorchModelHandler(ModelHandler):
-    def __init__(self,
-                 net: TorchModel,
-                 optimizer: torch.optim.Optimizer,
-                 optimizer_params: Dict[str, Any],
-                 criterion: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
-                 local_epochs: int=1,
-                 batch_size: int=32,
-                 create_model_mode: CreateModelMode=CreateModelMode.MERGE_UPDATE,
-                 copy_model=True,
-                 scheduler=None,
-                 scheduler_params=None):
-        """Handler for torch models.
-
-        This handler is responsible for the training and evaluation of a pytorch model. Thus it
-        requires a :class:`~gossipy.core.torch.TorchModel` instance that represents the model to
-        be trained, and an optimizer (e.g., :class:`torch.optim.SGD`) with its parameters (a dict).
-        The ``criterion`` is the loss function to be used for the training.
-
-        Parameters
-        ----------
-        net : TorchModel
-            The model to be trained.
-        optimizer : torch.optim.Optimizer
-            The optimizer to be used for the training.
-        optimizer_params : Dict[str, Any]
-            The parameters of the optimizer.
-        criterion : Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
-            The loss function to be used for the training.
-        local_epochs : int, default=1
-            The number of local epochs.
-        batch_size : int, default=32
-            The batch size.
-        create_model_mode : CreateModelMode, default=CreateModelMode.MERGE_UPDATE
-            The mode in which the model is created/updated
-        copy_model : bool, default=True
-            Whether to use a copy of the model (i.e., ``net``) or not.
-        scheduler : lr_scheduler._LRScheduler, default=None
-            The learning rate scheduler to use.
-        scheduler_params : Dict[str, Any], default=None
-            The parameters of the scheduler.
-        """
-
-        super(TorchModelHandler, self).__init__(create_model_mode)
-        self.model = copy.deepcopy(net) if copy_model else net
-        self.optimizer = optimizer(self.model.parameters(), **optimizer_params)
-        self.criterion = criterion
-        assert (batch_size == 0 and local_epochs > 0) or (batch_size > 0)
-        self.local_epochs = local_epochs
-        self.batch_size = batch_size
-        self.scheduler = scheduler(self.optimizer, **scheduler_params) if scheduler else None
-        GlobalSettings().auto_device()
-        self.device = GlobalSettings().get_device()
-        self.counter_local = 0
-
-    def init(self) -> None:
-        self.model.init_weights()
-
-    def _update(self, data: Tuple[torch.Tensor, torch.Tensor]) -> None:
-        self.model = self.model.to(self.device)
-        x, y = data
-        batch_size = x.size(0) if not self.batch_size else self.batch_size
-        if self.local_epochs > 0:
-            for epoch in range(self.local_epochs):
-                perm = torch.randperm(x.size(0))
-                x, y = x[perm], y[perm]
-                for i in range(0, x.size(0), batch_size):
-                    self._local_step(x[i : i + batch_size], y[i : i + batch_size])
-                if self.scheduler:
-                    self.scheduler.step()  # Update the scheduler at the end of each epoch
-        else:
-            perm = torch.randperm(x.size(0))
-            self._local_step(x[perm][:batch_size], y[perm][:batch_size])
-        self.model = self.model.to("cpu")
-    
-    def _local_step(self, x:torch.Tensor, y:torch.Tensor) -> None:
-        self.counter_local += 1
-        self.model.train()
-        x, y = x.to(self.device), y.to(self.device)
-        with torch.autocast(device_type="cuda"):
-            y_pred = self.model(x)
-            loss = self.criterion(y_pred, y)
-            self.optimizer.zero_grad(set_to_none=True)
-        loss.backward()
-        self.optimizer.step()
-        self.optimizer.zero_grad(set_to_none=True)
-        self.n_updates += 1
-    
-    def _merge(self, other_model_handler: Union[TorchModelHandler, Iterable[TorchModelHandler]]) -> None:
-        dict_params1 = self.model.state_dict()
-
-        if isinstance(other_model_handler, TorchModelHandler):
-            dicts_params2 = [other_model_handler.model.state_dict()]
-            n_up = other_model_handler.n_updates
-        else:
-            dicts_params2 = [omh.model.state_dict() for omh in other_model_handler]
-            n_up = max([omh.n_updates for omh in other_model_handler])
-
-        div = len(dicts_params2) + 1
-        for key in dict_params1:
-            for dict_params2 in dicts_params2:
-                dict_params1[key] += dict_params2[key]
-            if "num_batches_tracked" in key:
-                pass
-            else:
-                dict_params1[key] /= div
-
-        self.model.load_state_dict(dict_params1)
-        self.n_updates = max(self.n_updates, n_up) 
-
-    def _merge_received(self, other_model_handler: Union[TorchModelHandler, Iterable[TorchModelHandler]]) -> None:
-        print("Merging Sucessfull")
-        dict_params1 = self.model.state_dict()
-
-        if isinstance(other_model_handler, TorchModelHandler):
-            dicts_params2 = [other_model_handler.model.state_dict()]
-            n_up = other_model_handler.n_updates
-        else:
-            dicts_params2 = [omh.model.state_dict() for omh in other_model_handler]
-            n_up = max([omh.n_updates for omh in other_model_handler])
-
-        div = len(dicts_params2)
-        for key in dict_params1:
-            dict_params1[key] = 0
-            for dict_params2 in dicts_params2:
-                dict_params1[key] += dict_params2[key]
-            if "num_batches_tracked" in key:
-                pass
-            else:
-                dict_params1[key] /= div
-
-        self.model.load_state_dict(dict_params1)
-        self.n_updates = max(self.n_updates, n_up)
-
-    def evaluate(self,
-                 data: Tuple[torch.Tensor, torch.Tensor]) -> Dict[str, int]:
-        x, y = data
-        x, y = x.to(self.device), y.to(self.device)
-        self.model.eval()
-        self.model = self.model.to(self.device)
         scores = self.model(x)
 
         if y.dim() == 1:
@@ -901,3 +733,169 @@ class WeightedTMH(TorchModelHandler):
         # Gets the maximum number of updates from the merged models
         self.n_updates = max(self.n_updates, n_up)
 
+class NewTorchModelHandler(ModelHandler):
+    def __init__(self,
+                 net: TorchModel,
+                 optimizer: torch.optim.Optimizer,
+                 optimizer_params: Dict[str, Any],
+                 criterion: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
+                 local_epochs: int=1,
+                 batch_size: int=32,
+                 create_model_mode: CreateModelMode=CreateModelMode.MERGE_UPDATE,
+                 copy_model=True,
+                 scheduler=None,
+                 scheduler_params=None):
+        """Handler for torch models.
+
+        This handler is responsible for the training and evaluation of a pytorch model. Thus it
+        requires a :class:`~gossipy.core.torch.TorchModel` instance that represents the model to
+        be trained, and an optimizer (e.g., :class:`torch.optim.SGD`) with its parameters (a dict).
+        The ``criterion`` is the loss function to be used for the training.
+
+        Parameters
+        ----------
+        net : TorchModel
+            The model to be trained.
+        optimizer : torch.optim.Optimizer
+            The optimizer to be used for the training.
+        optimizer_params : Dict[str, Any]
+            The parameters of the optimizer.
+        criterion : Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
+            The loss function to be used for the training.
+        local_epochs : int, default=1
+            The number of local epochs.
+        batch_size : int, default=32
+            The batch size.
+        create_model_mode : CreateModelMode, default=CreateModelMode.MERGE_UPDATE
+            The mode in which the model is created/updated
+        copy_model : bool, default=True
+            Whether to use a copy of the model (i.e., ``net``) or not.
+        scheduler : lr_scheduler._LRScheduler, default=None
+            The learning rate scheduler to use.
+        scheduler_params : Dict[str, Any], default=None
+            The parameters of the scheduler.
+        """
+
+        super(NewTorchModelHandler, self).__init__(create_model_mode)
+        self.model = copy.deepcopy(net) if copy_model else net
+        self.optimizer = optimizer(self.model.parameters(), **optimizer_params)
+        self.criterion = criterion
+        assert (batch_size == 0 and local_epochs > 0) or (batch_size > 0)
+        self.local_epochs = local_epochs
+        self.batch_size = batch_size
+        self.scheduler = scheduler(self.optimizer, **scheduler_params) if scheduler else None
+        GlobalSettings().auto_device()
+        self.device = GlobalSettings().get_device()
+        self.counter_local = 0
+
+    def init(self) -> None:
+        self.model.init_weights()
+
+    def _update(self, data: Tuple[torch.Tensor, torch.Tensor]) -> None:
+        self.model = self.model.to(self.device)
+        x, y = data
+        batch_size = x.size(0) if not self.batch_size else self.batch_size
+        if self.local_epochs > 0:
+            for epoch in range(self.local_epochs):
+                perm = torch.randperm(x.size(0))
+                x, y = x[perm], y[perm]
+                for i in range(0, x.size(0), batch_size):
+                    self._local_step(x[i : i + batch_size], y[i : i + batch_size])
+                if self.scheduler:
+                    self.scheduler.step()  # Update the scheduler at the end of each epoch
+        else:
+            perm = torch.randperm(x.size(0))
+            self._local_step(x[perm][:batch_size], y[perm][:batch_size])
+        self.model = self.model.to("cpu")
+    
+    def _local_step(self, x:torch.Tensor, y:torch.Tensor) -> None:
+        self.counter_local += 1
+        self.model.train()
+        x, y = x.to(self.device), y.to(self.device)
+        with torch.autocast(device_type="cuda"):
+            y_pred = self.model(x)
+            loss = self.criterion(y_pred, y)
+            self.optimizer.zero_grad(set_to_none=True)
+        loss.backward()
+        self.optimizer.step()
+        self.optimizer.zero_grad(set_to_none=True)
+        self.n_updates += 1
+    
+    def _merge(self, other_model_handler: Union[NewTorchModelHandler, Iterable[NewTorchModelHandler]]) -> None:
+        dict_params1 = self.model.state_dict()
+
+        if isinstance(other_model_handler, NewTorchModelHandler):
+            dicts_params2 = [other_model_handler.model.state_dict()]
+            n_up = other_model_handler.n_updates
+        else:
+            dicts_params2 = [omh.model.state_dict() for omh in other_model_handler]
+            n_up = max([omh.n_updates for omh in other_model_handler])
+
+        div = len(dicts_params2) + 1
+        for key in dict_params1:
+            for dict_params2 in dicts_params2:
+                dict_params1[key] += dict_params2[key]
+            if "num_batches_tracked" in key:
+                pass
+            else:
+                dict_params1[key] /= div
+
+        self.model.load_state_dict(dict_params1)
+        self.n_updates = max(self.n_updates, n_up) 
+
+    def _merge_received(self, other_model_handler: Union[NewTorchModelHandler, Iterable[NewTorchModelHandler]]) -> None:
+        print("Merging Sucessfull")
+        dict_params1 = self.model.state_dict()
+
+        if isinstance(other_model_handler, NewTorchModelHandler):
+            dicts_params2 = [other_model_handler.model.state_dict()]
+            n_up = other_model_handler.n_updates
+        else:
+            dicts_params2 = [omh.model.state_dict() for omh in other_model_handler]
+            n_up = max([omh.n_updates for omh in other_model_handler])
+
+        div = len(dicts_params2)
+        for key in dict_params1:
+            dict_params1[key] = 0
+            for dict_params2 in dicts_params2:
+                dict_params1[key] += dict_params2[key]
+            if "num_batches_tracked" in key:
+                pass
+            else:
+                dict_params1[key] /= div
+
+        self.model.load_state_dict(dict_params1)
+        self.n_updates = max(self.n_updates, n_up)
+
+    def evaluate(self,
+                 data: Tuple[torch.Tensor, torch.Tensor]) -> Dict[str, int]:
+        x, y = data
+        x, y = x.to(self.device), y.to(self.device)
+        self.model.eval()
+        self.model = self.model.to(self.device)
+        scores = self.model(x)
+
+        if y.dim() == 1:
+            y_true = y.cpu().numpy().flatten()
+        else:
+            y_true = torch.argmax(y, dim=-1).cpu().numpy().flatten()
+
+        pred = torch.argmax(scores, dim=-1)
+        y_pred = pred.cpu().numpy().flatten()
+        
+        res = {
+            "accuracy": accuracy_score(y_true, y_pred),
+            "precision": precision_score(y_true, y_pred, zero_division=0, average="macro"),
+            "recall": recall_score(y_true, y_pred, zero_division=0, average="macro"),
+            "f1_score": f1_score(y_true, y_pred, zero_division=0, average="macro")
+        }
+
+        if scores.shape[1] == 2:
+            auc_scores = scores[:, 1].detach().cpu().numpy().flatten()
+            if len(set(y_true)) == 2:
+                res["auc"] = roc_auc_score(y_true, auc_scores).astype(float)
+            else:
+                res["auc"] = 0.5
+                LOG.warning("# of classes != 2. AUC is set to 0.5.")
+        self.model = self.model.to("cpu")
+        return res

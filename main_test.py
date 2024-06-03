@@ -5,7 +5,7 @@ from torchvision.transforms import Compose, Normalize
 from gossipy.core import AntiEntropyProtocol, CreateModelMode, ConstantDelay, StaticP2PNetwork
 from gossipy.data import CustomDataDispatcher, OLDCustomDataDispatcher
 from gossipy.data.handler import ClassificationDataHandler
-from gossipy.model.handler import ImprovedTorchModelHandler, TorchModelHandler
+from gossipy.model.handler import NewTorchModelHandler, TorchModelHandler
 from gossipy.node import GossipNode, FederatedGossipNode, AttackGossipNode
 from gossipy.simul import MIAGossipSimulator, MIADynamicGossipSimulator, MIAFederatedSimulator, MIASimulationReport
 from gossipy.model.architecture import *
@@ -52,7 +52,7 @@ class CIFAR10Net(TorchModel):
         return "CIFAR10Net(size=%d)" %self.get_size()
     
 n_classes = max(train_set[1].max().item(), test_set[1].max().item())+1
-model = resnet20(n_classes)
+model = NewResNet20(n_classes)
 n_nodes = 10
 n_rounds = 25
 n_local_epochs = 3
@@ -102,7 +102,7 @@ topology = StaticP2PNetwork(int(data_dispatcher.size()/factors), topology=nx.to_
 nodes = AttackGossipNode.generate(
     data_dispatcher=data_dispatcher,
     p2p_net=topology,
-    model_proto=ImprovedTorchModelHandler(
+    model_proto=NewTorchModelHandler(
         net=model,
         optimizer=torch.optim.SGD,
         optimizer_params = optimizer_params,
@@ -119,7 +119,7 @@ for i in range(1, n_nodes):
     if i % int(1/(p_attacker)) == 0:
         nodes[i].mar = True
         nodes[i].mar = False
-        nodes[i].echo = True
+        nodes[i].echo = False
 
 simulator = MIAGossipSimulator(
     nodes = nodes,

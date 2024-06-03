@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from gossipy.model import TorchModel
 
-"""
+
 class ResNet20(TorchModel):
     def __init__(self, num_classes=10):
         super(ResNet20, self).__init__()
@@ -118,7 +118,7 @@ class ResNet9(TorchModel):
 
 def resnet9(num_classes):
     return ResNet9(num_classes=num_classes)
-"""
+
 #-------------------------------------------------- TESTING ---------------------------------------------------#
 
 class BasicBlock(nn.Module):
@@ -151,9 +151,9 @@ class BasicBlock(nn.Module):
             layers.append(BasicBlock(out_channels, out_channels))
         return nn.Sequential(*layers)
 
-class ResNet20(TorchModel):
+class NewResNet20(TorchModel):
     def __init__(self, num_classes=10):
-        super(ResNet20, self).__init__()
+        super(NewResNet20, self).__init__()
         self.in_planes = 16
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1)
         self.bn1 = nn.BatchNorm2d(16)
@@ -210,5 +210,5 @@ class ResNet20(TorchModel):
     def __repr__(self) -> str:
         return "Resnet20"
 
-def resnet20(num_classes):
-    return ResNet20(num_classes=num_classes)
+def Newresnet20(num_classes):
+    return NewResNet20(num_classes=num_classes)
