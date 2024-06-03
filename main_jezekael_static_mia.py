@@ -60,13 +60,17 @@ factors = 1
 neigbors = 4
 test_size=0.5
 beta = 0.99
+p_attacker = 0.25
+mia = True
+mar = False
+echo = True
 optimizer_params = {
     "lr": 0.1,
     "momentum": 0.9,
     "weight_decay": 0.001
 }
 
-message = f"Experiment with ResNet20 on CIFAR10 dataset (test size : {test_size}, class distribution = {beta}). | Attacks: MIA: True, MAR: FAlSE, ECHO: REALLY TRUE | {n_nodes} nodes, {n_local_epochs} local epochs, batch size {batch_size}, lr {optimizer_params['lr']}, number of neigbors {neigbors}"
+message = f"Experiment with ResNet20 on CIFAR10 dataset (test size : {test_size}, class distribution = {beta}). | Attacks: N°Attackers: {int(n_nodes*p_attacker)}, MIA: {mia}, MAR: {mar}, ECHO: {echo} | {n_nodes} nodes, {n_local_epochs} local epochs, batch size {batch_size}, lr {optimizer_params['lr']}, number of neigbors {neigbors}"
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
 Xte, yte = transform(test_set[0]), test_set[1]
@@ -106,8 +110,8 @@ nodes = AttackGossipNode.generate(
     round_len=100,
     sync=False)
 
-for i in range(1, nodes.size()):
-    if i % 4 == 0:
+for i in range(1, n_nodes):
+    if i % int(1/(p_attacker)) == 0:
         nodes[i].mar = True
         nodes[i].mar = False
         nodes[i].echo = True
