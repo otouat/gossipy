@@ -778,7 +778,7 @@ class ImprovedTorchModelHandler(ModelHandler):
             The parameters of the scheduler.
         """
 
-        super(TorchModelHandler, self).__init__(create_model_mode)
+        super(ImprovedTorchModelHandler, self).__init__(create_model_mode)
         self.model = copy.deepcopy(net) if copy_model else net
         self.optimizer = optimizer(self.model.parameters(), **optimizer_params)
         self.criterion = criterion
