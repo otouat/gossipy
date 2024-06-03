@@ -63,7 +63,7 @@ beta = 0.99
 p_attacker = 0.25
 mia = True
 mar = False
-echo = True
+echo = False
 ra = False
 optimizer_params = {
     "lr": 0.1,

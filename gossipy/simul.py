@@ -364,6 +364,7 @@ class AttackSimulationReport(SimulationEventReceiver):
                 if i not in self._marginalized_mia_vulnerability:
                     self._marginalized_mia_vulnerability[i] = []
                 self._marginalized_mia_vulnerability[i].append((round, node_ev))
+            print(self._marginalized_mia_vulnerability)
         else:
             for i, node_ev in enumerate(mia):
                 if i not in self._local_mia_vulnerability:
@@ -1322,9 +1323,11 @@ class AttackGossipSimulator(GossipSimulator):
                             if self.mar :
                                 print("MIA MAR ATTACK")
                                 mia_mar_vulnerability = [mia_for_each_nn(self, n) for _, n in self.nodes.items() if isinstance(n, AttackGossipNode) and getattr(n, 'marginalized_state', False)]
+                                print(mia_mar_vulnerability)
                             if self.ra : 
                                 ra_mar_vulnerability = [ra_for_each_nn(n, marginalized=True) for _, n in self.nodes.items() if isinstance(n, AttackGossipNode) and getattr(n, 'marginalized_state', False)]
                                 if any(item is not None for item in mia_mar_vulnerability):
+                                    print("Updated MIA MAR")
                                     er.update_mia_vulnerability(self.n_rounds, mia_mar_vulnerability, marginalized = True)
 
                     if self.sampling_eval > 0:
