@@ -1,3 +1,5 @@
+from __future__ import annotations
+from abc import ABC, abstractmethod
 import os
 import copy
 import torch
@@ -12,8 +14,6 @@ from sklearn.metrics import accuracy_score, roc_auc_score, recall_score, f1_scor
 from sklearn.metrics.cluster import normalized_mutual_info_score as nmi
 from scipy.optimize import linear_sum_assignment as hungarian
 from typing import Set
-from __future__ import annotations
-from abc import ABC, abstractmethod
 from .. import CACHE, LOG, CacheKey, GlobalSettings, Sizeable
 from ..core import CreateModelMode
 from . import TorchModel

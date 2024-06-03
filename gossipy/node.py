@@ -1,13 +1,12 @@
+from __future__ import annotations
+from collections import OrderedDict
 import random
 import numpy as np
-
 from numpy.random import randint, normal, rand
 from numpy import ndarray
 from torch import Tensor
 from typing import Any, Optional, Union, Dict, Tuple, Iterable
 from gossipy.data import DataDispatcher
-from __future__ import annotations
-from collections import OrderedDict
 from . import CACHE, LOG
 from .core import AntiEntropyProtocol, CreateModelMode, MessageType, Message, P2PNetwork
 from .utils import choice_not_n
