@@ -19,20 +19,21 @@ transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
 train_set, test_set = get_CIFAR10()
 
 n_classes = max(train_set[1].max().item(), test_set[1].max().item())+1
-model = resnet20(n_classes)
-model = resnet20(n_classes)
-n_nodes = 100
-n_rounds = 250
-n_local_epochs = 5
+model = resnet50(n_classes)
+# Parameters:
+n_nodes = 32
+n_rounds = 100
+n_local_epochs = 3
 batch_size = 256
 factors = 1
 neigbors = 4
 test_size=0.5
 beta = 0.99
-p_attacker = 0.25
+p_attacker = 1.0
+# Attacks:
 mia = True
 mar = False
-echo = True
+echo = False
 ra = False
 peer_sampling_period=5
 optimizer_params = {
@@ -41,7 +42,7 @@ optimizer_params = {
         "weight_decay": 0.001
     }
 
-message = f"Experiment with ResNet20 on CIFAR10 dataset (test size : {test_size}, class distribution = {beta}). | Attacks: N°Attackers: {int(n_nodes*p_attacker)}, MIA: {mia}, MAR: {mar}, ECHO: {echo} | {n_nodes} nodes, {n_local_epochs} local epochs, batch size {batch_size}, lr {optimizer_params['lr']}, number of neigbors {neigbors}, and peer sampling period {peer_sampling_period}"
+message = f"Experiment with ResNet50 on CIFAR10 dataset (test size : {test_size}, class distribution = {beta}). | Attacks: N°Attackers: {int(n_nodes*p_attacker)}, MIA: {mia}, MAR: {mar}, ECHO: {echo} | {n_nodes} nodes, {n_local_epochs} local epochs, batch size {batch_size}, lr {optimizer_params['lr']}, number of neigbors {neigbors}, and peer sampling period {peer_sampling_period}"
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
 Xte, yte = transform(test_set[0]), test_set[1]
