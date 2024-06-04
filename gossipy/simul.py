@@ -1283,9 +1283,9 @@ class AttackGossipSimulator(GossipSimulator):
         return allocated_memory
 
     def print_memory(self, t):
-        memory_usage, total_memory = self.get_gpu_memory_usage()
+        """memory_usage, total_memory = self.get_gpu_memory_usage()
         print(f"GPU memory usage: {memory_usage}")
-        print(f"Total GPU memory: {total_memory}")
+        print(f"Total GPU memory: {total_memory}")"""
         pytorch_memory_usage = self.get_pytorch_memory_usage()
         print(f"PyTorch memory usage: {pytorch_memory_usage} bytes")
         self.print_top10_memory(self, t)
