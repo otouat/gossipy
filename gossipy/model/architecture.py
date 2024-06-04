@@ -175,6 +175,35 @@ class ResNet50(TorchModel):
 def resnet50(num_classes):
     return ResNet50(num_classes=num_classes)
 
+class CIFAR10Net(TorchModel):
+    def __init__(self):
+        super().__init__()
+        self.conv1 = nn.Conv2d(3, 32, 3)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(32, 64, 3)
+        self.conv3 = nn.Conv2d(64, 64, 3)
+        self.fc1 = nn.Linear(64 * 2 * 2, 64)
+        self.fc2 = nn.Linear(64, 10)
+    
+    def init_weights(self, *args, **kwargs) -> None:
+        def _init_weights(m: nn.Module):
+            if isinstance(m, nn.Linear) or isinstance(m, nn.Conv2d):
+                nn.init.xavier_uniform_(m.weight)
+                nn.init.zeros_(m.bias)
+        #self.apply(_init_weights)
+        pass
+
+    def forward(self, x):
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = self.pool(F.relu(self.conv3(x)))
+        x = x.view(-1, 64 * 2 * 2)
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+    
+    def __repr__(self) -> str:
+        return "CIFAR10Net(size=%d)" %self.get_size()
 #-------------------------------------------------- TESTING ---------------------------------------------------#
 
 class BasicBlock(nn.Module):
