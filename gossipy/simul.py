@@ -1349,34 +1349,22 @@ class AttackGossipSimulator(GossipSimulator):
                 if (t + 1) % self.delta == 0:
 
                     for er in self._receivers:
-                            print("1")
-                            self.print_memory(tracemalloc)
                             if self.mia : 
-                                mia_vulnerability = [mia_for_each_nn(self, n) for _, n in self.nodes.items()]
-                                print("2")
-                                self.print_memory(tracemalloc)        
+                                mia_vulnerability = [mia_for_each_nn(self, n) for _, n in self.nodes.items()]       
                                 er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)
                             if self.mar :
                                 mia_mar_vulnerability = [mia_for_each_nn(self, n) for _, n in self.nodes.items() if isinstance(n, AttackGossipNode) and getattr(n, 'marginalized_state', False)]
-                                print("3")
-                                self.print_memory(tracemalloc) 
                                 if any(item is not None for item in mia_mar_vulnerability):
                                     er.update_mia_vulnerability(self.n_rounds, mia_mar_vulnerability, marginalized = True)
                             if self.ra : 
                                 ra_mar_vulnerability = [ra_for_each_nn(n, marginalized=True) for _, n in self.nodes.items() if isinstance(n, AttackGossipNode) and getattr(n, 'marginalized_state', False)]
-                    print("4")
-                    self.print_memory(tracemalloc) 
                     if self.sampling_eval > 0:
                         sample = choice(list(self.nodes.keys()), max(int(self.n_nodes * self.sampling_eval), 1))
                         ev = [self.nodes[i].evaluate() for i in sample if self.nodes[i].has_test()]
                         ev_train = [self.nodes[i].evaluate(self.nodes[i].data[0]) for i in sample]
-                        print("5")
-                        self.print_memory(tracemalloc) 
                     else:
                         ev = [n.evaluate() for _, n in self.nodes.items() if n.has_test()]
                         ev_train = [n.evaluate(n.data[0]) for _, n in self.nodes.items()]
-                        print("6")
-                        self.print_memory(tracemalloc) 
                     if ev:
                         self.notify_evaluation(self.n_rounds, True, ev)
                         accuracy = []
@@ -1391,14 +1379,10 @@ class AttackGossipSimulator(GossipSimulator):
 
                     if self.data_dispatcher.has_test():
                         if self.sampling_eval > 0:
-                            print("7")
-                            self.print_memory(tracemalloc) 
                             ev = [self.nodes[i].evaluate(self.data_dispatcher.get_eval_set()) for i in sample]
                         else:
                             ev = [n.evaluate(self.data_dispatcher.get_eval_set()) for _, n in self.nodes.items()]
-                            print("8")
-                            self.print_memory(tracemalloc) 
-                            
+
                         if ev:
                             self.notify_evaluation(self.n_rounds, False, ev)
                             accuracy = []
