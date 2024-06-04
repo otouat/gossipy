@@ -1242,6 +1242,8 @@ class All2AllGossipSimulator(GossipSimulator):
 
 import tracemalloc
 import subprocess
+import os
+os.environ["PATH"] += os.pathsep + "/path/to/gpustat"
 
 class AttackGossipSimulator(GossipSimulator):
     def __init__(self, 
@@ -1270,7 +1272,7 @@ class AttackGossipSimulator(GossipSimulator):
             print(stat)
     
     def get_gpu_memory_usage(self):
-        result = subprocess.run(['gpustat', '-m'], capture_output=True, text=True)
+        result = subprocess.run(['/path/to/gpustat', '-m'], capture_output=True, text=True)
         output = result.stdout
         memory_usage = [line.split()[3].strip() for line in output.split('\n') if 'used' in line]
         total_memory = [line.split()[2].strip() for line in output.split('\n') if 'total' in line]
