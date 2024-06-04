@@ -1261,7 +1261,7 @@ class AttackGossipSimulator(GossipSimulator):
             self.ra = ra
             super().__init__(nodes, data_dispatcher, delta, protocol, drop_prob,
                             online_prob, delay, sampling_eval)
-    def print_memory(self, t):
+    def print_top10_memory(self, t):
         snapshot = t.take_snapshot()
         top_stats = snapshot.statistics('lineno')
 
@@ -1285,7 +1285,7 @@ class AttackGossipSimulator(GossipSimulator):
         print(f"Total GPU memory: {total_memory}")
         pytorch_memory_usage = self.get_pytorch_memory_usage()
         print(f"PyTorch memory usage: {pytorch_memory_usage} bytes")
-        self.print_memory(self, t)
+        self.print_top10_memory(self, t)
 
 
     def start(self, n_rounds: int = 100, attackerNode: int = 0) -> None:
