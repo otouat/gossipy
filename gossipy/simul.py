@@ -1288,7 +1288,7 @@ class AttackGossipSimulator(GossipSimulator):
         print(f"Total GPU memory: {total_memory}")"""
         pytorch_memory_usage = self.get_pytorch_memory_usage()
         print(f"PyTorch memory usage: {pytorch_memory_usage} bytes")
-        self.print_top10_memory(self, t)
+        self.print_top10_memory(t)
 
 
     def start(self, n_rounds: int = 100, attackerNode: int = 0) -> None:
