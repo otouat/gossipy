@@ -1241,6 +1241,7 @@ class All2AllGossipSimulator(GossipSimulator):
         return
 
 import tracemalloc
+import subprocess
 
 class AttackGossipSimulator(GossipSimulator):
     def __init__(self, 
@@ -1260,13 +1261,32 @@ class AttackGossipSimulator(GossipSimulator):
             self.ra = ra
             super().__init__(nodes, data_dispatcher, delta, protocol, drop_prob,
                             online_prob, delay, sampling_eval)
-    def trace_memory(self, t):
+    def print_memory(self, t):
         snapshot = t.take_snapshot()
         top_stats = snapshot.statistics('lineno')
 
         print("[ Top 10 ]")
         for stat in top_stats[:10]:
             print(stat)
+    
+    def get_gpu_memory_usage():
+        result = subprocess.run(['gpustat', '-m'], capture_output=True, text=True)
+        output = result.stdout
+        memory_usage = [line.split()[3].strip() for line in output.split('\n') if 'used' in line]
+        total_memory = [line.split()[2].strip() for line in output.split('\n') if 'total' in line]
+        return memory_usage, total_memory
+    def get_pytorch_memory_usage():
+        allocated_memory = torch.cuda.memory_allocated()
+        return allocated_memory
+
+    def print_memory(self, t):
+        memory_usage, total_memory = self.get_gpu_memory_usage()
+        print(f"GPU memory usage: {memory_usage}")
+        print(f"Total GPU memory: {total_memory}")
+        pytorch_memory_usage = self.get_pytorch_memory_usage()
+        print(f"PyTorch memory usage: {pytorch_memory_usage} bytes")
+        self.print_memory(self, t)
+
 
     def start(self, n_rounds: int = 100, attackerNode: int = 0) -> None:
         tracemalloc.start()
@@ -1327,33 +1347,33 @@ class AttackGossipSimulator(GossipSimulator):
 
                     for er in self._receivers:
                             print("1")
-                            self.trace_memory(tracemalloc)
+                            self.print_memory(tracemalloc)
                             if self.mia : 
                                 mia_vulnerability = [mia_for_each_nn(self, n) for _, n in self.nodes.items()]
                                 print("2")
-                                self.trace_memory(tracemalloc)        
+                                self.print_memory(tracemalloc)        
                                 er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)
                             if self.mar :
                                 mia_mar_vulnerability = [mia_for_each_nn(self, n) for _, n in self.nodes.items() if isinstance(n, AttackGossipNode) and getattr(n, 'marginalized_state', False)]
                                 print("3")
-                                self.trace_memory(tracemalloc) 
+                                self.print_memory(tracemalloc) 
                                 if any(item is not None for item in mia_mar_vulnerability):
                                     er.update_mia_vulnerability(self.n_rounds, mia_mar_vulnerability, marginalized = True)
                             if self.ra : 
                                 ra_mar_vulnerability = [ra_for_each_nn(n, marginalized=True) for _, n in self.nodes.items() if isinstance(n, AttackGossipNode) and getattr(n, 'marginalized_state', False)]
                     print("4")
-                    self.trace_memory(tracemalloc) 
+                    self.print_memory(tracemalloc) 
                     if self.sampling_eval > 0:
                         sample = choice(list(self.nodes.keys()), max(int(self.n_nodes * self.sampling_eval), 1))
                         ev = [self.nodes[i].evaluate() for i in sample if self.nodes[i].has_test()]
                         ev_train = [self.nodes[i].evaluate(self.nodes[i].data[0]) for i in sample]
                         print("5")
-                        self.trace_memory(tracemalloc) 
+                        self.print_memory(tracemalloc) 
                     else:
                         ev = [n.evaluate() for _, n in self.nodes.items() if n.has_test()]
                         ev_train = [n.evaluate(n.data[0]) for _, n in self.nodes.items()]
                         print("6")
-                        self.trace_memory(tracemalloc) 
+                        self.print_memory(tracemalloc) 
                     if ev:
                         self.notify_evaluation(self.n_rounds, True, ev)
                         accuracy = []
@@ -1369,12 +1389,12 @@ class AttackGossipSimulator(GossipSimulator):
                     if self.data_dispatcher.has_test():
                         if self.sampling_eval > 0:
                             print("7")
-                            self.trace_memory(tracemalloc) 
+                            self.print_memory(tracemalloc) 
                             ev = [self.nodes[i].evaluate(self.data_dispatcher.get_eval_set()) for i in sample]
                         else:
                             ev = [n.evaluate(self.data_dispatcher.get_eval_set()) for _, n in self.nodes.items()]
                             print("8")
-                            self.trace_memory(tracemalloc) 
+                            self.print_memory(tracemalloc) 
                             
                         if ev:
                             self.notify_evaluation(self.n_rounds, False, ev)
