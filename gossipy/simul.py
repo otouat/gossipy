@@ -1278,7 +1278,7 @@ class AttackGossipSimulator(GossipSimulator):
         total_memory = [line.split()[2].strip() for line in output.split('\n') if 'total' in line]
         return memory_usage, total_memory
     
-    def get_pytorch_memory_usage():
+    def get_pytorch_memory_usage(self):
         allocated_memory = torch.cuda.memory_allocated()
         return allocated_memory
 
