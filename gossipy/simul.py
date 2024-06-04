@@ -1269,12 +1269,13 @@ class AttackGossipSimulator(GossipSimulator):
         for stat in top_stats[:10]:
             print(stat)
     
-    def get_gpu_memory_usage():
+    def get_gpu_memory_usage(self):
         result = subprocess.run(['gpustat', '-m'], capture_output=True, text=True)
         output = result.stdout
         memory_usage = [line.split()[3].strip() for line in output.split('\n') if 'used' in line]
         total_memory = [line.split()[2].strip() for line in output.split('\n') if 'total' in line]
         return memory_usage, total_memory
+    
     def get_pytorch_memory_usage():
         allocated_memory = torch.cuda.memory_allocated()
         return allocated_memory
