@@ -161,7 +161,7 @@ class ResNet50(TorchModel):
 
         x = F.avg_pool2d(x, kernel_size=7)
         
-        x = x.view(x.size(0), -1)
+        x = x.view(x.size(0), -1)  # Flatten the feature map
         
         x = self.fc(x)
 
