@@ -131,7 +131,7 @@ class ResNet50(TorchModel):
         self.layer3 = self._make_layer(128, 256, num_blocks=6)
 
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(256*4, num_classes)
+        self.fc = nn.Linear(256*4, 256)
 
     def _make_layer(self, in_channels, out_channels, num_blocks):
         layers = []
