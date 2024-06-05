@@ -21,10 +21,10 @@ transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
 train_set, test_set = get_CIFAR10()
 
 n_classes = max(train_set[1].max().item(), test_set[1].max().item())+1
-model = resnet50(n_classes)
+model = resnet20(n_classes)
 # Parameters:
-n_nodes = 32
-n_rounds = 100
+n_nodes = 100
+n_rounds = 250
 n_local_epochs = 3
 batch_size = 256
 factors = 1
