@@ -107,6 +107,6 @@ simulator = AttackDynamicGossipSimulator(
 report = AttackSimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
-simulator.start(n_rounds=n_rounds)
+simulator.start(n_rounds=n_rounds, wall_time_limit=11)
 
 log_results(simulator, report, message)
