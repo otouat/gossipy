@@ -9,7 +9,7 @@ from gossipy.node import GossipNode, FederatedGossipNode, AttackGossipNode
 from gossipy.simul import AttackGossipSimulator, AttackSimulationReport
 from gossipy.model.architecture import *
 from gossipy.model.resnet import *
-from gossipy.data import *
+from gossipy.data import get_CIFAR10, get_CIFAR100
 from gossipy.topology import create_torus_topology, create_federated_topology, CustomP2PNetwork
 from gossipy.attacks.utils import log_results
 import networkx as nx
@@ -21,7 +21,7 @@ transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
 train_set, test_set = get_CIFAR10()
 
 n_classes = max(train_set[1].max().item(), test_set[1].max().item())+1
-model = resnet20(n_classes)
+model = resnet34(n_classes)
 # Parameters:
 n_nodes = 100
 n_rounds = 250
