@@ -1240,10 +1240,7 @@ class All2AllGossipSimulator(GossipSimulator):
         self.notify_end()
         return
 
-import tracemalloc
-import subprocess
-import os
-os.environ["PATH"] += os.pathsep + "/path/to/gpustat"
+import time
 
 class AttackGossipSimulator(GossipSimulator):
     def __init__(self, 
@@ -1263,36 +1260,8 @@ class AttackGossipSimulator(GossipSimulator):
             self.ra = ra
             super().__init__(nodes, data_dispatcher, delta, protocol, drop_prob,
                             online_prob, delay, sampling_eval)
-    def print_top10_memory(self, t):
-        snapshot = t.take_snapshot()
-        top_stats = snapshot.statistics('lineno')
 
-        print("[ Top 10 ]")
-        for stat in top_stats[:10]:
-            print(stat)
-    
-    def get_gpu_memory_usage(self):
-        result = subprocess.run(['/path/to/gpustat', '-m'], capture_output=True, text=True)
-        output = result.stdout
-        memory_usage = [line.split()[3].strip() for line in output.split('\n') if 'used' in line]
-        total_memory = [line.split()[2].strip() for line in output.split('\n') if 'total' in line]
-        return memory_usage, total_memory
-    
-    def get_pytorch_memory_usage(self):
-        allocated_memory = torch.cuda.memory_allocated()
-        return allocated_memory
-
-    def print_memory(self, t):
-        """memory_usage, total_memory = self.get_gpu_memory_usage()
-        print(f"GPU memory usage: {memory_usage}")
-        print(f"Total GPU memory: {total_memory}")"""
-        pytorch_memory_usage = self.get_pytorch_memory_usage()
-        print(f"PyTorch memory usage: {pytorch_memory_usage} bytes")
-        self.print_top10_memory(t)
-
-
-    def start(self, n_rounds: int = 100, attackerNode: int = 0) -> None:
-        tracemalloc.start()
+    def start(self, n_rounds: int = 100, attackerNode: int = 0, wall_time_limit: int = None) -> None:
         assert self.initialized, \
             "The simulator is not inizialized. Please, call the method 'init_nodes'."
         LOG.info("Simulation started.")
@@ -1301,9 +1270,14 @@ class AttackGossipSimulator(GossipSimulator):
 
         msg_queues = DefaultDict(list)
         rep_queues = DefaultDict(list)
+        start_time = time.time()
+        wall_time_limit = wall_time_limit * 3600
 
         try:
             for t in pbar:
+                if wall_time_limit is not None and (time.time() - start_time) > wall_time_limit:
+                    LOG.info(f"Simulation stopped after reaching the wall time limit of {wall_time_limit} seconds.")
+                    break
                 self.n_rounds = int(round(t, -2)/100)
                 if t % self.delta == 0:
                     shuffle(node_ids)
@@ -1426,7 +1400,7 @@ class AttackDynamicGossipSimulator(GossipSimulator):
         self.ra = ra
         self.attackerNode = self.nodes[int(random() * len(self.nodes))]
 
-    def start(self, n_rounds: int = 100) -> None:
+    def start(self, n_rounds: int = 100, wall_time_limit: int = None) -> None:
         """Starts the simulation.
         The simulation handles the messages exchange between the nodes for ``n_rounds`` rounds.
         If attached to a :class:`SimulationReport`, the report is updated at each time step,
@@ -1448,9 +1422,14 @@ class AttackDynamicGossipSimulator(GossipSimulator):
 
         msg_queues = DefaultDict(list)
         rep_queues = DefaultDict(list)
+        start_time = time.time()
+        wall_time_limit = wall_time_limit * 3600
 
         try:
             for t in pbar:
+                if wall_time_limit is not None and (time.time() - start_time) > wall_time_limit:
+                    LOG.info(f"Simulation stopped after reaching the wall time limit of {wall_time_limit} seconds.")
+                    break
                 self.n_rounds = int(round(t, -2)/100)
                 if t % self.delta == 0:
                     shuffle(node_ids)
