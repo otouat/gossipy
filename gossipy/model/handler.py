@@ -254,6 +254,7 @@ class TorchModelHandler(ModelHandler):
             perm = torch.randperm(x.size(0))
             self._local_step(x[perm][:batch_size], y[perm][:batch_size])
         self.model = self.model.to("cpu")
+        torch.cuda.empty_cache()
     
     def _local_step(self, x:torch.Tensor, y:torch.Tensor) -> None:
         self.counter_local += 1
