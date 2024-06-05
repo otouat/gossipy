@@ -282,54 +282,28 @@ def resnet34(num_classes=10):
 
 #-------------------------------------------------- TESTING ---------------------------------------------------#
 
-class BasicBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, stride=1):
-        super(BasicBlock, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1)
-        self.bn1 = nn.BatchNorm2d(out_channels)
-        self.relu = nn.ReLU(inplace=True)
-        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1)
-        self.bn2 = nn.BatchNorm2d(out_channels)
-
-        self.shortcut = nn.Sequential()
-        if stride != 1 or in_channels != out_channels:
-            self.shortcut = nn.Sequential(
-                nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride),
-                nn.BatchNorm2d(out_channels)
-            )
-
-    def forward(self, x):
-        out = self.relu(self.bn1(self.conv1(x)))
-        out = self.bn2(self.conv2(out))
-        out += self.shortcut(x)
-        out = self.relu(out)
-        return out
-    
-    def make_layer(self, in_channels, out_channels, num_blocks, stride=1):
-        layers = []
-        layers.append(BasicBlock(in_channels, out_channels, stride))
-        for _ in range(1, num_blocks):
-            layers.append(BasicBlock(out_channels, out_channels))
-        return nn.Sequential(*layers)
-
 class NewResNet20(TorchModel):
     def __init__(self, num_classes=10):
-        super(NewResNet20, self).__init__()
+        super(ResNet20, self).__init__()
         self.in_planes = 16
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1)
         self.bn1 = nn.BatchNorm2d(16)
-        self.layer1 = self.make_layer(16, 16, 3)
-        self.layer2 = self.make_layer(16, 32, 3, stride=2)
-        self.layer3 = self.make_layer(32, 64, 3, stride=2)
+        self.layer1 = self.make_layer(16, 16, 5)  # Increased number of blocks
+        self.layer2 = self.make_layer(16, 32, 5, stride=2)  # Increased number of blocks
+        self.layer3 = self.make_layer(32, 64, 5, stride=2)  # Increased number of blocks
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(64, num_classes)
         self.init_weights()
 
     def make_layer(self, in_channels, out_channels, num_blocks, stride=1):
         layers = []
-        layers.append(BasicBlock(in_channels, out_channels, stride))  # CHANGED
+        layers.append(nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1))
+        layers.append(nn.BatchNorm2d(out_channels))
+        layers.append(nn.ReLU(inplace=True))
         for _ in range(1, num_blocks):
-            layers.append(BasicBlock(out_channels, out_channels))  # CHANGED
+            layers.append(nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1))
+            layers.append(nn.BatchNorm2d(out_channels))
+            layers.append(nn.ReLU(inplace=True))
         return nn.Sequential(*layers)
 
     def forward(self, x):
@@ -337,7 +311,7 @@ class NewResNet20(TorchModel):
         log = False
         if torch.isnan(x).any() and log:
             print("NaN detected after conv1")
-        x = self.bn1(x)  # ADDED
+        x = self.bn1(x)
         x = self.layer1(x)
         if torch.isnan(x).any() and log:
             print("NaN detected after layer1")
@@ -347,14 +321,14 @@ class NewResNet20(TorchModel):
         x = self.layer3(x)
         if torch.isnan(x).any() and log:
             print("NaN detected after layer3")
-        x = self.avgpool(x)
+        x = self.avgpool(x)  # Use the avgpool layer here
         if torch.isnan(x).any() and log:
             print("NaN detected after avgpool")
         x = x.view(x.size(0), -1)
         x = self.fc(x)
         if torch.isnan(x).any() and log:
             print("NaN detected after fc")
-        return x  # Softmax can be applied during loss computation
+        return x
 
     def init_weights(self):  # Rename the method
         def _init(m: nn.Module):
@@ -369,7 +343,7 @@ class NewResNet20(TorchModel):
         self.apply(_init)
     
     def __repr__(self) -> str:
-        return "Resnet20"
+        return "ResNet20"
 
-def Newresnet20(num_classes):
-    return NewResNet20(num_classes=num_classes)
+def newresnet20(num_classes):
+    return ResNet20(num_classes=num_classes)
