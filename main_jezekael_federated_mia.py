@@ -76,7 +76,7 @@ nodes = FederatedAttackGossipNode.generate(
     round_len=100,
     sync=False)
 
-simulator = MIAFederatedSimulator(
+simulator =AttackFederatedSimulator(
     nodes = nodes,
     data_dispatcher=data_dispatcher,
     delta=100,
@@ -86,7 +86,7 @@ simulator = MIAFederatedSimulator(
     sampling_eval=0
 )
 
-report = MIASimulationReport()
+report = AttackSimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
 simulator.start(n_rounds=wdb.epochs, wall_time_limit=11.5)
