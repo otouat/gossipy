@@ -3,19 +3,17 @@ import torch
 import torch.nn.functional as F
 from torchvision.transforms import Compose, Normalize
 from gossipy.core import AntiEntropyProtocol, CreateModelMode, ConstantDelay, StaticP2PNetwork
-from gossipy.data import CustomDataDispatcher, OLDCustomDataDispatcher
+from gossipy.data import CustomDataDispatcher
 from gossipy.data.handler import ClassificationDataHandler
 from gossipy.model.handler import TorchModelHandler
-from gossipy.node import GossipNode, FederatedGossipNode, AttackGossipNode
-from gossipy.simul import AttackGossipSimulator, AttackDynamicGossipSimulator, AttackSimulationReport
-from gossipy.model.architecture import *
-from gossipy.model.resnet import *
-from gossipy.data import get_CIFAR10, get_CIFAR100
-from gossipy.topology import create_torus_topology, create_federated_topology, CustomP2PNetwork
-from gossipy.attacks.utils import log_results
+from gossipy.node import AttackGossipNode
+from gossipy.simul import AttackDynamicGossipSimulator, AttackSimulationReport
+from gossipy.model.resnet import resnet20
+from gossipy.data import get_CIFAR10
 import networkx as nx
 from networkx.generators import random_regular_graph
 import os
+
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:256'
 
 wandb.init(
@@ -42,27 +40,25 @@ wandb.init(
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
 train_set, test_set = get_CIFAR10()
 
-n_classes = max(train_set[1].max().item(), test_set[1].max().item())+1
+n_classes = max(train_set[1].max().item(), test_set[1].max().item()) + 1
 model = resnet20(n_classes)
 wdb = wandb.config
 
 optimizer_params = {
-    "lr":  wdb.learning_rate,
+    "lr": wdb.learning_rate,
     "momentum": wdb.momentum,
     "weight_decay": wdb.weight_decay
 }
 
-message = f"Experiment with ResNet20 on CIFAR10 dataset (test size : { wdb.test_size}, class distribution = { wdb.beta}). | Attacks: N°Attackers: {int(wdb.n_nodes*wdb.p_attacker)}, MIA: {wdb.mia}, MAR: {wdb.mar}, ECHO: {wdb.echo} | {wdb.n_nodes} nodes, {wdb.n_local_epochs} local epochs, batch size {wdb.batch_size}, lr {wdb.optimizer_params['lr']}, number of neigbors {wdb.neigbors}"
+message = f"Experiment with ResNet20 on CIFAR10 dataset (test size : {wdb.test_size}, class distribution = {wdb.beta}). | Attacks: N°Attackers: {int(wdb.n_nodes * wdb.p_attacker)}, MIA: {wdb.attacks['mia']}, MAR: {wdb.attacks['mar']}, ECHO: {wdb.attacks['echo']} | {wdb.n_nodes} nodes, {wdb.n_local_epochs} local epochs, batch size {wdb.batch_size}, lr {wdb.learning_rate}, number of neigbors {wdb.neigbors}"
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
 Xte, yte = transform(test_set[0]), test_set[1]
 
-data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size= wdb.test_size)
+data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=wdb.test_size)
 
 assignment_method = 'label_dirichlet_skew'
-assignment_params = {
-    'beta': wdb.beta
-}
+assignment_params = {'beta': wdb.beta}
 
 data_dispatcher = CustomDataDispatcher(
     data_handler,
@@ -74,9 +70,10 @@ data_dispatcher = CustomDataDispatcher(
 # Assign data using the specified method
 data_dispatcher.assign(seed=42, method=assignment_method, **assignment_params)
 
-#data_dispatcher = OLDCustomDataDispatcher(data_handler, n=n_nodes*factors, eval_on_user=True, auto_assign=True)
-
-topology = StaticP2PNetwork(int(data_dispatcher.size()/wdb.factors), topology=nx.to_numpy_array(random_regular_graph(wdb.neigbors, wdb.n_nodes, seed=42)))
+topology = StaticP2PNetwork(
+    int(data_dispatcher.size() / wdb.factors),
+    topology=nx.to_numpy_array(random_regular_graph(wdb.neigbors, wdb.n_nodes, seed=42))
+)
 
 nodes = AttackGossipNode.generate(
     data_dispatcher=data_dispatcher,
@@ -88,15 +85,17 @@ nodes = AttackGossipNode.generate(
         criterion=F.cross_entropy,
         create_model_mode=CreateModelMode.MERGE_UPDATE,
         batch_size=wdb.batch_size,
-        local_epochs=wdb.n_local_epochs),
+        local_epochs=wdb.n_local_epochs
+    ),
     round_len=100,
-    sync=False)
+    sync=False
+)
 
 for i in range(1, wdb.n_nodes):
-    nodes[i].mia = wdb.mia
-    nodes[i].mar = wdb.mar
-    if i % int(1/(wdb.p_attacker)) == 0:
-        nodes[i].echo = wdb.echo
+    nodes[i].mia = wdb.attacks['mia']
+    nodes[i].mar = wdb.attacks['mar']
+    if i % int(1 / (wdb.p_attacker)) == 0:
+        nodes[i].echo = wdb.attacks['echo']
 
 simulator = AttackDynamicGossipSimulator(
     nodes=nodes,
@@ -104,13 +103,13 @@ simulator = AttackDynamicGossipSimulator(
     delta=100,
     protocol=AntiEntropyProtocol.PUSH,
     delay=ConstantDelay(0),
-    online_prob=1,  # Approximates the average online rate of the STUNner's smartphone traces
-    drop_prob=0,  # 0.1 Simulate the possibility of message dropping,
+    online_prob=1,
+    drop_prob=0,
     sampling_eval=0,
-    peer_sampling_period= wdb.peer_sampling_period,
-    mia=wdb.mia,
-    mar=wdb.mar,
-    ra=wdb.ra
+    peer_sampling_period=wdb.peer_sampling_period,
+    mia=wdb.attacks['mia'],
+    mar=wdb.attacks['mar'],
+    ra=wdb.attacks['ra']
 )
 
 report = AttackSimulationReport()
