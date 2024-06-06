@@ -47,6 +47,10 @@ def log_results(Simul, report, wandb, message=""):
         writer = csv.writer(combined_file)
         print("3")
         print(report.get_mia_vulnerability(False).items())
+        print("3.1")
+        print(report.get_accuracy(True).get(0, []))
+        print("3.2")
+        print(report.get_accuracy(True).get(1, []))
         writer.writerow(['Node', 'Round', 'Loss MIA', 'Entropy MIA', 'Marginalized Loss MIA', 'Marginalized Entropy MIA', 'Train Accuracy', 'Local Test Accuracy', 'Global Test Accuracy'])
         for node_id, mia_vulnerabilities in report.get_mia_vulnerability(False).items():
             marginalized_mia_vulnerabilities = report.get_mia_vulnerability(True).get(node_id, [])
