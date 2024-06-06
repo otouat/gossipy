@@ -99,6 +99,10 @@ nodes = FederatedAttackGossipNode.generate(
     round_len=100,
     sync=False)
 
+nodes[0].mia = wdb.mia
+nodes[0].mar = wdb.mar
+nodes[0].echo = wdb.echo
+
 simulator = AttackFederatedSimulator(
     nodes = nodes,
     data_dispatcher=data_dispatcher,

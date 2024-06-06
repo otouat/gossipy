@@ -351,7 +351,7 @@ class AttackSimulationReport(SimulationEventReceiver):
                 if i not in self._local_accuracy:
                     self._local_accuracy[i] = []  # Initialize the list for this node if it doesn't exist
                 self._local_accuracy[i].append((round, acc))
-                
+
         else:
             for i, acc in enumerate(accuracy):
                 if i not in self._global_accuracy:
@@ -1657,6 +1657,7 @@ class AttackFederatedSimulator(GossipSimulator):
                     for er in self._receivers:
                             if self.mia:
                                 mia_vulnerability = [mia_for_each_nn(self, n) for _, n in self.nodes.items()]
+                                print()
                                 er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)
                             if self.mar : 
                                 mia_mar_vulnerability = [mia_for_each_nn(self, n) for _, n in self.nodes.items() if isinstance(n, FederatedAttackGossipNode) and getattr(n, 'marginalized_state', False)]
