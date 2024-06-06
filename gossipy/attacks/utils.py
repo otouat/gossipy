@@ -136,6 +136,7 @@ def plot(file_path):
 
     # Plotting all four graphs together
     fig, axs = plt.subplots(2, 2, figsize=(15, 10))
+    print(df)
 
     avg_train_acc = df.groupby('Round')['Train Accuracy'].mean()
     avg_local_test_acc = df.groupby('Round')['Local Test Accuracy'].mean()
