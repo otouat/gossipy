@@ -1349,6 +1349,7 @@ class AttackGossipSimulator(GossipSimulator):
                             })
                         
                         for er in self._receivers:
+                            print(accuracy)
                             er.update_accuracy(self.n_rounds, True, accuracy)
 
                     if self.data_dispatcher.has_test():
@@ -1679,6 +1680,7 @@ class AttackFederatedSimulator(GossipSimulator):
                             })
                         
                         for er in self._receivers:
+                            print(accuracy)
                             er.update_accuracy(self.n_rounds, True, accuracy)
 
                     if self.data_dispatcher.has_test():
