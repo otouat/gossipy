@@ -1570,7 +1570,7 @@ class AttackFederatedSimulator(GossipSimulator):
     #         self.n_nodes += 1
 
 
-    def start(self, n_rounds: int=100) -> None:
+    def start(self, n_rounds: int=100, wall_time_limit: int = None) -> None:
         """Starts the simulation.
 
         The simulation handles the messages exchange between the nodes for ``n_rounds`` rounds.
@@ -1592,9 +1592,14 @@ class AttackFederatedSimulator(GossipSimulator):
         pbar = track(range(n_rounds * self.delta), description="Simulating...")
         msg_queues = DefaultDict(list)
         rep_queues = DefaultDict(list)
+        start_time = time.time()
+        wall_time_limit = wall_time_limit * 3600
 
         try:
             for t in pbar:
+                if wall_time_limit is not None and (time.time() - start_time) > wall_time_limit:
+                    LOG.info(f"Simulation stopped after reaching the wall time limit of {wall_time_limit} seconds.")
+                    break
                 self.n_rounds = int(round(t, -2)/100)
                 if t % self.delta == 0: 
                     shuffle(node_ids)
