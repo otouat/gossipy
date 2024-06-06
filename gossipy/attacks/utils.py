@@ -45,11 +45,13 @@ def log_results(Simul, report, wandb, message=""):
     combined_file_path = f"{new_folder_path}/mia_results.csv"
     with open(combined_file_path, 'w', newline='') as combined_file:
         writer = csv.writer(combined_file)
+        print("3")
+        print(report.get_mia_vulnerability(False).items())
         writer.writerow(['Node', 'Round', 'Loss MIA', 'Entropy MIA', 'Marginalized Loss MIA', 'Marginalized Entropy MIA', 'Train Accuracy', 'Local Test Accuracy', 'Global Test Accuracy'])
         for node_id, mia_vulnerabilities in report.get_mia_vulnerability(False).items():
             marginalized_mia_vulnerabilities = report.get_mia_vulnerability(True).get(node_id, [])
             local_accuracies = report.get_accuracy(True).get(node_id, [])
-            print("3")
+            print("4")
             print(local_accuracies)
             global_accuracies = report.get_accuracy(False).get(node_id, [])
 
