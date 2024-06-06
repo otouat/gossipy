@@ -8,7 +8,7 @@ from gossipy.data.handler import ClassificationDataHandler
 from gossipy.model.handler import TorchModelHandler
 from gossipy.node import AttackGossipNode
 from gossipy.simul import AttackDynamicGossipSimulator, AttackSimulationReport
-from gossipy.model.resnet import resnet20
+from gossipy.model.architecture import resnet20
 from gossipy.data import get_CIFAR10
 import networkx as nx
 from networkx.generators import random_regular_graph
