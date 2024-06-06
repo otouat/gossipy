@@ -21,47 +21,19 @@ os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:256'
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
 train_set, test_set = get_CIFAR10()
 
-class CIFAR10Net(TorchModel):
-    def __init__(self):
-        super().__init__()
-        self.conv1 = nn.Conv2d(3, 32, 3)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(32, 64, 3)
-        self.conv3 = nn.Conv2d(64, 64, 3)
-        self.fc1 = nn.Linear(64 * 2 * 2, 64)
-        self.fc2 = nn.Linear(64, 10)
-    
-    def init_weights(self, *args, **kwargs) -> None:
-        def _init_weights(m: nn.Module):
-            if isinstance(m, nn.Linear) or isinstance(m, nn.Conv2d):
-                nn.init.xavier_uniform_(m.weight)
-                nn.init.zeros_(m.bias)
-        #self.apply(_init_weights)
-        pass
-
-    def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = self.pool(F.relu(self.conv3(x)))
-        x = x.view(-1, 64 * 2 * 2)
-        x = F.relu(self.fc1(x))
-        x = self.fc2(x)
-        return x
-    
-    def __repr__(self) -> str:
-        return "CIFAR10Net(size=%d)" %self.get_size()
-    
 n_classes = max(train_set[1].max().item(), test_set[1].max().item())+1
 model = resnet20(n_classes)
+# Parameters:
 n_nodes = 100
-n_rounds = 200
-n_local_epochs = 5
+n_rounds = 250
+n_local_epochs = 3
 batch_size = 256
 factors = 1
 neigbors = 4
 test_size=0.5
 beta = 0.99
 p_attacker = 1.0
+# Attacks:
 mia = True
 mar = False
 echo = False
@@ -71,10 +43,12 @@ optimizer_params = {
     "momentum": 0.9,
     "weight_decay": 0.001
 }
-scheduler = lr_scheduler.StepLR  # Choosing a StepLR scheduler
-scheduler_params = {'step_size': 30, 'gamma': 0.1}
 
 message = f"Experiment with ResNet20 on CIFAR10 dataset (test size : {test_size}, class distribution = {beta}). | Attacks: N°Attackers: {int(n_nodes*p_attacker)}, MIA: {mia}, MAR: {mar}, ECHO: {echo} | {n_nodes} nodes, {n_local_epochs} local epochs, batch size {batch_size}, lr {optimizer_params['lr']}, number of neigbors {neigbors}"
+
+# Adjusted scheduler to use MultiStepLR
+scheduler = lr_scheduler.MultiStepLR  
+scheduler_params = {'milestones': [int(200/n_local_epochs), int(350/n_local_epochs), int(450/n_local_epochs)], 'gamma': 0.1}
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
 Xte, yte = transform(test_set[0]), test_set[1]
