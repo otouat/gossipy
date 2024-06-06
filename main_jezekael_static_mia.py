@@ -34,7 +34,10 @@ wandb.init(
         "test_size": 0.5,
         "beta": 0.99,
         "p_attacker": 1.0,
-        "attacks": {"mia": True, "mar": False, "echo": False, "ra": False}
+        "mia": True,
+        "mar": False,
+        "echo": False,
+        "ra": False
     }
 )
 
@@ -51,7 +54,7 @@ optimizer_params = {
     "weight_decay": wdb.weight_decay
 }
 
-message = f"Experiment with {wdb.architecture} on {wdb.dataset} dataset (test size : { wdb.test_size}, class distribution = { wdb.beta}). | Attacks: N°Attackers: {int(wdb.n_nodes*wdb.p_attacker)}, MIA: {wdb.mia}, MAR: {wdb.mar}, ECHO: {wdb.echo} | {wdb.n_nodes} nodes, {wdb.n_local_epochs} local epochs, batch size {wdb.batch_size}, lr {wdb.optimizer_params['lr']}, number of neigbors {wdb.neigbors}"
+message = f"Experiment with {wdb.architecture} on {wdb.dataset} dataset (test size : {wdb.test_size}, class distribution = {wdb.beta}). | Attacks: N°Attackers: {int(wdb.n_nodes * wdb.p_attacker)}, MIA: {wdb.mia}, MAR: {wdb.mar}, ECHO: {wdb.echo} | {wdb.n_nodes} nodes, {wdb.n_local_epochs} local epochs, batch size {wdb.batch_size}, lr {wdb.learning_rate}, number of neigbors {wdb.neigbors}"
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
 Xte, yte = transform(test_set[0]), test_set[1]
@@ -65,7 +68,7 @@ assignment_params = {
 
 data_dispatcher = CustomDataDispatcher(
     data_handler,
-    n=wdb.n_nodes * wdb.factors,
+    n=wdb.n_nodes,
     eval_on_user=True,
     auto_assign=False
 )
@@ -73,9 +76,7 @@ data_dispatcher = CustomDataDispatcher(
 # Assign data using the specified method
 data_dispatcher.assign(seed=42, method=assignment_method, **assignment_params)
 
-#data_dispatcher = OLDCustomDataDispatcher(data_handler, n=n_nodes*factors, eval_on_user=True, auto_assign=True)
-
-topology = StaticP2PNetwork(int(data_dispatcher.size()/wdb.factors), topology=nx.to_numpy_array(random_regular_graph(wdb.neigbors, wdb.n_nodes, seed=42)))
+topology = StaticP2PNetwork(int(data_dispatcher.size()), topology=nx.to_numpy_array(random_regular_graph(wdb.neigbors, wdb.n_nodes, seed=42)))
 
 nodes = AttackGossipNode.generate(
     data_dispatcher=data_dispatcher,
@@ -92,10 +93,10 @@ nodes = AttackGossipNode.generate(
     sync=False)
 
 for i in range(1, wdb.n_nodes):
-    nodes[i].mia = wdb.attacks["mia"]
-    nodes[i].mar = wdb.attacks["mar"]
+    nodes[i].mia = wdb.mia
+    nodes[i].mar = wdb.mar
     if i % int(1/(wdb.p_attacker)) == 0:
-        nodes[i].echo = wdb.attacks["echo"]
+        nodes[i].echo = wdb.echo
 
 simulator = AttackGossipSimulator(
     nodes=nodes,
@@ -105,15 +106,15 @@ simulator = AttackGossipSimulator(
     online_prob=1,
     drop_prob=0,
     sampling_eval=0,
-    mia=wdb.attacks["mia"],
-    mar=wdb.attacks["mar"],
-    ra=wdb.attacks["ra"]
+    mia=wdb.mia,
+    mar=wdb.mar,
+    ra=wdb.ra
 )
 
 report = AttackSimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
-simulator.start(n_rounds=wdb.n_rounds, wall_time_limit=0.1)
+simulator.start(n_rounds=wdb.epochs, wall_time_limit=0.1)
 
-log_results(simulator, report, wdb, message)
+log_results(simulator, report, message)
 wandb.finish()
