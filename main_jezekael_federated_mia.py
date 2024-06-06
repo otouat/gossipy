@@ -110,7 +110,10 @@ simulator = AttackFederatedSimulator(
     protocol=AntiEntropyProtocol.PULL,
     online_prob=1,  # Approximates the average online rate of the STUNner's smartphone traces
     drop_prob=0,  # 0.1 Simulate the possibility of message dropping,
-    sampling_eval=0
+    sampling_eval=0,
+    mia=wdb.mia,
+    mar=wdb.mar,
+    ra=wdb.ra
 )
 
 report = AttackSimulationReport()
