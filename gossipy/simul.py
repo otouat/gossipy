@@ -1657,10 +1657,11 @@ class AttackFederatedSimulator(GossipSimulator):
                     for er in self._receivers:
                             if self.mia:
                                 mia_vulnerability = [mia_for_each_nn(self, 0)]
-                                print()
+                                print(mia_vulnerability)
                                 er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)
                             if self.mar : 
                                 mia_mar_vulnerability = [mia_for_each_nn(self, 0)] if isinstance(0, FederatedAttackGossipNode) and getattr(0, 'marginalized_state', False)
+                                print(mia_mar_vulnerability)
                                 if any(item is not None for item in mia_mar_vulnerability):
                                     er.update_mia_vulnerability(self.n_rounds, mia_mar_vulnerability, marginalized = True)
 
