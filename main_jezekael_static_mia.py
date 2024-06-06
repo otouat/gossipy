@@ -93,10 +93,10 @@ nodes = AttackGossipNode.generate(
     sync=False)
 
 for i in range(1, wdb.n_nodes):
-    nodes[i].mia = wdb.attacks["mia"]
-    nodes[i].mar = wdb.attacks["mar"]
+    nodes[i].mia = wdb.mia
+    nodes[i].mar = wdb.mar
     if i % int(1/(wdb.p_attacker)) == 0:
-        nodes[i].echo = wdb.attacks["echo"]
+        nodes[i].echo = wdb.echo
 
 simulator = AttackGossipSimulator(
     nodes=nodes,
@@ -106,9 +106,9 @@ simulator = AttackGossipSimulator(
     online_prob=1,
     drop_prob=0,
     sampling_eval=0,
-    mia=wdb.attacks["mia"],
-    mar=wdb.attacks["mar"],
-    ra=wdb.attacks["ra"]
+    mia=wdb.mia,
+    mar=wdb.mar,
+    ra=wdb.ra
 )
 
 report = AttackSimulationReport()
