@@ -32,10 +32,14 @@ wandb.init(
         "test_size": 0.5,
         "beta": 0.99,
         "p_attacker": 1.0,
-        "peer_sampling_period": 5,
-        "attacks": {"mia": True, "mar": False, "echo": False, "ra": False}
+        "attacks": {"mia": True, "mar": False, "echo": False, "ra": False},
+        "mia": True,
+        "mar": False,
+        "echo": False,
+        "ra": False
     }
 )
+
 
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
 train_set, test_set = get_CIFAR10()
