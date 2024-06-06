@@ -68,7 +68,7 @@ assignment_params = {
 
 data_dispatcher = CustomDataDispatcher(
     data_handler,
-    n=wdb.n_nodes,
+    n=wdb.n_nodes * wdb.factors,
     eval_on_user=True,
     auto_assign=False
 )
@@ -76,8 +76,10 @@ data_dispatcher = CustomDataDispatcher(
 # Assign data using the specified method
 data_dispatcher.assign(seed=42, method=assignment_method, **assignment_params)
 
-topology = StaticP2PNetwork(int(data_dispatcher.size()), topology=nx.to_numpy_array(random_regular_graph(wdb.neigbors, wdb.n_nodes, seed=42)))
-
+topology = StaticP2PNetwork(
+    int(data_dispatcher.size() / wdb.factors),
+    topology=nx.to_numpy_array(random_regular_graph(wdb.neigbors, wdb.n_nodes, seed=42))
+)
 nodes = AttackGossipNode.generate(
     data_dispatcher=data_dispatcher,
     p2p_net=topology,

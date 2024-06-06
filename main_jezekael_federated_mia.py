@@ -1,3 +1,4 @@
+from networkx import random_regular_graph
 import torch
 import torch.nn.functional as F
 from torchvision.transforms import Compose, Normalize
@@ -13,6 +14,9 @@ from gossipy.model.resnet import *
 from gossipy.data import get_CIFAR10, get_CIFAR100
 from gossipy.topology import create_torus_topology, create_federated_topology, CustomP2PNetwork
 from gossipy.attacks.utils import log_results
+import networkx as nx
+import os
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:256'
 
 wandb.init(
     project="my-awesome-project",
@@ -24,7 +28,7 @@ wandb.init(
         "dataset": "CIFAR-10",
         "epochs": 250,
         "batch_size": 256,
-        "n_nodes": 100,
+        "n_nodes": 10,
         "n_local_epochs": 3,
         "neigbors": 4,
         "test_size": 0.5,
@@ -55,8 +59,26 @@ message = f"Experiment with {wdb.architecture} on {wdb.dataset} dataset (test si
 Xtr, ytr = transform(train_set[0]), train_set[1]
 Xte, yte = transform(test_set[0]), test_set[1]
 
-data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size= wdb.test_size)
+assignment_method = 'label_dirichlet_skew'
+assignment_params = {
+    'beta': wdb.beta
+}
 
+data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size= wdb.test_size)
+data_dispatcher = CustomDataDispatcher(
+    data_handler,
+    n=wdb.n_nodes * wdb.factors,
+    eval_on_user=True,
+    auto_assign=False
+)
+
+# Assign data using the specified method
+data_dispatcher.assign(seed=42, method=assignment_method, **assignment_params)
+
+topology = StaticP2PNetwork(
+    int(data_dispatcher.size() / wdb.factors),
+    topology=nx.to_numpy_array(random_regular_graph(wdb.neigbors, wdb.n_nodes, seed=42))
+)
 data_dispatcher = OLDCustomDataDispatcher(data_handler, n=wdb.n_nodes, eval_on_user=True, auto_assign=True)
 
 topology = create_federated_topology(wdb.n_nodes)
@@ -76,7 +98,7 @@ nodes = FederatedAttackGossipNode.generate(
     round_len=100,
     sync=False)
 
-simulator =AttackFederatedSimulator(
+simulator = AttackFederatedSimulator(
     nodes = nodes,
     data_dispatcher=data_dispatcher,
     delta=100,
