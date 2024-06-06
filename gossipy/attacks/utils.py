@@ -49,6 +49,8 @@ def log_results(Simul, report, wandb, message=""):
         for node_id, mia_vulnerabilities in report.get_mia_vulnerability(False).items():
             marginalized_mia_vulnerabilities = report.get_mia_vulnerability(True).get(node_id, [])
             local_accuracies = report.get_accuracy(True).get(node_id, [])
+            print("3")
+            print(local_accuracies)
             global_accuracies = report.get_accuracy(False).get(node_id, [])
 
             # Determine the number of rounds based on mia_vulnerabilities

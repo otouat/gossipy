@@ -350,8 +350,11 @@ class AttackSimulationReport(SimulationEventReceiver):
             for i, acc in enumerate(accuracy):
                 if i not in self._local_accuracy:
                     self._local_accuracy[i] = []  # Initialize the list for this node if it doesn't exist
+                    print("1")
                     print(acc)
                 self._local_accuracy[i].append((round, acc))
+                print("2")
+                print(self._local_accuracy)
         else:
             for i, acc in enumerate(accuracy):
                 if i not in self._global_accuracy:
