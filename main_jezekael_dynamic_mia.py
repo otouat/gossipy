@@ -27,7 +27,7 @@ wandb.init(
         "epochs": 250,
         "batch_size": 256,
         "n_nodes": 100,
-        "n_local_epochs": 3,
+        "n_local_epochs": 1,
         "factors": 1,
         "neigbors": 4,
         "test_size": 0.5,
@@ -56,7 +56,7 @@ optimizer_params = {
     "weight_decay": wdb.weight_decay
 }
 
-message = f"Experiment with ResNet20 on CIFAR10 dataset (test size : {wdb.test_size}, class distribution = {wdb.beta}). | Attacks: N°Attackers: {int(wdb.n_nodes * wdb.p_attacker)}, MIA: {wdb.attacks['mia']}, MAR: {wdb.attacks['mar']}, ECHO: {wdb.attacks['echo']} | {wdb.n_nodes} nodes, {wdb.n_local_epochs} local epochs, batch size {wdb.batch_size}, lr {wdb.learning_rate}, number of neigbors {wdb.neigbors}"
+message = f"Experiment with {wdb.architecture} on {wdb.dataset} dataset (test size : {wdb.test_size}, class distribution = {wdb.beta}). | Attacks: N°Attackers: {int(wdb.n_nodes * wdb.p_attacker)}, MIA: {wdb.attacks['mia']}, MAR: {wdb.attacks['mar']}, ECHO: {wdb.attacks['echo']} | {wdb.n_nodes} nodes, {wdb.n_local_epochs} local epochs, batch size {wdb.batch_size}, lr {wdb.learning_rate}, number of neigbors {wdb.neigbors}"
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
 Xte, yte = transform(test_set[0]), test_set[1]
