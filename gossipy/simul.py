@@ -364,7 +364,6 @@ class AttackSimulationReport(SimulationEventReceiver):
             for i, node_ev in enumerate(mia):
                 if i not in self._marginalized_mia_vulnerability:
                     self._marginalized_mia_vulnerability[i] = []
-                    print
                 self._marginalized_mia_vulnerability[i].append((round, node_ev))
         else:
             for i, node_ev in enumerate(mia):
@@ -868,13 +867,10 @@ class DynamicGossipSimulator(GossipSimulator):
                         sample = choice(list(self.nodes.keys()),
                                         max(int(self.n_nodes * self.sampling_eval), 1))
                         ev = [self.nodes[i].evaluate() for i in sample if self.nodes[i].has_test()]
-                        print(ev)
                     else:
                         ev = [n.evaluate() for _, n in self.nodes.items() if n.has_test()]
-                        print(ev)
                     if ev:
                         self.notify_evaluation(t, True, ev)
-                        print(ev)
 
                     if self.data_dispatcher.has_test():
                         if self.sampling_eval > 0:
@@ -885,7 +881,6 @@ class DynamicGossipSimulator(GossipSimulator):
                                   for _, n in self.nodes.items()]
                         if ev:
                             self.notify_evaluation(t, False, ev)
-                        print(ev)
                 self.notify_timestep(t)
 
         except KeyboardInterrupt:
@@ -1351,7 +1346,6 @@ class AttackGossipSimulator(GossipSimulator):
                             })
                         
                         for er in self._receivers:
-                            print(accuracy)
                             er.update_accuracy(self.n_rounds, True, accuracy)
 
                     if self.data_dispatcher.has_test():
@@ -1689,7 +1683,6 @@ class AttackFederatedSimulator(GossipSimulator):
                             })
                         
                         for er in self._receivers:
-                            print(accuracy)
                             er.update_accuracy(self.n_rounds, True, accuracy)
 
                     if self.data_dispatcher.has_test():
