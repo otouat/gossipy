@@ -12,6 +12,7 @@ from gossipy.model.architecture import resnet20
 from gossipy.data import get_CIFAR10
 import networkx as nx
 from networkx.generators import random_regular_graph
+from gossipy.attacks.utils import log_results
 import os
 
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:256'
@@ -121,7 +122,7 @@ simulator = AttackDynamicGossipSimulator(
 report = AttackSimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
-simulator.start(n_rounds=wdb.epochs, wall_time_limit=11.5)
+simulator.start(n_rounds=wdb.epochs, wall_time_limit=0.05)
 
 log_results(simulator, report, wandb, message)
 wandb.finish()
