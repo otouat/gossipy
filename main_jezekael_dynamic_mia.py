@@ -27,9 +27,9 @@ wandb.init(
         "dataset": "CIFAR-10",
         "epochs": 250,
         "batch_size": 256,
-        "n_nodes": 100,
+        "n_nodes": 10,
         "n_local_epochs": 1,
-        "factors": 1,
+        "factors": 10,
         "neigbors": 4,
         "test_size": 0.5,
         "beta": 0.99,
@@ -122,7 +122,7 @@ simulator = AttackDynamicGossipSimulator(
 report = AttackSimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
-simulator.start(n_rounds=wdb.epochs, wall_time_limit=0.05)
+simulator.start(n_rounds=wdb.epochs, wall_time_limit=1)
 
 log_results(simulator, report, wandb, message)
 wandb.finish()
