@@ -1,4 +1,3 @@
-
 import os
 import matplotlib.pyplot as plt
 from datetime import datetime
@@ -46,33 +45,34 @@ def log_results(Simul, report, wandb, message=""):
     with open(combined_file_path, 'w', newline='') as combined_file:
         writer = csv.writer(combined_file)
         writer.writerow(['Node', 'Round', 'Loss MIA', 'Entropy MIA', 'Marginalized Loss MIA', 'Marginalized Entropy MIA', 'Train Accuracy', 'Local Test Accuracy', 'Global Test Accuracy'])
-        for node_id, mia_vulnerabilities in report.get_mia_vulnerability(False).items():
+
+        all_node_ids = set(report.get_mia_vulnerability(False).keys()).union(set(report.get_accuracy(True).keys()))
+
+        for node_id in all_node_ids:
+            mia_vulnerabilities = report.get_mia_vulnerability(False).get(node_id, [])
             marginalized_mia_vulnerabilities = report.get_mia_vulnerability(True).get(node_id, [])
             local_accuracies = report.get_accuracy(True).get(node_id, [])
             global_accuracies = report.get_accuracy(False).get(node_id, [])
 
-            # Determine the number of rounds based on mia_vulnerabilities
-            num_rounds = len(mia_vulnerabilities)
+            # Determine the number of rounds based on the maximum length of the lists
+            num_rounds = max(len(mia_vulnerabilities), len(local_accuracies), len(global_accuracies))
 
             for round_number in range(1, num_rounds + 1):
-                mia_round = mia_vulnerabilities[round_number - 1]
-                mia_vulnerabilities_dict = mia_round[1]
-
-                # Initialize marginalized MIA vulnerabilities dictionary
+                # Initialize dictionaries
+                mia_vulnerabilities_dict = {'loss_mia': None, 'entropy_mia': None}
                 marginalized_mia_vulnerabilities_dict = {'loss_mia': None, 'entropy_mia': None}
-
-                # Check if the round exists in marginalized_mia_vulnerabilities
-                if round_number - 1 < len(marginalized_mia_vulnerabilities):
-                    marginalized_mia_round = marginalized_mia_vulnerabilities[round_number - 1]
-                    marginalized_mia_vulnerabilities_dict = marginalized_mia_round[1]
-
-                # Extract local and global accuracy metrics
                 local_accuracy_dict = {'train': None, 'test': None}
                 global_accuracy_dict = {'test': None}
 
+                # Extract MIA vulnerabilities if they exist
+                if round_number - 1 < len(mia_vulnerabilities):
+                    mia_vulnerabilities_dict = mia_vulnerabilities[round_number - 1][1]
+                if round_number - 1 < len(marginalized_mia_vulnerabilities):
+                    marginalized_mia_vulnerabilities_dict = marginalized_mia_vulnerabilities[round_number - 1][1]
+
+                # Extract local and global accuracy metrics
                 if round_number - 1 < len(local_accuracies):
                     local_accuracy_dict = local_accuracies[round_number - 1][1]
-
                 if round_number - 1 < len(global_accuracies):
                     global_accuracy_dict = global_accuracies[round_number - 1][1]
 

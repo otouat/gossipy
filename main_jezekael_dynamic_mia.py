@@ -28,10 +28,10 @@ wandb.init(
         "epochs": 250,
         "batch_size": 256,
         "n_nodes": 100,
-        "n_local_epochs": 1,
-        "factors": 1,
+        "n_local_epochs": 3,
         "neigbors": 4,
         "test_size": 0.5,
+        "factors": 1,
         "beta": 0.99,
         "p_attacker": 1.0,
         "attacks": {"mia": True, "mar": False, "echo": False, "ra": False},
@@ -122,7 +122,7 @@ simulator = AttackDynamicGossipSimulator(
 report = AttackSimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
-simulator.start(n_rounds=wdb.epochs, wall_time_limit=11.5)
+simulator.start(n_rounds=wdb.epochs, wall_time_limit=0.1)
 
 log_results(simulator, report, wandb, message)
 wandb.finish()

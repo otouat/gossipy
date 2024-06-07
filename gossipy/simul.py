@@ -1657,7 +1657,6 @@ class AttackFederatedSimulator(GossipSimulator):
                     for er in self._receivers:
                             if self.mia:
                                 mia_vulnerability = [mia_for_each_nn(self, self.nodes[0])]
-                                print(mia_vulnerability)
                                 er.update_mia_vulnerability(self.n_rounds, mia_vulnerability)
                             if self.mar : 
                                 if isinstance(0, FederatedAttackGossipNode) and getattr(0, 'marginalized_state', False):
@@ -1668,7 +1667,6 @@ class AttackFederatedSimulator(GossipSimulator):
                                         "entropy_mia": 0
                                     }
                                     mia_mar_vulnerability = [mia_results]
-                                print(mia_mar_vulnerability)
                                 if any(item is not None for item in mia_mar_vulnerability):
                                     er.update_mia_vulnerability(self.n_rounds, mia_mar_vulnerability, marginalized = True)
 

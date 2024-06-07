@@ -13,7 +13,7 @@ from gossipy.model.architecture import *
 from gossipy.model.resnet import *
 from gossipy.data import get_CIFAR10, get_CIFAR100
 from gossipy.topology import create_torus_topology, create_federated_topology, CustomP2PNetwork
-from gossipy.attacks.utils import log_results
+from gossipy.attacks.federated_utils import log_results
 import networkx as nx
 import os
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:256'
@@ -30,7 +30,7 @@ wandb.init(
         "batch_size": 256,
         "n_nodes": 100,
         "n_local_epochs": 3,
-        "neigbors": 0,
+        "neigbors": 4,
         "test_size": 0.5,
         "factors": 1,
         "beta": 0.99,
@@ -66,6 +66,7 @@ assignment_params = {
 }
 
 data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size= wdb.test_size)
+
 data_dispatcher = CustomDataDispatcher(
     data_handler,
     n=wdb.n_nodes * wdb.factors,
@@ -106,7 +107,7 @@ simulator = AttackFederatedSimulator(
     protocol=AntiEntropyProtocol.PULL,
     online_prob=1,  # Approximates the average online rate of the STUNner's smartphone traces
     drop_prob=0,  # 0.1 Simulate the possibility of message dropping,
-    sampling_eval=0.2,
+    sampling_eval=0,
     mia=wdb.mia,
     mar=wdb.mar,
     ra=wdb.ra
@@ -115,7 +116,7 @@ simulator = AttackFederatedSimulator(
 report = AttackSimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
-simulator.start(n_rounds=wdb.epochs, wall_time_limit=11.5)
+simulator.start(n_rounds=wdb.epochs, wall_time_limit=0.1)
 
 log_results(simulator, report, wandb, message)
 wandb.finish()
