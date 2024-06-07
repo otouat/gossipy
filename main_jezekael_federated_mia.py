@@ -30,7 +30,7 @@ wandb.init(
         "batch_size": 256,
         "n_nodes": 100,
         "n_local_epochs": 3,
-        "neigbors": 4,
+        "neigbors": 0,
         "test_size": 0.5,
         "factors": 1,
         "beta": 0.99,
@@ -76,10 +76,6 @@ data_dispatcher = CustomDataDispatcher(
 # Assign data using the specified method
 data_dispatcher.assign(seed=42, method=assignment_method, **assignment_params)
 
-topology = StaticP2PNetwork(
-    int(data_dispatcher.size() / wdb.factors),
-    topology=nx.to_numpy_array(random_regular_graph(wdb.neigbors, wdb.n_nodes, seed=42))
-)
 data_dispatcher = OLDCustomDataDispatcher(data_handler, n=wdb.n_nodes, eval_on_user=True, auto_assign=True)
 
 topology = create_federated_topology(wdb.n_nodes)
@@ -110,7 +106,7 @@ simulator = AttackFederatedSimulator(
     protocol=AntiEntropyProtocol.PULL,
     online_prob=1,  # Approximates the average online rate of the STUNner's smartphone traces
     drop_prob=0,  # 0.1 Simulate the possibility of message dropping,
-    sampling_eval=0,
+    sampling_eval=0.2,
     mia=wdb.mia,
     mar=wdb.mar,
     ra=wdb.ra
