@@ -1671,8 +1671,8 @@ class AttackFederatedSimulator(GossipSimulator):
                         ev = [self.nodes[i].evaluate() for i in sample if self.nodes[i].has_test()]
                         ev_train = [self.nodes[i].evaluate(self.nodes[i].data[0]) for i in sample]
                     else:
-                        ev = [n.evaluate() for _, n in self.nodes.items() if n.has_test()]
-                        ev_train = [n.evaluate(n.data[0]) for _, n in self.nodes.items()]
+                        ev = [n.evaluate() for _, n in self.nodes.items() if n.has_test() and n.idx != 0]
+                        ev_train = [n.evaluate(n.data[0]) for _, n in self.nodes.items() if n.idx != 0]
                     if ev:
                         self.notify_evaluation(self.n_rounds, True, ev)
                         accuracy = []
@@ -1689,7 +1689,7 @@ class AttackFederatedSimulator(GossipSimulator):
                         if self.sampling_eval > 0:
                             ev = [self.nodes[i].evaluate(self.data_dispatcher.get_eval_set()) for i in sample]
                         else:
-                            ev = [n.evaluate(self.data_dispatcher.get_eval_set()) for _, n in self.nodes.items()]
+                            ev = [n.evaluate(self.data_dispatcher.get_eval_set()) for _, n in self.nodes.items()if n.idx != 0]
                             
                         if ev:
                             self.notify_evaluation(self.n_rounds, False, ev)
