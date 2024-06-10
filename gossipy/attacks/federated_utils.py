@@ -125,6 +125,9 @@ def plot(file_path):
     # Read the CSV file
     df = pd.read_csv(file_path)
 
+    # Exclude the server node (node 0)
+    df = df[df['Node'] != 0]
+
     # Extract unique nodes
     nodes = df['Node'].unique()
 
@@ -215,3 +218,4 @@ def get_fig_evaluation(evals: List[List[Dict]], title: str="Untitled plot") -> N
         LOG.info(f"{k}: {mu[-1]:.2f}")
     ax.legend(loc="lower right")
     return fig
+

@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 from torchvision.transforms import Compose, Normalize
 from gossipy.core import AntiEntropyProtocol, CreateModelMode, ConstantDelay, StaticP2PNetwork
-from gossipy.data import CustomDataDispatcher
+from gossipy.data import CustomDataDispatcher, OLDCustomDataDispatcher
 from gossipy.data.handler import ClassificationDataHandler
 from gossipy.model.handler import TorchModelHandler
 from gossipy.node import AttackGossipNode
@@ -27,7 +27,7 @@ wandb.init(
         "dataset": "CIFAR-10",
         "epochs": 250,
         "batch_size": 256,
-        "n_nodes": 100,
+        "n_nodes": 36,
         "n_local_epochs": 3,
         "neigbors": 5,
         "test_size": 0.5,
@@ -64,8 +64,11 @@ Xte, yte = transform(test_set[0]), test_set[1]
 
 data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=wdb.test_size)
 
+'''
 assignment_method = 'label_dirichlet_skew'
-assignment_params = {'beta': wdb.beta}
+assignment_params = {
+    'beta': wdb.beta
+}
 
 data_dispatcher = CustomDataDispatcher(
     data_handler,
@@ -76,6 +79,8 @@ data_dispatcher = CustomDataDispatcher(
 
 # Assign data using the specified method
 data_dispatcher.assign(seed=42, method=assignment_method, **assignment_params)
+'''
+data_dispatcher = OLDCustomDataDispatcher(data_handler, n=wdb.n_nodes, eval_on_user=True, auto_assign=True)
 
 topology = StaticP2PNetwork(
     int(data_dispatcher.size() / wdb.factors),
