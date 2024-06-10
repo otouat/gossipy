@@ -32,7 +32,7 @@ wandb.init(
         "n_local_epochs": 3,
         "neigbors": 5,
         "test_size": 0.5,
-        "factors": 1,
+        "factors": 2,
         "beta": 0.99,
         "p_attacker": 1.0,
         "mia": True,
@@ -79,7 +79,7 @@ data_dispatcher = CustomDataDispatcher(
 data_dispatcher.assign(seed=42, method=assignment_method, **assignment_params)
 '''
 
-data_dispatcher = OLDCustomDataDispatcher(data_handler, n=wdb.n_nodes, eval_on_user=True, auto_assign=True)
+data_dispatcher = OLDCustomDataDispatcher(data_handler, n=wdb.n_nodes*wdb.factors, eval_on_user=True, auto_assign=True)
 
 topology = create_federated_topology(wdb.n_nodes)
 network = CustomP2PNetwork(topology)
