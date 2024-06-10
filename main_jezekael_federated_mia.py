@@ -23,7 +23,7 @@ wandb.init(
     config={
         "learning_rate": 0.1,
         "momentum": 0.9,
-        "weight_decay": 0.0005,
+        "weight_decay": 0.001,
         "architecture": "ResNet20",
         "dataset": "CIFAR-10",
         "epochs": 250,
