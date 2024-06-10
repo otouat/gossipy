@@ -51,7 +51,7 @@ wdb = wandb.config
 
 optimizer_params = {
     "lr":  wdb.learning_rate,
-    "momentum": wdb.momentum,
+    #"momentum": wdb.momentum,
     "weight_decay": wdb.weight_decay
 }
 
