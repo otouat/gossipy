@@ -131,3 +131,4 @@ simulator.start(n_rounds=wdb.epochs, wall_time_limit=23.5)
 
 log_results(simulator, report, wandb, message)
 wandb.finish()
+print("Finished!")
