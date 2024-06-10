@@ -23,7 +23,7 @@ wandb.init(
     config={
         "learning_rate": 0.1,
         "momentum": 0.9,
-        "weight_decay": 0.001,
+        "weight_decay": 0.0005,
         "architecture": "ResNet20",
         "dataset": "CIFAR-10",
         "epochs": 250,
@@ -89,7 +89,7 @@ nodes = FederatedAttackGossipNode.generate(
     p2p_net=network,
     model_proto=TorchModelHandler(
         net=model,
-        optimizer=torch.optim.SGD,
+        optimizer=torch.optim.Adam,
         optimizer_params = optimizer_params,
         criterion = F.cross_entropy,
         create_model_mode = CreateModelMode.UPDATE,
