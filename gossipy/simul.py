@@ -1665,7 +1665,7 @@ class AttackFederatedSimulator(GossipSimulator):
                                     er.update_mia_vulnerability(self.n_rounds, mia_mar_vulnerability, marginalized = True)
 
                     if self.sampling_eval > 0:
-                        node_ids = [node_id for node_id in self.nodes.keys() if node_id != "server_state"]
+                        node_ids = [node_id for node_id in self.nodes.keys() if node_id != 0]
                         sample = choice(node_ids, max(int((self.n_nodes - 1) * self.sampling_eval), 1))
 
                         ev = [self.nodes[i].evaluate() for i in sample if self.nodes[i].has_test()]

@@ -1,20 +1,15 @@
-
 import os
 import matplotlib.pyplot as plt
 from datetime import datetime
 import numpy as np
 import csv
-from datetime import datetime
-from typing import List, Dict, Tuple
-from gossipy import LOG
+from typing import List, Dict
 import pandas as pd
-import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
-
+from gossipy import LOG
 from gossipy.data import plot_class_distribution
+import wandb
 
 def log_results(Simul, report, wandb, message=""):
-
     base_folder_path = os.path.join(os.getcwd(), "results")
     exp_tracker_file = os.path.join(base_folder_path, "exp_number.txt")
 
@@ -189,8 +184,8 @@ def plot(file_path):
     axs[1, 0].grid(True)
 
     # Calculating the average MIA vulnerability over the generalization errors
-    axs[1, 1].scatter(gen_errors, avg_mia_entropy, 'C1', label='Average MIA Entropy')
-    axs[1, 1].scatter(gen_errors, avg_mar_mia_entropy, 'C2', label='Average Marginalized MIA Entropy')
+    axs[1, 1].scatter(gen_errors, avg_mia_entropy, c='C1', label='Average MIA Entropy')
+    axs[1, 1].scatter(gen_errors, avg_mar_mia_entropy, c='C2', label='Average Marginalized MIA Entropy')
     axs[1, 1].set_xlabel('Average Generalization Error')
     axs[1, 1].set_ylabel('Average MIA Vulnerability')
     axs[1, 1].set_title('Average MIA Vulnerability over Generalization Errors')
@@ -200,17 +195,16 @@ def plot(file_path):
     plt.tight_layout()
     return fig
 
-def get_fig_evaluation(evals: List[List[Dict]],
-                    title: str="Untitled plot") -> None:
-
-    if not evals or not evals[0] or not evals[0][0]: return
+def get_fig_evaluation(evals: List[List[Dict]], title: str="Untitled plot") -> None:
+    if not evals or not evals[0] or not evals[0][0]:
+        return
     fig = plt.figure()
     fig.canvas.manager.set_window_title(title)
     ax = fig.add_subplot(111)
     for k in evals[0][0]:
         evs = [[d[k] for d in l] for l in evals]
-        mu: float = np.mean(evs, axis=0)
-        std: float = np.std(evs, axis=0)
+        mu = np.mean(evs, axis=0)
+        std = np.std(evs, axis=0)
         plt.fill_between(range(1, len(mu)+1), mu-std, mu+std, alpha=0.2)
         plt.title(title)
         plt.xlabel("cycle")
@@ -218,6 +212,4 @@ def get_fig_evaluation(evals: List[List[Dict]],
         plt.plot(range(1, len(mu)+1), mu, label=k)
         LOG.info(f"{k}: {mu[-1]:.2f}")
     ax.legend(loc="lower right")
-    #plt.show()
-
     return fig
