@@ -23,7 +23,7 @@ wandb.init(
     config={
         "learning_rate": 0.1,
         "momentum": 0.9,
-        "weight_decay": 0.001,
+        "weight_decay": 0.0005,
         "architecture": "ResNet20",
         "dataset": "CIFAR-10",
         "epochs": 250,
@@ -32,7 +32,7 @@ wandb.init(
         "n_local_epochs": 3,
         "neigbors": 5,
         "test_size": 0.5,
-        "factors": 2,
+        "factors": 10,
         "beta": 0.99,
         "p_attacker": 1.0,
         "mia": True,

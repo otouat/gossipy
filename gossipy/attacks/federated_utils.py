@@ -125,9 +125,6 @@ def plot(file_path):
     # Read the CSV file
     df = pd.read_csv(file_path)
 
-    # Exclude the server node (node 0)
-    df = df[df['Node'] != 0]
-
     # Extract unique nodes
     nodes = df['Node'].unique()
 
@@ -187,6 +184,10 @@ def plot(file_path):
     axs[1, 0].set_title('Average MIA Vulnerability over Epochs')
     axs[1, 0].legend()
     axs[1, 0].grid(True)
+
+    # Including the MIA entropy vulnerability of node 0
+    axs[1, 0].plot(rounds, avg_mia_entropy, 'C0-', label='Average MIA Entropy Node 0')
+    axs[1, 0].legend()
 
     # Calculating the average MIA vulnerability over the generalization errors
     axs[1, 1].scatter(gen_errors, avg_mia_entropy, c='C1', label='Average MIA Entropy')
