@@ -49,7 +49,7 @@ def mia_for_each_nn(simulation, attackerNode):
     return mia_results
 
 def check_for_nans_in_model(model):
-    for name, param in model.items():
+    for name, param in model.named_parameters():
         if torch.isnan(param).any() or torch.isinf(param).any():
             print(f"NaN or Inf detected in {name}")
             
