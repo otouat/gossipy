@@ -104,10 +104,10 @@ for i, node in enumerate(nodes):
     print(f"Node {i} created")
 
 for i, node in enumerate(nodes):
-    node.mia = wdb.mia
-    node.mar = wdb.mar
+    nodes[i].mia = wdb.mia
+    nodes[i].mar = wdb.mar
     if i % int(1/(wdb.p_attacker)) == 0:
-        node.echo = wdb.echo
+        nodes[i].echo = wdb.echo
 
 simulator = AttackGossipSimulator(
     nodes=nodes,
