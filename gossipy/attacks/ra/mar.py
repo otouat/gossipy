@@ -14,7 +14,6 @@ def check_for_nans(state_dict, label):
 def isolate_victim(model_update_buffer, victim_id):
     """ Computes marginalized model  """
     
-    # Received model updates for the round
     thetas = model_update_buffer.copy()
     n = len(thetas)
     victim = None
@@ -27,51 +26,58 @@ def isolate_victim(model_update_buffer, victim_id):
     
     others = thetas
 
-    # accumulate others
     other = init_list_variables(victim[1])
     for _, model in others:
         other = agg_sum(other, model)
     other = agg_div(other, n)
 
-    # Check for NaNs after aggregation
     check_for_nans(other, "aggregation of others")
 
-    # remove global functionality
     victim_c = agg_sub(victim[1], other)
-    # Check for NaNs after subtraction
     check_for_nans(victim_c, "subtraction")
 
-    # scale back marginalized model
     victim_c = agg_div(victim_c, 1/n)
-    # Check for NaNs after scaling
     check_for_nans(victim_c, "scaling")
 
     return victim_c
 
+
 def init_list_variables(A):
     B = OrderedDict()
     for key in A:
-        B[key] = torch.zeros_like(A[key], dtype=torch.float32)  # Use higher precision
+        if 'bn' not in key:  # Skip BatchNorm layers
+            B[key] = torch.zeros_like(A[key], dtype=torch.float32)
+        else:
+            B[key] = A[key].clone()  # Just clone the BatchNorm layer parameters
     return B
 
 def agg_sum(A, B):
     assert len(A) == len(B)
     C = OrderedDict()
     for key in A:
-        C[key] = A[key].to(torch.float32) + B[key].to(torch.float32)  # Ensure higher precision
+        if 'bn' not in key:  # Skip BatchNorm layers
+            C[key] = A[key].to(torch.float32) + B[key].to(torch.float32)
+        else:
+            C[key] = A[key]  # Keep BatchNorm parameters unchanged
     return C
 
 def agg_sub(A, B):
     assert len(A) == len(B)
     C = OrderedDict()
     for key in A:
-        C[key] = A[key].to(torch.float32) - B[key].to(torch.float32)  # Ensure higher precision
+        if 'bn' not in key:  # Skip BatchNorm layers
+            C[key] = A[key].to(torch.float32) - B[key].to(torch.float32)
+        else:
+            C[key] = A[key]  # Keep BatchNorm parameters unchanged
     return C
 
 def agg_div(A, alpha):
     C = OrderedDict()
     for key in A:
-        C[key] = A[key].to(torch.float32) / alpha  # Ensure higher precision
+        if 'bn' not in key:  # Skip BatchNorm layers
+            C[key] = A[key].to(torch.float32) / alpha
+        else:
+            C[key] = A[key]  # Keep BatchNorm parameters unchanged
     return C
 
 def agg_neg(A):
