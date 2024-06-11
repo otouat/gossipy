@@ -24,6 +24,7 @@ wandb.init(
         "learning_rate": 0.1,
         "momentum": 0.9,
         "weight_decay": 0.0005,
+        "optimizer": "SGD",
         "architecture": "ResNet20",
         "dataset": "CIFAR-10",
         "epochs": 250,
@@ -55,7 +56,7 @@ optimizer_params = {
     "weight_decay": wdb.weight_decay
 }
 
-message = f"Experiment with {wdb.architecture} on {wdb.dataset} dataset (test size : {wdb.test_size}, class distribution = {wdb.beta}). | Attacks: N°Attackers: {int(wdb.n_nodes * wdb.p_attacker)}, MIA: {wdb.mia}, MAR: {wdb.mar}, ECHO: {wdb.echo} | {wdb.n_nodes} nodes, {wdb.n_local_epochs} local epochs, batch size {wdb.batch_size}, lr {wdb.learning_rate}, number of neigbors {wdb.neigbors}"
+message = f"Experiment with {wdb.architecture} on {wdb.dataset} dataset (test size : {wdb.test_size}, class distribution = {wdb.beta}). | Attacks: N°Attackers: {int(wdb.n_nodes * wdb.p_attacker)}, MIA: {wdb.mia}, MAR: {wdb.mar}, ECHO: {wdb.echo} | Training: {wdb.n_nodes} nodes, {wdb.n_local_epochs} local epochs, batch size {wdb.batch_size}, number of neigbors {wdb.neigbors} | Model: Optimizer: {wdb.optimizer}, lr {wdb.learning_rate},  momentum: {wdb.momentum}, weight_decay: {wdb.weight_decay} "
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
 Xte, yte = transform(test_set[0]), test_set[1]
