@@ -103,7 +103,7 @@ nodes = AttackGossipNode.generate(
     sync=False
 )
 
-for i in range(1, wdb.n_nodes):
+for i in range(0, wdb.n_nodes):
     nodes[i].mia = wdb.attacks['mia']
     nodes[i].mar = wdb.attacks['mar']
     if i % int(1 / (wdb.p_attacker)) == 0:

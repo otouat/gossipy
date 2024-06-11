@@ -21,13 +21,13 @@ os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:256'
 wandb.init(
     project="my-awesome-project",
     config={
-        "learning_rate": 0.1,
+        "learning_rate": 0.0001,
         "momentum": 0.9,
         "weight_decay": 0.0005,
         "architecture": "ResNet20",
         "dataset": "CIFAR-10",
         "epochs": 250,
-        "batch_size": 512,
+        "batch_size": 256,
         "n_nodes": 36,
         "n_local_epochs": 5,
         "neigbors": 5,
@@ -89,7 +89,7 @@ nodes = FederatedAttackGossipNode.generate(
     p2p_net=network,
     model_proto=TorchModelHandler(
         net=model,
-        optimizer=torch.optim.Adam,
+        optimizer=torch.optim.SGD,
         optimizer_params = optimizer_params,
         criterion = F.cross_entropy,
         create_model_mode = CreateModelMode.UPDATE,

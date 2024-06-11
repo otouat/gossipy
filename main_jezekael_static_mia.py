@@ -36,7 +36,7 @@ wandb.init(
         "beta": 0.99,
         "p_attacker": 1.0,
         "mia": True,
-        "mar": False,
+        "mar": True,
         "echo": False,
         "ra": False
     }
@@ -99,7 +99,7 @@ nodes = AttackGossipNode.generate(
     round_len=100,
     sync=False)
 
-for i in range(1, wdb.n_nodes):
+for i in range(0, wdb.n_nodes):
     nodes[i].mia = wdb.mia
     nodes[i].mar = wdb.mar
     if i % int(1/(wdb.p_attacker)) == 0:
