@@ -102,12 +102,12 @@ nodes = AttackGossipNode.generate(
 print(f"Number of nodes generated: {len(nodes)}")
 for i, node in enumerate(nodes):
     print(f"Node {i} created")
-    
-for i in range(0, wdb.n_nodes):
-    nodes[i].mia = wdb.mia
-    nodes[i].mar = wdb.mar
+
+for i, node in enumerate(nodes):
+    node.mia = wdb.mia
+    node.mar = wdb.mar
     if i % int(1/(wdb.p_attacker)) == 0:
-        nodes[i].echo = wdb.echo
+        node.echo = wdb.echo
 
 simulator = AttackGossipSimulator(
     nodes=nodes,
