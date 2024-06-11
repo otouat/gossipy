@@ -1348,6 +1348,7 @@ class AttackGossipNode(GossipNode):
                             for key in self.final_agg:
                                 self.gradient[key] = self.final_agg[key] - self.received_models[-1][1][key]
                     else:
+                        #print("node ", self.idx, " has not received all the models")
                         self.marginalized_state = False
             else:
                 recv_model = CACHE.pop(recv_model)
