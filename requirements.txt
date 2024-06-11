@@ -9,3 +9,4 @@ torch
 scikit_learn
 rich
 nvidia-ml-py3
+wandb
