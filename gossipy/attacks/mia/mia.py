@@ -32,8 +32,10 @@ def mia_for_each_nn(simulation, attackerNode):
                 marginalized_state = isolate_victim(attackerNode.received_models, node.idx)
                 model.load_state_dict(marginalized_state, strict=False)
                 model.to(device)
+                print("Marginalized model loaded")
                 check_for_nans_in_model(model)
-                mia_results.append(mia_best_th(model, train_data, test_data, device, log=True))
+                print("Marginalized model checked")
+                mia_results.append(mia_best_th(model, train_data, test_data, device, log=False))
             elif class_specific:
                 num_classes = max(train_data[1].max().item(), test_data[1].max().item()) + 1
                 results = mia_best_th_class(model, train_data, test_data, num_classes, device)
@@ -72,7 +74,7 @@ def mia_best_th(model, train_data, test_data, device, nt=200, log=False):
     model.eval()
     Ltrain, Ptrain, Ytrain = evaluate(model, device, train_data, log = log)
     Ltest, Ptest, Ytest = evaluate(model, device, test_data, log = log)
-    if log and False:
+    if log and True:
         print(f"Train size: {len(train_data)}")
         print("Mean loss train: ", np.mean(Ltrain))
         print("Mean loss test: ", np.mean(Ltest))
