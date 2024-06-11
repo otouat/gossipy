@@ -99,6 +99,10 @@ nodes = AttackGossipNode.generate(
     round_len=100,
     sync=False)
 
+print(f"Number of nodes generated: {len(nodes)}")
+for i, node in enumerate(nodes):
+    print(f"Node {i} created")
+    
 for i in range(0, wdb.n_nodes):
     nodes[i].mia = wdb.mia
     nodes[i].mar = wdb.mar
