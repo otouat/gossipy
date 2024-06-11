@@ -32,7 +32,7 @@ wandb.init(
         "n_local_epochs": 3,
         "neigbors": 5,
         "test_size": 0.5,
-        "factors": 1,
+        "factors": 100,
         "beta": 0.99,
         "p_attacker": 1.0,
         "mia": True,
