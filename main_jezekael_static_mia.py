@@ -30,7 +30,7 @@ wandb.init(
         "epochs": 250,
         "batch_size": 256,
         "n_nodes": 36,
-        "n_local_epochs": 3,
+        "n_local_epochs": 2,
         "neigbors": 5,
         "test_size": 0.5,
         "factors": 50,
