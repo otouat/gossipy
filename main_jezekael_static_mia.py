@@ -31,7 +31,7 @@ wandb.init(
         "batch_size": 256,
         "n_nodes": 5,
         "n_local_epochs": 3,
-        "neigbors": 1,
+        "neigbors": 2,
         "test_size": 0.5,
         "factors": 100,
         "beta": 0.99,
