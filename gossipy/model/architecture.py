@@ -70,7 +70,7 @@ def resnet20(num_classes):
     return ResNet20(num_classes=num_classes)
 
 class CIFAR10Net(TorchModel):
-    def __init__(self):
+    def __init__(self, num_classes=10):
         super().__init__()
         self.fc1 = nn.Linear(32 * 32 * 3, 128)  # Adjusted input size to match the output of convolutions
         self.fc2 = nn.Linear(128, 10)

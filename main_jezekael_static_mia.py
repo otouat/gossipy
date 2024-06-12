@@ -25,21 +25,21 @@ wandb.init(
         "momentum": 0.9,
         "weight_decay": 0.0005,
         "optimizer": "SGD",
-        "architecture": "ResNet20",
+        "architecture": "CifarNet",
         "dataset": "CIFAR-10",
         "epochs": 250,
         "batch_size": 256,
-        "n_nodes": 100,
+        "n_nodes": 5,
         "n_local_epochs": 3,
-        "neigbors": 50,
+        "neigbors": 1,
         "test_size": 0.5,
-        "factors": 1,
+        "factors": 100,
         "beta": 0.99,
         "p_attacker": 0.3,
         "mia": True,
         "mar": True,
         "echo": False,
-        "ra": False
+        "ra": True
     }
 )
 
@@ -47,7 +47,7 @@ transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
 train_set, test_set = get_CIFAR10()
 
 n_classes = max(train_set[1].max().item(), test_set[1].max().item())+1
-model = resnet20(n_classes)
+model = CIFAR10Net(n_classes)
 wdb = wandb.config
 
 optimizer_params = {
