@@ -30,12 +30,11 @@ wandb.init(
         "batch_size": 256,
         "n_nodes": 36,
         "n_local_epochs": 3,
-        "neigbors": 5,
+        "neigbors": 1,
         "test_size": 0.5,
         "factors": 1,
         "beta": 0.99,
-        "p_attacker": 1.0,
-        "attacks": {"mia": True, "mar": True, "echo": False, "ra": False},
+        "p_attacker": 0.3,
         "mia": True,
         "mar": True,
         "echo": False,
@@ -104,11 +103,11 @@ nodes = AttackGossipNode.generate(
     sync=False
 )
 
-for i in range(0, wdb.n_nodes):
-    nodes[i].mia = wdb.attacks['mia']
-    nodes[i].mar = wdb.attacks['mar']
-    if i % int(1 / (wdb.p_attacker)) == 0:
-        nodes[i].echo = wdb.attacks['echo']
+for i, node in enumerate(nodes):
+    nodes[i].mia = wdb.mia
+    nodes[i].mar = wdb.mar
+    if i % int(1/(wdb.p_attacker)) == 0:
+        nodes[i].echo = wdb.echo
 
 simulator = AttackDynamicGossipSimulator(
     nodes=nodes,
@@ -120,9 +119,9 @@ simulator = AttackDynamicGossipSimulator(
     drop_prob=0,
     sampling_eval=0,
     peer_sampling_period=wdb.peer_sampling_period,
-    mia=wdb.attacks['mia'],
-    mar=wdb.attacks['mar'],
-    ra=wdb.attacks['ra']
+    mia=wdb.mia,
+    mar=wdb.mar,
+    ra=wdb.ra
 )
 
 report = AttackSimulationReport()
