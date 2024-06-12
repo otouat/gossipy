@@ -37,9 +37,9 @@ wandb.init(
         "p_attacker": 0.3,
         "mia": True,
         "mar": True,
-        "echo": True,
+        "echo": False,
         "ra": False,
-        "peer_sampling_period": 5,
+        "peer_sampling_period": 10,
     }
 )
 

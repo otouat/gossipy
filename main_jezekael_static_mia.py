@@ -38,7 +38,7 @@ wandb.init(
         "p_attacker": 0.3,
         "mia": True,
         "mar": True,
-        "echo": True,
+        "echo": False,
         "ra": False
     }
 )
