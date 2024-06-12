@@ -30,7 +30,7 @@ wandb.init(
         "epochs": 250,
         "batch_size": 256,
         "n_nodes": 36,
-        "n_local_epochs": 7,
+        "n_local_epochs": 2,
         "neigbors": 5,
         "test_size": 0.5,
         "factors": 50,
@@ -47,7 +47,7 @@ transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
 train_set, test_set = get_CIFAR10()
 
 n_classes = max(train_set[1].max().item(), test_set[1].max().item())+1
-model = CIFAR10Net()
+model = resnet20(n_classes)
 wdb = wandb.config
 
 optimizer_params = {
