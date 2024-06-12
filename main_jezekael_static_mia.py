@@ -29,17 +29,17 @@ wandb.init(
         "dataset": "CIFAR-10",
         "epochs": 250,
         "batch_size": 256,
-        "n_nodes": 100,
+        "n_nodes": 3,
         "n_local_epochs": 3,
-        "neigbors": 5,
+        "neigbors": 2,
         "test_size": 0.5,
-        "factors": 1,
+        "factors": 50,
         "beta": 0.99,
         "p_attacker": 0.3,
         "mia": True,
         "mar": True,
         "echo": False,
-        "ra": False
+        "ra": True
     }
 )
 
@@ -109,6 +109,7 @@ for i, node in enumerate(nodes):
     nodes[i].mar = wdb.mar
     if i % int(1/(wdb.p_attacker)) == 0:
         nodes[i].echo = wdb.echo
+        nodes[i].ra = wdb.ra
 
 simulator = AttackGossipSimulator(
     nodes=nodes,
