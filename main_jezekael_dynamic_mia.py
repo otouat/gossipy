@@ -39,7 +39,7 @@ wandb.init(
         "mar": True,
         "echo": False,
         "ra": False,
-        "peer_sampling_period": 1,
+        "peer_sampling_period": 3,
     }
 )
 
