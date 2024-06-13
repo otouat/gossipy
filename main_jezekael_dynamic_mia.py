@@ -30,7 +30,7 @@ wandb.init(
         "batch_size": 256,
         "n_nodes": 10,
         "n_local_epochs": 3,
-        "neigbors": 5,
+        "neigbors": 3,
         "test_size": 0.5,
         "factors": 10,
         "beta": 0.99,
@@ -108,6 +108,7 @@ for i, node in enumerate(nodes):
     nodes[i].mar = wdb.mar
     if i % int(1/(wdb.p_attacker)) == 0:
         nodes[i].echo = wdb.echo
+        nodes[i].ra = wdb.ra
 
 simulator = AttackDynamicGossipSimulator(
     nodes=nodes,
