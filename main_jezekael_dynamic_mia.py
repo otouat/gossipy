@@ -30,7 +30,7 @@ wandb.init(
         "batch_size": 256,
         "n_nodes": 100,
         "n_local_epochs": 3,
-        "neigbors": 5,
+        "neigbors": 20,
         "test_size": 0.5,
         "factors": 1,
         "beta": 0.99,
@@ -39,7 +39,7 @@ wandb.init(
         "mar": True,
         "echo": False,
         "ra": False,
-        "peer_sampling_period": 3,
+        "peer_sampling_period": 5,
     }
 )
 
