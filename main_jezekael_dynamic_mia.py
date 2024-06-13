@@ -28,7 +28,7 @@ wandb.init(
         "dataset": "CIFAR-10",
         "epochs": 250,
         "batch_size": 256,
-        "n_nodes": 10,
+        "n_nodes": 36,
         "n_local_epochs": 3,
         "neigbors": 3,
         "test_size": 0.5,
@@ -80,7 +80,7 @@ data_dispatcher = CustomDataDispatcher(
 # Assign data using the specified method
 data_dispatcher.assign(seed=42, method=assignment_method, **assignment_params)
 '''
-data_dispatcher = OLDCustomDataDispatcher(data_handler, n=wdb.n_nodes, eval_on_user=True, auto_assign=True)
+data_dispatcher = OLDCustomDataDispatcher(data_handler, n=wdb.n_nodes*wdb.factors, eval_on_user=True, auto_assign=True)
 
 topology = StaticP2PNetwork(
     int(data_dispatcher.size() / wdb.factors),
