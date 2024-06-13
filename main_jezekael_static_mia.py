@@ -25,15 +25,15 @@ wandb.init(
         "momentum": 0.9,
         "weight_decay": 0.0005,
         "optimizer": "SGD",
-        "architecture": "CifarNet",
+        "architecture": "ResNet20",
         "dataset": "CIFAR-10",
         "epochs": 250,
         "batch_size": 256,
-        "n_nodes": 5,
+        "n_nodes": 10,
         "n_local_epochs": 3,
-        "neigbors": 2,
+        "neigbors": 5,
         "test_size": 0.5,
-        "factors": 100,
+        "factors": 10,
         "beta": 0.99,
         "p_attacker": 0.3,
         "mia": True,
@@ -127,7 +127,7 @@ simulator = AttackGossipSimulator(
 report = AttackSimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
-simulator.start(n_rounds=wdb.epochs, wall_time_limit=16.5)
+simulator.start(n_rounds=wdb.epochs, wall_time_limit=0.5)
 
 log_results(simulator, report, wandb, message)
 wandb.finish()
