@@ -39,7 +39,7 @@ wandb.init(
         "mia": True,
         "mar": True,
         "echo": False,
-        "ra": True
+        "ra": False
     }
 )
 
