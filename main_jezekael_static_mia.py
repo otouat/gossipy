@@ -127,7 +127,7 @@ simulator = AttackGossipSimulator(
 report = AttackSimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
-simulator.start(n_rounds=wdb.epochs, wall_time_limit=15.5)
+simulator.start(n_rounds=wdb.epochs, wall_time_limit=10.5)
 
 log_results(simulator, report, wandb, message)
 wandb.finish()
