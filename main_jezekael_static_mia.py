@@ -29,7 +29,7 @@ wandb.init(
         "dataset": "CIFAR-10",
         "epochs": 250,
         "batch_size": 256,
-        "n_nodes": 36,
+        "n_nodes": 100,
         "n_local_epochs": 3,
         "neigbors": 5,
         "test_size": 0.5,
@@ -38,7 +38,7 @@ wandb.init(
         "p_attacker": 0.3,
         "mia": True,
         "mar": True,
-        "echo": True,
+        "echo": False,
         "ra": False
     }
 )
