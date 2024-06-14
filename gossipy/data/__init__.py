@@ -21,7 +21,8 @@ import numpy as np
 
 from .. import LOG
 from ..utils import download_and_unzip, download_and_untar
-
+from torch.utils.data import Subset
+from collections import defaultdict
 
 # AUTHORSHIP
 __version__ = "0.0.1"
@@ -574,6 +575,70 @@ class OLDCustomDataDispatcher(DataDispatcher):
                 start_index = idx * eval_ex_x_user
                 end_index = start_index + eval_ex_x_user
                 self.te_assignments[idx] = list(range(start_index, min(end_index, n_eval_ex)))
+
+class NewCustomDataDispatcher(DataDispatcher):
+    def assign(self, seed: int = 42, beta: float = 0.5) -> None:
+        np.random.seed(seed)
+        self.tr_assignments = [[] for _ in range(self.n)]
+        self.te_assignments = [[] for _ in range(self.n)]
+
+        y_train = self.data_handler.y_train
+        n_classes = len(np.unique(y_train))
+
+        class_indices = defaultdict(list)
+        for idx, label in enumerate(y_train):
+            class_indices[label].append(idx)
+
+        for c in class_indices:
+            np.random.shuffle(class_indices[c])
+
+        n_samples_per_class = [len(class_indices[c]) for c in range(n_classes)]
+        class_proportions = np.random.dirichlet([beta] * self.n, n_classes)
+
+        for c in range(n_classes):
+            start_idx = 0
+            for idx in range(self.n):
+                n_samples = int(class_proportions[c, idx] * n_samples_per_class[c])
+                self.tr_assignments[idx].extend(class_indices[c][start_idx:start_idx + n_samples])
+                start_idx += n_samples
+
+        for idx in range(self.n):
+            np.random.shuffle(self.tr_assignments[idx])
+
+        if self.eval_on_user:
+            y_eval = self.data_handler.y_eval
+            class_indices_eval = defaultdict(list)
+            for idx, label in enumerate(y_eval):
+                class_indices_eval[label].append(idx)
+
+            for c in class_indices_eval:
+                np.random.shuffle(class_indices_eval[c])
+
+            n_samples_per_class_eval = [len(class_indices_eval[c]) for c in range(n_classes)]
+            class_proportions_eval = np.random.dirichlet([beta] * self.n, n_classes)
+
+            for c in range(n_classes):
+                start_idx = 0
+                for idx in range(self.n):
+                    n_samples = int(class_proportions_eval[c, idx] * n_samples_per_class_eval[c])
+                    self.te_assignments[idx].extend(class_indices_eval[c][start_idx:start_idx + n_samples])
+                    start_idx += n_samples
+
+            for idx in range(self.n):
+                np.random.shuffle(self.te_assignments[idx])
+
+    def print_data_distribution(self):
+        y_train = self.data_handler.y_train
+        n_classes = len(np.unique(y_train))
+        distribution = np.zeros((self.n, n_classes), dtype=int)
+
+        for node_idx, indices in enumerate(self.tr_assignments):
+            for idx in indices:
+                label = y_train[idx]
+                distribution[node_idx][label] += 1
+
+        for node_idx in range(self.n):
+            print(f"Node {node_idx}: {distribution[node_idx]}")
 
 class RecSysDataDispatcher(DataDispatcher):
     from .handler import RecSysDataHandler
