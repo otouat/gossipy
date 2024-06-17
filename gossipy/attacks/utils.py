@@ -7,9 +7,8 @@ from typing import List, Dict
 import pandas as pd
 from gossipy import LOG
 from gossipy.data import plot_class_distribution
-import wandb
 
-def log_results(Simul, report, wandb, message=""):
+def log_results(Simul, report, message=""):
     base_folder_path = os.path.join(os.getcwd(), "results")
     exp_tracker_file = os.path.join(base_folder_path, "exp_number.txt")
 
@@ -83,18 +82,6 @@ def log_results(Simul, report, wandb, message=""):
                     local_accuracy_dict.get('test', None),
                     global_accuracy_dict.get('test', None)
                 ])
-
-                wandb.log({
-                    "node": node_id,
-                    "round": round_number,
-                    "loss_mia": mia_vulnerabilities_dict.get('loss_mia', None),
-                    "entropy_mia": mia_vulnerabilities_dict.get('entropy_mia', None),
-                    "marginalized_loss_mia": marginalized_mia_vulnerabilities_dict.get('loss_mia', None),
-                    "marginalized_entropy_mia": marginalized_mia_vulnerabilities_dict.get('entropy_mia', None),
-                    "train_accuracy": local_accuracy_dict.get('train', None),
-                    "local_test_accuracy": local_accuracy_dict.get('test', None),
-                    "global_test_accuracy": global_accuracy_dict.get('test', None)
-                })
 
     # Update the experiment number tracker file
     with open(exp_tracker_file, 'w') as file:
