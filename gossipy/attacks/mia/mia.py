@@ -205,9 +205,9 @@ def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], log = False
                     #print(f"scores: {scores.shape}, Value: {scores}")
                     #print(f"loss: {loss.item()}")
                               # Detect NaNs in scores and loss
-                if torch.isnan(scores).any():
+                if torch.isnan(scores).any() and False:
                     print("NaN detected in scores")
-                if torch.isnan(loss).any():
+                if torch.isnan(loss).any() and False:
                     print("NaN detected in loss")
                 # Collect probability scores instead of class predictions
                 prob_scores = torch.nn.functional.softmax(scores, dim=-1).cpu().numpy()
