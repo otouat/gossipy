@@ -104,6 +104,6 @@ simulator = AttackGossipSimulator(
 report = AttackSimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
-simulator.start(n_rounds=config["epochs"], wall_time_limit=16.5)
+simulator.start(n_rounds=config["epochs"], wall_time_limit=23.5)
 
 log_results(simulator, report, message)
