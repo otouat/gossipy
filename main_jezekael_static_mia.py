@@ -40,7 +40,7 @@ config = {
     "beta": 0.99,
     "p_attacker": 0.3,
     "mia": True,
-    "mar": True,
+    "mar": False,
     "echo": False,
     "ra": False
 }
