@@ -33,8 +33,8 @@ config = {
     "epochs": 250,
     "batch_size": 256,
     "n_nodes": 36,
-    "n_local_epochs": 3,
-    "neigbors": 5,
+    "n_local_epochs": 1,
+    "neigbors": 1,
     "test_size": 0.5,
     "factors": 1,
     "beta": 0.99,
@@ -107,6 +107,6 @@ simulator = AttackDynamicGossipSimulator(
 report = AttackSimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
-simulator.start(n_rounds=config["epochs"], wall_time_limit=23.5)
+simulator.start(n_rounds=config["epochs"], wall_time_limit=16.5)
 
 log_results(simulator, report, message)
