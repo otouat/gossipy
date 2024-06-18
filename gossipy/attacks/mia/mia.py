@@ -11,11 +11,7 @@ def mia_for_each_nn(simulation, attackerNode):
     class_specific = attackerNode.class_specific
     marginalized = attackerNode.marginalized_state
     nn = sorted(attackerNode.p2p_net.get_peers(attackerNode.idx), key=lambda x: int(x))
-    
-    if class_specific:
-        mia_results = [[], []]
-    else:
-        mia_results = [[], []]  # Ensure consistent structure for mia_results
+    mia_results = [[], []]  # Ensure consistent structure for mia_results
     
     for node in simulation.nodes.values():
         if node.idx in nn:
