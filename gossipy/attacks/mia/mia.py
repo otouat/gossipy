@@ -1,18 +1,25 @@
-from typing import Tuple
-import numpy as np
 from sklearn.utils import resample
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
+import torch
+import torchvision.models as models
+from torch.profiler import profile, record_function, ProfilerActivity
+from torch.utils.data import DataLoader
+import matplotlib.pyplot as plt
+import numpy as np
 import copy
-
-from gossipy.attacks.ra.mar import isolate_victim
+from typing import Tuple, Dict, List
+from sklearn.metrics import accuracy_score, roc_auc_score, recall_score, f1_score, precision_score
+import os
+from gossipy.attacks.ra.mar import *
+from torchsummary import summary
 
 def mia_for_each_nn(simulation, attackerNode):
     class_specific = attackerNode.class_specific
     marginalized = attackerNode.marginalized_state
     nn = sorted(attackerNode.p2p_net.get_peers(attackerNode.idx), key=lambda x: int(x))
-    mia_results = [[], []]  # Ensure consistent structure for mia_results
-    
+    mia_results = [[], []] if class_specific else []
     for node in simulation.nodes.values():
         if node.idx in nn:
             data = node.data
@@ -28,21 +35,14 @@ def mia_for_each_nn(simulation, attackerNode):
                 print("Marginalized model loaded")
                 check_for_nans_in_model(model)
                 print("Marginalized model checked")
-                loss_mia, ent_mia = mia_best_th(model, train_data, test_data, device, log=False)
-                mia_results[0].append(loss_mia)
-                mia_results[1].append(ent_mia)
+                mia_results.append(mia_best_th(model, train_data, test_data, device, log=False))
             elif class_specific:
                 num_classes = max(train_data[1].max().item(), test_data[1].max().item()) + 1
                 results = mia_best_th_class(model, train_data, test_data, num_classes, device)
                 mia_results[0].append(results[0])
                 mia_results[1].append(results[1])
             else:
-                loss_mia, ent_mia = mia_best_th(model, train_data, test_data, device)
-                mia_results[0].append(loss_mia)
-                mia_results[1].append(ent_mia)
-    
-    if len(mia_results[0]) == 0 or len(mia_results[1]) == 0:
-        raise ValueError("mia_results does not have enough elements")
+                mia_results.append(mia_best_th(model, train_data, test_data, device))
     
     mia_results = {
         "loss_mia": np.mean(mia_results[0]),
@@ -54,8 +54,9 @@ def check_for_nans_in_model(model):
     for name, param in model.named_parameters():
         if torch.isnan(param).any() or torch.isinf(param).any():
             print(f"NaN or Inf detected in {name}")
-
+            
 def mia_best_th(model, train_data, test_data, device, nt=200, log=False):
+    
     def search_th(train, test):
         thrs = np.linspace(min(train.min(), test.min()), max(train.max(), test.max()), nt)
         R = np.zeros_like(thrs)
@@ -63,22 +64,23 @@ def mia_best_th(model, train_data, test_data, device, nt=200, log=False):
         for i, th in enumerate(thrs):
             tp = (train < th).sum()
             tn = (test >= th).sum()
-            acc = (tp + tn) / (len(train) + len(test))
-            if log:
+            acc = (tp + tn) / (len(train) + len(test))  # Correcting the calculation for accuracy
+            if log and False:
                 print(f"Acc: {acc}")
             R[i] = acc
 
         return R.max()
 
     model.eval()
-    Ltrain, Ptrain, Ytrain = evaluate(model, device, train_data, log=log)
-    Ltest, Ptest, Ytest = evaluate(model, device, test_data, log=log)
-    if log:
+    Ltrain, Ptrain, Ytrain = evaluate(model, device, train_data, log = log)
+    Ltest, Ptest, Ytest = evaluate(model, device, test_data, log = log)
+    if log and True:
         print(f"Train size: {len(train_data)}")
         print("Mean loss train: ", np.mean(Ltrain))
         print("Mean loss test: ", np.mean(Ltest))
     model.train()
 
+    # it takes a subset of results on test set with size equal to the one of the training test 
     n = min(Ptest.shape[0], Ptrain.shape[0])
     Ptrain = Ptrain[:n]
     Ytrain = Ytrain[:n]
@@ -91,13 +93,15 @@ def mia_best_th(model, train_data, test_data, device, nt=200, log=False):
         
     if log:
         print(f"Loss_mia: {loss_mia}, Ent_mia: {ent_mia}")
+    #print(f" Loss: {loss_mia}, Enthropy: {ent_mia}")
 
     return loss_mia, ent_mia
 
 def mia_best_th_class(model, train_data, test_data, num_class, device, nt=200):
+    
     def search_th(train, test, train_label, test_label, num_classes):
         thrs = np.linspace(min(train.min(), test.min()), max(train.max(), test.max()), nt)
-        R = np.zeros((num_classes, len(thrs)))
+        R = np.zeros((num_classes, len(thrs)))  # Initialize array for class-specific thresholds
         train_c = []
         test_c = []
 
@@ -107,10 +111,12 @@ def mia_best_th_class(model, train_data, test_data, num_class, device, nt=200):
                     train_c.append(train[i])
                 if test_label[i] == c:
                     test_c.append(test[i])
+            # Resample the training and testing data to have an equal size in each class
             train_c = resample(train_c, replace=False, n_samples=min(int(sum(train_label == c)), int(sum(test_label == c))))
             test_c = resample(test_c, replace=False, n_samples=min(int(sum(train_label == c)), int(sum(test_label == c))))
 
             for i, th in enumerate(thrs):
+                # Count true positives and true negatives for each class
                 tp = (train_c < th).sum()
                 tn = (test_c >= th).sum()
                 acc = (tp + tn) / (len(train_c) + len(test_c))
@@ -124,17 +130,20 @@ def mia_best_th_class(model, train_data, test_data, num_class, device, nt=200):
     Ltest, Ptest, Ytest = evaluate(model, device, test_data)
     model.train()
 
+    # it takes a subset of results on test set with size equal to the one of the training test
     n = min(Ptest.shape[0], Ptrain.shape[0])
+    
     Ptrain = Ptrain[:n]
     Ytrain = Ytrain[:n]
     Ltrain = Ltrain[:n]
 
-    th_indices_loss = search_th(Ltrain, Ltest, Ytrain, Ytest, num_class)
-    th_indices_ent = search_th(compute_modified_entropy(Ptrain, Ytrain), compute_modified_entropy(Ptest, Ytest), Ytrain, Ytest, num_class)
+    th_indices_loss = search_th(Ltrain, Ltest, Ytrain, Ytest, num_class,)  # Class-specific thresholds for loss
+    th_indices_ent = search_th(compute_modified_entropy(Ptrain, Ytrain), compute_modified_entropy(Ptest, Ytest), Ytrain, Ytest, num_class,)  # Class-specific thresholds for entropy
 
     return th_indices_loss, th_indices_ent
 
 def compute_modified_entropy(p, y, epsilon=0.00001):
+    """ Computes label informed entropy from 'Systematic evaluation of privacy risks of machine learning models' USENIX21 """
     assert len(y) == len(p)
     n = len(p)
 
@@ -145,15 +154,16 @@ def compute_modified_entropy(p, y, epsilon=0.00001):
         yi = y[i]
         for j, pij in enumerate(pi):
             if j == yi:
-                entropy[i] -= (1-pij) * np.log(pij + epsilon)
+                # right class
+                entropy[i] -= (1-pij)*np.log(pij+epsilon)
             else:
-                entropy[i] -= pij * np.log(1-pij + epsilon)
+                entropy[i] -= (pij)*np.log(1-pij+epsilon)
 
     return entropy
 
-def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], log=False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], log = False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+
     x, y = data
-    print(device)
     model = model.to(device)
     x, y = x.to(device), y.to(device)
 
@@ -162,28 +172,41 @@ def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], log=False) 
     labels = []
 
     for idx in range(len(x)):
-        input_tensor = x[idx].unsqueeze(0)
-        with torch.no_grad():
-            with torch.autocast(device_type="cuda"):
+        input_tensor = x[idx].unsqueeze(0)  # Ensure the input tensor has shape [1, channels, height, width]
+        #if log:
+            #print(f"Input tensor shape: {input_tensor.shape}")
+        #with profile(activities=[ProfilerActivity.CUDA], profile_memory=True, record_shapes=True) as prof:
+        with torch.autocast(device_type="cuda"):
+            with torch.no_grad():
+                """if log:
+                    summary(model, input_size=(1, *x[0].shape))
+                    model.eval()
+                    with torch.no_grad():
+                        test_input = x[0].unsqueeze(0).to(device)
+                        test_output = model(test_input)
+                        print("Test output:", test_output)"""
                 scores = model(input_tensor)
                 loss = torch.nn.functional.cross_entropy(scores, y[idx].unsqueeze(0))
+                #if log:
+                    #print(f"scores: {scores.shape}, Value: {scores}")
+                    #print(f"loss: {loss.item()}")
+                              # Detect NaNs in scores and loss
                 if torch.isnan(scores).any():
                     print("NaN detected in scores")
                 if torch.isnan(loss).any():
                     print("NaN detected in loss")
+                # Collect probability scores instead of class predictions
                 prob_scores = torch.nn.functional.softmax(scores, dim=-1).cpu().numpy()
                 label = y[idx].cpu().numpy()
 
                 losses.append(loss.cpu().numpy())
-                preds.append(prob_scores.reshape(1, -1))
-                labels.append(label.reshape(1, -1))
-    
+                preds.append(prob_scores.reshape(1, -1))  # Store probability scores
+                labels.append(label.reshape(1, -1))  # Ensure labels are added as arrays
     losses = np.array(losses)
     preds = np.concatenate(preds) if preds else np.array([])
     labels = np.concatenate(labels) if labels else np.array([])
     model = model.to("cpu")
     return losses, preds, labels
-
 
 def compute_consensus_distance(nodes) -> float:
     num_nodes = len(nodes)
@@ -231,3 +254,4 @@ def check_model_initialization(original_model, marginalized_model):
         print("Error: Model state dictionaries do not match.")
     else:
         print("Model initialization successful. State dictionaries match.")
+
