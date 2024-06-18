@@ -15,11 +15,15 @@ import os
 from gossipy.attacks.ra.mar import *
 from torchsummary import summary
 
+
 def mia_for_each_nn(simulation, attackerNode):
     class_specific = attackerNode.class_specific
     marginalized = attackerNode.marginalized_state
     nn = sorted(attackerNode.p2p_net.get_peers(attackerNode.idx), key=lambda x: int(x))
-    mia_results = [[], []] if class_specific else []
+    
+    mia_results = [[], []]
+    # Ensure consistent structure for mia_results
+    
     for node in simulation.nodes.values():
         if node.idx in nn:
             data = node.data
@@ -35,14 +39,21 @@ def mia_for_each_nn(simulation, attackerNode):
                 print("Marginalized model loaded")
                 check_for_nans_in_model(model)
                 print("Marginalized model checked")
-                mia_results.append(mia_best_th(model, train_data, test_data, device, log=False))
+                loss_mia, ent_mia = mia_best_th(model, train_data, test_data, device, log=False)
+                mia_results[0].append(loss_mia)
+                mia_results[1].append(ent_mia)
             elif class_specific:
                 num_classes = max(train_data[1].max().item(), test_data[1].max().item()) + 1
                 results = mia_best_th_class(model, train_data, test_data, num_classes, device)
                 mia_results[0].append(results[0])
                 mia_results[1].append(results[1])
             else:
-                mia_results.append(mia_best_th(model, train_data, test_data, device))
+                loss_mia, ent_mia = mia_best_th(model, train_data, test_data, device)
+                mia_results[0].append(loss_mia)
+                mia_results[1].append(ent_mia)
+    
+    if len(mia_results[0]) == 0 or len(mia_results[1]) == 0:
+        raise ValueError("mia_results does not have enough elements")
     
     mia_results = {
         "loss_mia": np.mean(mia_results[0]),
