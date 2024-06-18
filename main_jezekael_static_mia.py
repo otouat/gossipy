@@ -36,11 +36,11 @@ config = {
     "n_local_epochs": 3,
     "neigbors": 3,
     "test_size": 0.5,
-    "factors": 50,
+    "factors": 10,
     "beta": 0.99,
     "p_attacker": 0.3,
     "mia": True,
-    "mar": False,
+    "mar": True,
     "echo": False,
     "ra": False
 }

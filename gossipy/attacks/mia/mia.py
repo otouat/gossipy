@@ -153,6 +153,7 @@ def compute_modified_entropy(p, y, epsilon=0.00001):
 
 def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], log=False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     x, y = data
+    print(device)
     model = model.to(device)
     x, y = x.to(device), y.to(device)
 
