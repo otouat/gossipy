@@ -69,12 +69,6 @@ topology =  UniformDynamicP2PNetwork(
     topology=nx.to_numpy_array(random_regular_graph(config["neigbors"], config["n_nodes"], seed=42))
 )
 
-adj_matrix = nx.to_numpy_array(random_regular_graph(config["neigbors"], config["n_nodes"], seed=42))
-topology =  UniformDynamicP2PNetwork(
-    int(data_dispatcher.size() / config["factors"]),
-    topology=adj_matrix
-)
-
 nodes = AttackGossipNode.generate(
     data_dispatcher=data_dispatcher,
     p2p_net=topology,
@@ -113,16 +107,9 @@ simulator = AttackDynamicGossipSimulator(
     ra=config["ra"]
 )
 
-# Print nodes and their neighbors
-print("Nodes and their neighbors:")
-graph = nx.from_numpy_array(adj_matrix)
-for node in graph.nodes:
-    neighbors = list(graph.neighbors(node))
-    print(f"Node {node}: Neighbors {neighbors}")
-
 report = AttackSimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
-simulator.start(n_rounds=config["epochs"], wall_time_limit=0.5)
+simulator.start(n_rounds=config["epochs"], wall_time_limit=0.1)
 
 log_results(simulator, report, message)
