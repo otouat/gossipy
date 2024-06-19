@@ -11,7 +11,7 @@ import json
 from gossipy.model.utils import *
 
 from . import CACHE, LOG, CacheKey
-from .core import AntiEntropyProtocol, Message, ConstantDelay, Delay, MixingMatrix, UniformMixing, DynamicP2PNetwork
+from .core import AntiEntropyProtocol, Message, ConstantDelay, Delay, MixingMatrix, UniformDynamicP2PNetwork, UniformMixing, DynamicP2PNetwork
 from .data import DataDispatcher
 from .node import FederatedAttackGossipNode, GossipNode, AttackGossipNode, All2AllGossipNode
 from .flow_control import TokenAccount
@@ -1437,7 +1437,7 @@ class AttackDynamicGossipSimulator(GossipSimulator):
                 for i in node_ids:
                     node = self.nodes[i]
                     if node.timed_out(t):
-                        if isinstance(node.p2p_net, DynamicP2PNetwork) and t % self.peer_sampling_period == 0:
+                        if isinstance(node.p2p_net, UniformDynamicP2PNetwork) and t % self.peer_sampling_period == 0:
                             print(node)
                             for n in node.p2p_net._topology[node.idx]:
                                 print(n.idx)
