@@ -32,11 +32,11 @@ config = {
     "dataset": "CIFAR-10",
     "epochs": 250,
     "batch_size": 256,
-    "n_nodes": 100,
+    "n_nodes": 6,
     "n_local_epochs": 1,
-    "neigbors": 1,
+    "neigbors": 3,
     "test_size": 0.5,
-    "factors": 1,
+    "factors": 10,
     "beta": 0.99,
     "p_attacker": 0.3,
     "mia": True,
@@ -107,6 +107,6 @@ simulator = AttackDynamicGossipSimulator(
 report = AttackSimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
-simulator.start(n_rounds=config["epochs"], wall_time_limit=23.5)
+simulator.start(n_rounds=config["epochs"], wall_time_limit=0.5)
 
 log_results(simulator, report, message)
