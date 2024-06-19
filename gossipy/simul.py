@@ -1439,8 +1439,12 @@ class AttackDynamicGossipSimulator(GossipSimulator):
                     if node.timed_out(t):
                         if isinstance(node.p2p_net, UniformDynamicP2PNetwork) and t % self.peer_sampling_period == 0:
                             print(node)
+                            print(node.info())
+                            print(node.__dir__())
                             for n in node.p2p_net._topology[node]:
                                 print(n)
+                                print(n.info())
+                                print(n.__dir__())
                             node.p2p_net.update_view(node_id=i)
                         peer = node.get_peer()
                         if peer is None:
