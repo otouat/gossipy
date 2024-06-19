@@ -452,42 +452,54 @@ class UniformDynamicP2PNetwork(DynamicP2PNetwork):
     def __init__(self, num_nodes: int,
                  topology: Optional[Union[np.ndarray, csr_matrix]] = None,
                  shuffle_ratio=0.5):
-
         super().__init__(num_nodes, topology)
         self._shuffle_ratio = shuffle_ratio
 
     def update_view(self, node_id: int):
         degree = len(self._topology[node_id])
-        nb_nodes_to_exchange = math.ceil(self._shuffle_ratio * degree)
-        id_nodes_to_exchange = sample(population=self._topology[node_id],
-                                      k=nb_nodes_to_exchange)
+        nb_nodes_to_exchange = min(math.ceil(self._shuffle_ratio * degree), degree)
+        
+        # If nb_nodes_to_exchange is 0, there's nothing to exchange
+        if nb_nodes_to_exchange == 0:
+            return
+
+        id_nodes_to_exchange = sample(population=self._topology[node_id], k=nb_nodes_to_exchange)
         node_jd = choice(id_nodes_to_exchange)
+        
+        # Remove the chosen nodes from the current node's topology
+        self._topology[node_id] = [node for node in self._topology[node_id] if node not in id_nodes_to_exchange]
 
-        self._topology[node_id] = [node for node in self._topology[node_id] if
-                                   node not in id_nodes_to_exchange]
+        # Sample nodes to exchange from the neighbor's topology, ensuring the sample size is valid
+        neighbor_candidates = [node for node in self._topology[node_jd] if node != node_id]
+        nb_nodes_to_exchange = min(nb_nodes_to_exchange, len(neighbor_candidates))
 
-        jd_nodes_to_exchange = sample(population=[node for node in self._topology[node_jd] if node != node_id],
-                                      k=nb_nodes_to_exchange)
+        if nb_nodes_to_exchange > 0:
+            jd_nodes_to_exchange = sample(population=neighbor_candidates, k=nb_nodes_to_exchange)
+        else:
+            jd_nodes_to_exchange = []
 
-        self._topology[node_jd] = list(set([node for node in self._topology[node_jd] if
-                                            node not in jd_nodes_to_exchange] + id_nodes_to_exchange + [node_id]))
-        self._topology[node_jd].remove(node_jd)
+        self._topology[node_jd] = list(set([node for node in self._topology[node_jd] if node not in jd_nodes_to_exchange] +
+                                           id_nodes_to_exchange + [node_id]))
+        
+        # Remove node_jd from its own topology if it exists
+        if node_jd in self._topology[node_jd]:
+            self._topology[node_jd].remove(node_jd)
 
         self._topology[node_id] = list(set(self._topology[node_id] + jd_nodes_to_exchange))
 
-        while len(self._topology[node_id]) < degree:
+        # Refill topology to maintain original degree
+        while len(self._topology[node_id]) < degree and id_nodes_to_exchange:
             chosen = choice(id_nodes_to_exchange)
-            while chosen in self._topology[node_id]:
-                chosen = choice(id_nodes_to_exchange)
             id_nodes_to_exchange.remove(chosen)
-            self._topology[node_id].append(chosen)
+            if chosen not in self._topology[node_id]:
+                self._topology[node_id].append(chosen)
 
-        while len(self._topology[node_jd]) < degree:
+        while len(self._topology[node_jd]) < degree and jd_nodes_to_exchange:
             chosen = choice(jd_nodes_to_exchange)
-            while chosen in self._topology[node_jd]:
-                chosen = choice(jd_nodes_to_exchange)
             jd_nodes_to_exchange.remove(chosen)
-            self._topology[node_jd].append(chosen)
+            if chosen not in self._topology[node_jd]:
+                self._topology[node_jd].append(chosen)
+
 
 
 class MixingMatrix:
