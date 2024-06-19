@@ -107,6 +107,13 @@ simulator = AttackDynamicGossipSimulator(
     ra=config["ra"]
 )
 
+# Print nodes and their neighbors
+print("Nodes and their neighbors:")
+graph = nx.from_numpy_array(topology.topology)
+for node in graph.nodes:
+    neighbors = list(graph.neighbors(node))
+    print(f"Node {node}: Neighbors {neighbors}")
+    
 report = AttackSimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
