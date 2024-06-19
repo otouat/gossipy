@@ -1332,7 +1332,6 @@ class AttackGossipNode(GossipNode):
                             break
                         
                     self.received_models.append((msg.sender,  recv_model.model.state_dict()))
-                    self.model_handler(recv_model, self.data[0])
                     expected_peers = set(self.p2p_net.get_peers(self.idx))
                     received_peers = set(pair[0] for pair in self.received_models)
                     if received_peers == expected_peers:
