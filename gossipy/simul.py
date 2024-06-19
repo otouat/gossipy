@@ -1668,14 +1668,14 @@ class AttackFederatedSimulator(GossipSimulator):
                                     er.update_mia_vulnerability(self.n_rounds, mia_mar_vulnerability, marginalized = True)
 
                     if self.sampling_eval > 0:
-                        node_ids = [node_id for node_id in self.nodes.keys() if node_id is not 0]
+                        node_ids = [node_id for node_id in self.nodes.keys() if node_id != 0]
                         sample = choice(node_ids, max(int((self.n_nodes - 1) * self.sampling_eval), 1))
                         print(sample)
                         ev = [self.nodes[i].evaluate() for i in sample if self.nodes[i].has_test()]
                         ev_train = [self.nodes[i].evaluate(self.nodes[i].data[0]) for i in sample]
                     else:
-                        ev = [n.evaluate() for _, n in self.nodes.items() if n.has_test() and n.idx is not 0]
-                        ev_train = [n.evaluate(n.data[0]) for _, n in self.nodes.items() if n.idx is not 0]
+                        ev = [n.evaluate() for _, n in self.nodes.items() if n.has_test() and n.idx != 0]
+                        ev_train = [n.evaluate(n.data[0]) for _, n in self.nodes.items() if n.idx != 0]
                     if ev:
                         self.notify_evaluation(self.n_rounds, True, ev)
                         accuracy = []
