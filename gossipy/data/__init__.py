@@ -576,74 +576,6 @@ class OLDCustomDataDispatcher(DataDispatcher):
                 end_index = start_index + eval_ex_x_user
                 self.te_assignments[idx] = list(range(start_index, min(end_index, n_eval_ex)))
 
-from collections import Counter
-
-class NEWCustomDataDispatcher(CustomDataDispatcher):
-    def assign(self, seed: int = 42, alpha: float = 0.5) -> None:
-        np.random.seed(seed)
-        self.tr_assignments = [[] for _ in range(self.n)]
-        self.te_assignments = [[] for _ in range(self.n)]
-
-        n_ex = self.data_handler.size()
-        labels = self.data_handler.ytr  # Access training labels directly
-        n_classes = len(np.unique(labels))
-        
-        # Generate class proportions for each user using Dirichlet distribution
-        class_proportions = np.random.dirichlet([alpha] * self.n, n_classes)
-        
-        # Partition the data indices by class
-        indices_by_class = {i: np.where(labels == i)[0] for i in range(n_classes)}
-        
-        # Shuffle indices within each class
-        for indices in indices_by_class.values():
-            np.random.shuffle(indices)
-        
-        # Assign indices to users based on class proportions
-        for c, indices in indices_by_class.items():
-            split_points = np.cumsum(class_proportions[c]) * len(indices)
-            split_points = np.array(split_points, dtype=int)  # Convert split points to integers
-            split_indices = np.split(indices, split_points)
-            
-            # Distribute split indices to users
-            for u, user_indices in enumerate(split_indices):
-                if u < self.n:  # Ensure u is within range of self.n
-                    self.tr_assignments[u].extend(user_indices.tolist())
-        
-        # Shuffle the assignments for each user
-        for idx in range(self.n):
-            np.random.shuffle(self.tr_assignments[idx])
-        
-        if self.eval_on_user:
-            n_eval_ex = self.data_handler.eval_size()
-            eval_ex_x_user = n_eval_ex // self.n
-            for idx in range(self.n):
-                start_index = idx * eval_ex_x_user
-                end_index = start_index + eval_ex_x_user
-                self.te_assignments[idx] = list(range(start_index, min(end_index, n_eval_ex)))
-    
-    def print_data_distribution(self):
-        labels = self.data_handler.ytr  # Access training labels directly
-        n_classes = len(np.unique(labels))
-        class_counts_per_user = np.zeros((self.n, n_classes), dtype=int)
-        total_samples = 0
-
-        for user_id, indices in enumerate(self.tr_assignments):
-            user_labels = labels[indices]
-            class_counts = Counter(user_labels)
-            for class_id, count in class_counts.items():
-                class_counts_per_user[user_id, class_id] = count
-                total_samples += count  # Increment total samples count
-        
-        # Print total number of samples
-        print(f"Total number of samples: {total_samples}")
-        
-        # Print detailed distribution
-        print("User ID | Total Samples | " + " | ".join(f"Class {i}" for i in range(n_classes)))
-        print("-" * (12 + 8 * n_classes))
-        for user_id, counts in enumerate(class_counts_per_user):
-            user_total_samples = np.sum(counts)
-            print(f"User {user_id:4d} | {user_total_samples:13d} | " + " | ".join(f"{count:6d}" for count in counts))
-
 
 class RecSysDataDispatcher(DataDispatcher):
     from .handler import RecSysDataHandler
@@ -1012,3 +944,70 @@ def plot_class_distribution(simulator):
     ax.set_title("Class Distribution per Node")
     
     return fig
+
+class NEWCustomDataDispatcher(CustomDataDispatcher):
+    def assign(self, seed: int = 42, alpha: float = 0.5) -> None:
+        np.random.seed(seed)
+        self.tr_assignments = [[] for _ in range(self.n)]
+        self.te_assignments = [[] for _ in range(self.n)]
+
+        n_ex = self.data_handler.size()
+        labels = self.data_handler.ytr  # Access training labels directly
+        n_classes = len(np.unique(labels))
+
+        # Generate class proportions for each user using Dirichlet distribution
+        class_proportions = np.random.dirichlet([alpha] * self.n, n_classes)
+
+        # Partition the data indices by class
+        indices_by_class = {i: np.where(labels == i)[0] for i in range(n_classes)}
+
+        # Shuffle indices within each class
+        for indices in indices_by_class.values():
+            np.random.shuffle(indices)
+
+        # Assign indices to users based on class proportions
+        for c, indices in indices_by_class.items():
+            split_points = np.cumsum(class_proportions[c]) * len(indices)
+            split_points = np.array(split_points, dtype=int)  # Convert split points to integers
+            split_indices = np.split(indices, split_points[:-1])  # Split at calculated points
+
+            # Distribute split indices to users
+            for u, user_indices in enumerate(split_indices):
+                if u < self.n:  # Ensure u is within range of self.n
+                    self.tr_assignments[u].extend(user_indices.tolist())
+
+        # Shuffle the assignments for each user
+        for idx in range(self.n):
+            np.random.shuffle(self.tr_assignments[idx])
+
+        if self.eval_on_user:
+            n_eval_ex = self.data_handler.eval_size()
+            eval_ex_x_user = n_eval_ex // self.n
+            for idx in range(self.n):
+                start_index = idx * eval_ex_x_user
+                end_index = start_index + eval_ex_x_user
+                self.te_assignments[idx] = list(range(start_index, min(end_index, n_eval_ex)))
+
+    def print_data_distribution(self):
+        from collections import Counter  # Ensure Counter is imported
+        labels = self.data_handler.ytr  # Access training labels directly
+        n_classes = len(np.unique(labels))
+        class_counts_per_user = np.zeros((self.n, n_classes), dtype=int)
+        total_samples = 0
+
+        for user_id, indices in enumerate(self.tr_assignments):
+            user_labels = labels[indices]
+            class_counts = Counter(user_labels)
+            for class_id, count in class_counts.items():
+                class_counts_per_user[user_id, class_id] = count
+                total_samples += count  # Increment total samples count
+
+        # Print total number of samples
+        print(f"Total number of samples: {total_samples}")
+
+        # Print detailed distribution
+        print("User ID | Total Samples | " + " | ".join(f"Class {i}" for i in range(n_classes)))
+        print("-" * (12 + 8 * n_classes))
+        for user_id, counts in enumerate(class_counts_per_user):
+            user_total_samples = np.sum(counts)
+            print(f"User {user_id:4d} | {user_total_samples:13d} | " + " | ".join(f"{count:6d}" for count in counts))
