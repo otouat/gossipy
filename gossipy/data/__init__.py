@@ -576,8 +576,6 @@ class OLDCustomDataDispatcher(DataDispatcher):
                 end_index = start_index + eval_ex_x_user
                 self.te_assignments[idx] = list(range(start_index, min(end_index, n_eval_ex)))
 
-import numpy as np
-from collections import Counter
 
 class NEWCustomDataDispatcher(CustomDataDispatcher):
     def assign(self, seed: int = 42, alpha: float = 0.5) -> None:
@@ -621,7 +619,7 @@ class NEWCustomDataDispatcher(CustomDataDispatcher):
                 start_index = idx * eval_ex_x_user
                 end_index = start_index + eval_ex_x_user
                 self.te_assignments[idx] = list(range(start_index, min(end_index, n_eval_ex)))
-
+    
     def print_data_distribution(self):
         labels = self.data_handler.ytr  # Access training labels directly
         n_classes = len(np.unique(labels))
@@ -637,7 +635,6 @@ class NEWCustomDataDispatcher(CustomDataDispatcher):
         print("-" * (10 + 8 * n_classes))
         for user_id, counts in enumerate(class_counts_per_user):
             print(f"User {user_id:4d} | " + " | ".join(f"{count:6d}" for count in counts))
-
 
 class RecSysDataDispatcher(DataDispatcher):
     from .handler import RecSysDataHandler
