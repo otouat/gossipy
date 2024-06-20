@@ -601,6 +601,8 @@ class NEWCustomDataDispatcher(CustomDataDispatcher):
         
         # Assign indices to users based on class proportions
         for c, indices in indices_by_class.items():
+            # Debug: Check the number of indices available for the class
+            print(f"Class {c}: {len(indices)} samples")
             split_points = np.cumsum(class_proportions[c][:-1]) * len(indices)
             split_points = split_points.astype(int)  # Ensure split points are integers
             split_indices = np.split(indices, split_points)
@@ -610,6 +612,10 @@ class NEWCustomDataDispatcher(CustomDataDispatcher):
         # Shuffle the assignments for each user
         for idx in range(self.n):
             np.random.shuffle(self.tr_assignments[idx])
+        
+        # Debug: Print the number of samples assigned to each user
+        for idx, assignment in enumerate(self.tr_assignments):
+            print(f"User {idx}: {len(assignment)} samples")
         
         if self.eval_on_user:
             n_eval_ex = self.data_handler.eval_size()
@@ -639,7 +645,6 @@ class NEWCustomDataDispatcher(CustomDataDispatcher):
 # dispatcher = OLDCustomDataDispatcher(data_handler=my_data_handler, n=10, eval_on_user=True)
 # dispatcher.assign(seed=42, alpha=0.5)
 # dispatcher.print_data_distribution()
-
 
 class RecSysDataDispatcher(DataDispatcher):
     from .handler import RecSysDataHandler
