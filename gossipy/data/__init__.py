@@ -576,7 +576,6 @@ class OLDCustomDataDispatcher(DataDispatcher):
                 end_index = start_index + eval_ex_x_user
                 self.te_assignments[idx] = list(range(start_index, min(end_index, n_eval_ex)))
 
-
 from collections import Counter
 
 class NEWCustomDataDispatcher(CustomDataDispatcher):
@@ -627,13 +626,17 @@ class NEWCustomDataDispatcher(CustomDataDispatcher):
         n_classes = len(np.unique(labels))
         class_counts_per_user = np.zeros((self.n, n_classes), dtype=int)
         total_samples = 0
-
+        
         for user_id, indices in enumerate(self.tr_assignments):
             user_labels = labels[indices]
             class_counts = Counter(user_labels)
             for class_id, count in class_counts.items():
                 class_counts_per_user[user_id, class_id] = count
-                total_samples += count  # Increment total samples count
+            user_total_samples = np.sum(class_counts.values())
+            total_samples += user_total_samples
+            
+            # Debug print to check details per user
+            print(f"User {user_id}: Total Samples = {user_total_samples}, Class Counts = {class_counts}")
         
         # Print total number of samples
         print(f"Total number of samples: {total_samples}")
@@ -644,7 +647,6 @@ class NEWCustomDataDispatcher(CustomDataDispatcher):
         for user_id, counts in enumerate(class_counts_per_user):
             user_total_samples = np.sum(counts)
             print(f"User {user_id:4d} | {user_total_samples:13d} | " + " | ".join(f"{count:6d}" for count in counts))
-
 
 class RecSysDataDispatcher(DataDispatcher):
     from .handler import RecSysDataHandler
