@@ -12,7 +12,7 @@ from pyparsing import ParseSyntaxException
 import torch
 import torchvision
 from torch import Tensor, tensor
-from sklearn import datasets
+from sklearn import datasets, logger
 from sklearn.datasets import load_svmlight_file
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 import torch
@@ -630,24 +630,28 @@ class NEWCustomDataDispatcher(CustomDataDispatcher):
         for user_id, indices in enumerate(self.tr_assignments):
             user_labels = labels[indices]
             class_counts = Counter(user_labels)
-            for class_id, count in class_counts.items():
-                class_counts_per_user[user_id, class_id] = count
-            user_total_samples = np.sum(class_counts.values())
+            
+            # Calculate total number of samples per user
+            user_total_samples = sum(class_counts.values())
             total_samples += user_total_samples
             
-            # Debug print to check details per user
-            print(f"User {user_id}: Total Samples = {user_total_samples}, Class Counts = {class_counts}")
+            # Store class counts for this user
+            for class_id, count in class_counts.items():
+                class_counts_per_user[user_id, class_id] = count
+            
+            # Debug log for each user
+            logger.info(f"User {user_id}: Total Samples = {user_total_samples}, Class Counts = {class_counts}")
         
         # Print total number of samples
-        print(f"Total number of samples: {total_samples}")
+        logger.info(f"Total number of samples: {total_samples}")
         
         # Print detailed distribution
-        print("User ID | Total Samples | " + " | ".join(f"Class {i}" for i in range(n_classes)))
-        print("-" * (12 + 8 * n_classes))
+        logger.info("User ID | Total Samples | " + " | ".join(f"Class {i}" for i in range(n_classes)))
+        logger.info("-" * (12 + 8 * n_classes))
         for user_id, counts in enumerate(class_counts_per_user):
             user_total_samples = np.sum(counts)
-            print(f"User {user_id:4d} | {user_total_samples:13d} | " + " | ".join(f"{count:6d}" for count in counts))
-
+            logger.info(f"User {user_id:4d} | {user_total_samples:13d} | " + " | ".join(f"{count:6d}" for count in counts))
+            
 class RecSysDataDispatcher(DataDispatcher):
     from .handler import RecSysDataHandler
     def __init__(self,
