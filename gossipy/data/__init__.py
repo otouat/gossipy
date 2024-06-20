@@ -578,15 +578,17 @@ class OLDCustomDataDispatcher(DataDispatcher):
 
 import numpy as np
 from collections import Counter
+import numpy as np
+from collections import Counter
 
-class NEWCustomDataDispatcher(CustomDataDispatcher):
+class OLDCustomDataDispatcher(CustomDataDispatcher):
     def assign(self, seed: int = 42, alpha: float = 0.5) -> None:
         np.random.seed(seed)
         self.tr_assignments = [[] for _ in range(self.n)]
         self.te_assignments = [[] for _ in range(self.n)]
 
         n_ex = self.data_handler.size()
-        labels = self.data_handler.get_labels()  # Correctly retrieve labels
+        labels = self.data_handler.ytr  # Access training labels directly
         n_classes = len(np.unique(labels))
         
         # Generate class proportions for each user using Dirichlet distribution
@@ -618,7 +620,7 @@ class NEWCustomDataDispatcher(CustomDataDispatcher):
                 self.te_assignments[idx] = list(range(start_index, min(end_index, n_eval_ex)))
 
     def print_data_distribution(self):
-        labels = self.data_handler.get_labels()  # Correctly retrieve labels
+        labels = self.data_handler.ytr  # Access training labels directly
         n_classes = len(np.unique(labels))
         class_counts_per_user = np.zeros((self.n, n_classes), dtype=int)
         
@@ -632,7 +634,6 @@ class NEWCustomDataDispatcher(CustomDataDispatcher):
         print("-" * (10 + 8 * n_classes))
         for user_id, counts in enumerate(class_counts_per_user):
             print(f"User {user_id:4d} | " + " | ".join(f"{count:6d}" for count in counts))
-
 
 class RecSysDataDispatcher(DataDispatcher):
     from .handler import RecSysDataHandler
