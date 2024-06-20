@@ -36,7 +36,7 @@ config = {
     "n_local_epochs": 3,
     "neigbors": 5,
     "test_size": 0.5,
-    "factors": 10,
+    "factors": 100,
     "beta": 0.99,
     "p_attacker": 0.3,
     "mia": True,
