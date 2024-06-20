@@ -576,20 +576,24 @@ class OLDCustomDataDispatcher(DataDispatcher):
                 end_index = start_index + eval_ex_x_user
                 self.te_assignments[idx] = list(range(start_index, min(end_index, n_eval_ex)))
 
-class NEWCustomDataDispatcher(DataDispatcher):
+import numpy as np
+from collections import Counter
+
+class OLDCustomDataDispatcher(CustomDataDispatcher):
     def assign(self, seed: int = 42, alpha: float = 0.5) -> None:
         np.random.seed(seed)
         self.tr_assignments = [[] for _ in range(self.n)]
         self.te_assignments = [[] for _ in range(self.n)]
 
         n_ex = self.data_handler.size()
-        n_classes = len(np.unique(self.data_handler.labels))
+        labels = self.data_handler.get_labels()  # Correctly retrieve labels
+        n_classes = len(np.unique(labels))
         
         # Generate class proportions for each user using Dirichlet distribution
         class_proportions = np.random.dirichlet([alpha] * self.n, n_classes)
         
         # Partition the data indices by class
-        indices_by_class = {i: np.where(self.data_handler.labels == i)[0] for i in range(n_classes)}
+        indices_by_class = {i: np.where(labels == i)[0] for i in range(n_classes)}
         
         # Shuffle indices within each class
         for indices in indices_by_class.values():
@@ -612,14 +616,15 @@ class NEWCustomDataDispatcher(DataDispatcher):
                 start_index = idx * eval_ex_x_user
                 end_index = start_index + eval_ex_x_user
                 self.te_assignments[idx] = list(range(start_index, min(end_index, n_eval_ex)))
-                
+
     def print_data_distribution(self):
-        n_classes = len(np.unique(self.data_handler.labels))
+        labels = self.data_handler.get_labels()  # Correctly retrieve labels
+        n_classes = len(np.unique(labels))
         class_counts_per_user = np.zeros((self.n, n_classes), dtype=int)
         
         for user_id, indices in enumerate(self.tr_assignments):
-            labels = self.data_handler.labels[indices]
-            class_counts = Counter(labels)
+            user_labels = labels[indices]
+            class_counts = Counter(user_labels)
             for class_id, count in class_counts.items():
                 class_counts_per_user[user_id, class_id] = count
         
