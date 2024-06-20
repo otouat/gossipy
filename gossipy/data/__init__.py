@@ -994,6 +994,8 @@ class NEWCustomDataDispatcher(DataDispatcher):
 
         # Assign samples to clients based on the generated class distributions
         for client_id in range(self.n):
+            print(f"Assigning samples to Client {client_id}...")
+
             tr_samples = []
             for class_id, proportion in enumerate(class_distributions[client_id]):
                 n_samples_class = int(proportion * n_samples_per_client)
@@ -1003,6 +1005,7 @@ class NEWCustomDataDispatcher(DataDispatcher):
 
             np.random.shuffle(tr_samples)
             self.tr_assignments[client_id] = tr_samples
+            print(f"Client {client_id} (Training): Assigned {len(tr_samples)} samples")
 
             if self.eval_on_user:
                 te_samples = []
@@ -1014,8 +1017,10 @@ class NEWCustomDataDispatcher(DataDispatcher):
 
                 np.random.shuffle(te_samples)
                 self.te_assignments[client_id] = te_samples
+                print(f"Client {client_id} (Test): Assigned {len(te_samples)} samples")
             else:
                 self.te_assignments[client_id] = []
+                print(f"Client {client_id} (Test): No test set assigned")
 
         # Print data distribution for verification
         self.print_data_distribution()
