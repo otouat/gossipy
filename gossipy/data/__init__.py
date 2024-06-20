@@ -607,7 +607,8 @@ class NEWCustomDataDispatcher(CustomDataDispatcher):
             
             # Distribute split indices to users
             for u, user_indices in enumerate(split_indices):
-                self.tr_assignments[u].extend(user_indices.tolist())
+                if u < self.n:  # Ensure u is within range of self.n
+                    self.tr_assignments[u].extend(user_indices.tolist())
         
         # Shuffle the assignments for each user
         for idx in range(self.n):
