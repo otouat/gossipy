@@ -948,7 +948,6 @@ def plot_class_distribution(simulator):
 import numpy as np
 from typing import List, Optional, Tuple, Any
 from collections import defaultdict
-
 class NEWCustomDataDispatcher(DataDispatcher):
     def assign(self, seed: int = 42, alpha: float = 0.5) -> None:
         """Assign data to clients with the same number of samples but different class distributions.
@@ -961,6 +960,12 @@ class NEWCustomDataDispatcher(DataDispatcher):
             The concentration parameter for the Dirichlet distribution to generate class distributions.
         """
         np.random.seed(seed)
+
+        # Print the number of clients and total number of samples
+        print(f"Number of clients: {self.n}")
+        print(f"Total number of training samples: {len(self.data_handler.ytr)}")
+        print(f"Total number of test samples: {len(self.data_handler.yte)}")
+
         n_samples_per_client = len(self.data_handler.ytr) // self.n
         n_classes = len(np.unique(self.data_handler.ytr))
 
