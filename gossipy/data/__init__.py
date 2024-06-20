@@ -948,6 +948,7 @@ def plot_class_distribution(simulator):
 import numpy as np
 from typing import List, Optional, Tuple, Any
 from collections import defaultdict
+
 class NEWCustomDataDispatcher(DataDispatcher):
     def assign(self, seed: int = 42, alpha: float = 0.5) -> None:
         """Assign data to clients with the same number of samples but different class distributions.
@@ -1018,9 +1019,18 @@ class NEWCustomDataDispatcher(DataDispatcher):
 
     def print_data_distribution(self):
         """Print the data distribution of each client."""
-        for client_id, assignments in enumerate(self.tr_assignments):
-            class_counts = defaultdict(int)
-            for idx in assignments:
+        for client_id in range(self.n):
+            tr_distribution = defaultdict(int)
+            for idx in self.tr_assignments[client_id]:
                 label = self.data_handler.ytr[idx]
-                class_counts[label] += 1
-            print(f"Client {client_id}: {dict(class_counts)}")
+                tr_distribution[label] += 1
+            print(f"Client {client_id} (Training): {dict(tr_distribution)}")
+
+            if self.eval_on_user:
+                te_distribution = defaultdict(int)
+                for idx in self.te_assignments[client_id]:
+                    label = self.data_handler.yte[idx]
+                    te_distribution[label] += 1
+                print(f"Client {client_id} (Test): {dict(te_distribution)}")
+            else:
+                print(f"Client {client_id} (Test): No test set assigned")
