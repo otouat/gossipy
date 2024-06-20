@@ -607,6 +607,10 @@ class NEWCustomDataDispatcher(CustomDataDispatcher):
             for u, user_indices in enumerate(split_indices):
                 if u < self.n:  # Ensure u is within range of self.n
                     self.tr_assignments[u].extend(user_indices.tolist())
+                    
+                    # Debugging output
+                    print(f"Assigned {len(user_indices)} samples of class {c} to user {u}.")
+                    print(f"Current assignment for user {u}: {self.tr_assignments[u]}")
         
         # Shuffle the assignments for each user
         for idx in range(self.n):
@@ -619,7 +623,10 @@ class NEWCustomDataDispatcher(CustomDataDispatcher):
                 start_index = idx * eval_ex_x_user
                 end_index = start_index + eval_ex_x_user
                 self.te_assignments[idx] = list(range(start_index, min(end_index, n_eval_ex)))
-    
+                
+                # Debugging output
+                print(f"Evaluation set for user {idx}: {self.te_assignments[idx]}")
+
     def print_data_distribution(self):
         labels = self.data_handler.ytr  # Access training labels directly
         n_classes = len(np.unique(labels))
