@@ -1017,6 +1017,9 @@ class NEWCustomDataDispatcher(DataDispatcher):
             else:
                 self.te_assignments[client_id] = []
 
+        # Print data distribution for verification
+        self.print_data_distribution()
+
     def print_data_distribution(self):
         """Print the data distribution of each client."""
         for client_id in range(self.n):
