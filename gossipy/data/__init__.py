@@ -970,7 +970,7 @@ class NEWCustomDataDispatcher(DataDispatcher):
         n_samples_per_client = len(self.data_handler.ytr) // self.n
         n_classes = len(np.unique(self.data_handler.ytr))
 
-        # Generate a different class distribution for each client
+        # Generate a different class distribution for each client using Dirichlet distribution
         class_distributions = np.random.dirichlet([alpha] * n_classes, self.n)
 
         self.tr_assignments = [[] for _ in range(self.n)]
