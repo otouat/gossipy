@@ -576,12 +576,7 @@ class OLDCustomDataDispatcher(DataDispatcher):
                 end_index = start_index + eval_ex_x_user
                 self.te_assignments[idx] = list(range(start_index, min(end_index, n_eval_ex)))
 
-import numpy as np
-from collections import Counter
-import numpy as np
-from collections import Counter
-
-class OLDCustomDataDispatcher(CustomDataDispatcher):
+class NEWCustomDataDispatcher(CustomDataDispatcher):
     def assign(self, seed: int = 42, alpha: float = 0.5) -> None:
         np.random.seed(seed)
         self.tr_assignments = [[] for _ in range(self.n)]
