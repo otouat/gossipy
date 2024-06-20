@@ -976,46 +976,46 @@ class NEWCustomDataDispatcher(DataDispatcher):
         self.tr_assignments = [[] for _ in range(self.n)]
         self.te_assignments = [[] for _ in range(self.n)]
 
-        indices_by_class = defaultdict(list)
+        # Collect indices of samples by class
+        indices_by_class_tr = defaultdict(list)
         for idx, label in enumerate(self.data_handler.ytr):
-            indices_by_class[label].append(idx)
+            indices_by_class_tr[label].append(idx)
+
+        indices_by_class_te = defaultdict(list)
+        for idx, label in enumerate(self.data_handler.yte):
+            indices_by_class_te[label].append(idx)
 
         # Shuffle indices within each class
-        for label in indices_by_class:
-            np.random.shuffle(indices_by_class[label])
+        for label in indices_by_class_tr:
+            np.random.shuffle(indices_by_class_tr[label])
+
+        for label in indices_by_class_te:
+            np.random.shuffle(indices_by_class_te[label])
 
         # Assign samples to clients based on the generated class distributions
         for client_id in range(self.n):
-            client_samples = []
+            tr_samples = []
             for class_id, proportion in enumerate(class_distributions[client_id]):
                 n_samples_class = int(proportion * n_samples_per_client)
-                n_samples_class = min(n_samples_class, len(indices_by_class[class_id]))
-                client_samples.extend(indices_by_class[class_id][:n_samples_class])
-                indices_by_class[class_id] = indices_by_class[class_id][n_samples_class:]
+                n_samples_class = min(n_samples_class, len(indices_by_class_tr[class_id]))
+                tr_samples.extend(indices_by_class_tr[class_id][:n_samples_class])
+                indices_by_class_tr[class_id] = indices_by_class_tr[class_id][n_samples_class:]
 
-            np.random.shuffle(client_samples)
-            self.tr_assignments[client_id] = client_samples
+            np.random.shuffle(tr_samples)
+            self.tr_assignments[client_id] = tr_samples
 
-        if self.eval_on_user:
-            indices_by_class = defaultdict(list)
-            for idx, label in enumerate(self.data_handler.yte):
-                indices_by_class[label].append(idx)
-
-            for label in indices_by_class:
-                np.random.shuffle(indices_by_class[label])
-
-            for client_id in range(self.n):
-                client_samples = []
+            if self.eval_on_user:
+                te_samples = []
                 for class_id, proportion in enumerate(class_distributions[client_id]):
                     n_samples_class = int(proportion * n_samples_per_client)
-                    n_samples_class = min(n_samples_class, len(indices_by_class[class_id]))
-                    client_samples.extend(indices_by_class[class_id][:n_samples_class])
-                    indices_by_class[class_id] = indices_by_class[class_id][n_samples_class:]
+                    n_samples_class = min(n_samples_class, len(indices_by_class_te[class_id]))
+                    te_samples.extend(indices_by_class_te[class_id][:n_samples_class])
+                    indices_by_class_te[class_id] = indices_by_class_te[class_id][n_samples_class:]
 
-                np.random.shuffle(client_samples)
-                self.te_assignments[client_id] = client_samples
-        else:
-            self.te_assignments = [[] for _ in range(self.n)]
+                np.random.shuffle(te_samples)
+                self.te_assignments[client_id] = te_samples
+            else:
+                self.te_assignments[client_id] = []
 
     def print_data_distribution(self):
         """Print the data distribution of each client."""
