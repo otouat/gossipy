@@ -577,6 +577,8 @@ class OLDCustomDataDispatcher(DataDispatcher):
                 self.te_assignments[idx] = list(range(start_index, min(end_index, n_eval_ex)))
 
 
+from collections import Counter
+
 class NEWCustomDataDispatcher(CustomDataDispatcher):
     def assign(self, seed: int = 42, alpha: float = 0.5) -> None:
         np.random.seed(seed)
@@ -607,10 +609,6 @@ class NEWCustomDataDispatcher(CustomDataDispatcher):
             for u, user_indices in enumerate(split_indices):
                 if u < self.n:  # Ensure u is within range of self.n
                     self.tr_assignments[u].extend(user_indices.tolist())
-                    
-                    # Debugging output
-                    print(f"Assigned {len(user_indices)} samples of class {c} to user {u}.")
-                    print(f"Current assignment for user {u}: {self.tr_assignments[u]}")
         
         # Shuffle the assignments for each user
         for idx in range(self.n):
@@ -623,25 +621,30 @@ class NEWCustomDataDispatcher(CustomDataDispatcher):
                 start_index = idx * eval_ex_x_user
                 end_index = start_index + eval_ex_x_user
                 self.te_assignments[idx] = list(range(start_index, min(end_index, n_eval_ex)))
-                
-                # Debugging output
-                print(f"Evaluation set for user {idx}: {self.te_assignments[idx]}")
-
+    
     def print_data_distribution(self):
         labels = self.data_handler.ytr  # Access training labels directly
         n_classes = len(np.unique(labels))
         class_counts_per_user = np.zeros((self.n, n_classes), dtype=int)
-        
+        total_samples = 0
+
         for user_id, indices in enumerate(self.tr_assignments):
             user_labels = labels[indices]
             class_counts = Counter(user_labels)
             for class_id, count in class_counts.items():
                 class_counts_per_user[user_id, class_id] = count
+                total_samples += count  # Increment total samples count
         
-        print("User ID | " + " | ".join(f"Class {i}" for i in range(n_classes)))
-        print("-" * (10 + 8 * n_classes))
+        # Print total number of samples
+        print(f"Total number of samples: {total_samples}")
+        
+        # Print detailed distribution
+        print("User ID | Total Samples | " + " | ".join(f"Class {i}" for i in range(n_classes)))
+        print("-" * (12 + 8 * n_classes))
         for user_id, counts in enumerate(class_counts_per_user):
-            print(f"User {user_id:4d} | " + " | ".join(f"{count:6d}" for count in counts))
+            user_total_samples = np.sum(counts)
+            print(f"User {user_id:4d} | {user_total_samples:13d} | " + " | ".join(f"{count:6d}" for count in counts))
+
 
 class RecSysDataDispatcher(DataDispatcher):
     from .handler import RecSysDataHandler
