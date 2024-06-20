@@ -945,71 +945,77 @@ def plot_class_distribution(simulator):
     
     return fig
 
-
 import numpy as np
-from collections import Counter
+from typing import List, Optional, Tuple, Any
+from collections import defaultdict
 
-class NEWCustomDataDispatcher(CustomDataDispatcher):
+class NEWCustomDataDispatcher(DataDispatcher):
     def assign(self, seed: int = 42, alpha: float = 0.5) -> None:
+        """Assign data to clients with the same number of samples but different class distributions.
+
+        Parameters
+        ----------
+        seed : int, default=42
+            The seed for the random number generator.
+        alpha : float, default=0.5
+            The concentration parameter for the Dirichlet distribution to generate class distributions.
+        """
         np.random.seed(seed)
+        n_samples_per_client = len(self.data_handler.ytr) // self.n
+        n_classes = len(np.unique(self.data_handler.ytr))
+
+        # Generate a different class distribution for each client
+        class_distributions = np.random.dirichlet([alpha] * n_classes, self.n)
+
         self.tr_assignments = [[] for _ in range(self.n)]
         self.te_assignments = [[] for _ in range(self.n)]
 
-        labels = self.data_handler.ytr  # Access training labels directly
-        n_classes = len(np.unique(labels))
-
-        # Generate class proportions for each user using Dirichlet distribution
-        class_proportions = np.random.dirichlet([alpha] * self.n, n_classes)
-
-        # Partition the data indices by class
-        indices_by_class = {i: np.where(labels == i)[0] for i in range(n_classes)}
+        indices_by_class = defaultdict(list)
+        for idx, label in enumerate(self.data_handler.ytr):
+            indices_by_class[label].append(idx)
 
         # Shuffle indices within each class
-        for indices in indices_by_class.values():
-            np.random.shuffle(indices)
+        for label in indices_by_class:
+            np.random.shuffle(indices_by_class[label])
 
-        # Assign indices to users based on class proportions
-        for c, indices in indices_by_class.items():
-            split_points = (np.cumsum(class_proportions[c]) * len(indices)).astype(int)
-            split_indices = np.split(indices, split_points[:-1])  # Split at calculated points
+        # Assign samples to clients based on the generated class distributions
+        for client_id in range(self.n):
+            client_samples = []
+            for class_id, proportion in enumerate(class_distributions[client_id]):
+                n_samples_class = int(proportion * n_samples_per_client)
+                n_samples_class = min(n_samples_class, len(indices_by_class[class_id]))
+                client_samples.extend(indices_by_class[class_id][:n_samples_class])
+                indices_by_class[class_id] = indices_by_class[class_id][n_samples_class:]
 
-            # Distribute split indices to users
-            for u, user_indices in enumerate(split_indices):
-                if u < self.n:  # Ensure u is within range of self.n
-                    self.tr_assignments[u].extend(user_indices.tolist())
-
-        # Shuffle the assignments for each user
-        for idx in range(self.n):
-            np.random.shuffle(self.tr_assignments[idx])
+            np.random.shuffle(client_samples)
+            self.tr_assignments[client_id] = client_samples
 
         if self.eval_on_user:
-            n_eval_ex = self.data_handler.eval_size()
-            eval_ex_x_user = n_eval_ex // self.n
-            for idx in range(self.n):
-                start_index = idx * eval_ex_x_user
-                end_index = start_index + eval_ex_x_user
-                self.te_assignments[idx] = list(range(start_index, min(end_index, n_eval_ex)))
+            indices_by_class = defaultdict(list)
+            for idx, label in enumerate(self.data_handler.yte):
+                indices_by_class[label].append(idx)
+
+            for label in indices_by_class:
+                np.random.shuffle(indices_by_class[label])
+
+            for client_id in range(self.n):
+                client_samples = []
+                for class_id, proportion in enumerate(class_distributions[client_id]):
+                    n_samples_class = int(proportion * n_samples_per_client)
+                    n_samples_class = min(n_samples_class, len(indices_by_class[class_id]))
+                    client_samples.extend(indices_by_class[class_id][:n_samples_class])
+                    indices_by_class[class_id] = indices_by_class[class_id][n_samples_class:]
+
+                np.random.shuffle(client_samples)
+                self.te_assignments[client_id] = client_samples
+        else:
+            self.te_assignments = [[] for _ in range(self.n)]
 
     def print_data_distribution(self):
-        labels = self.data_handler.ytr  # Access training labels directly
-        n_classes = len(np.unique(labels))
-        class_counts_per_user = np.zeros((self.n, n_classes), dtype=int)
-        total_samples = 0
-
-        for user_id, indices in enumerate(self.tr_assignments):
-            user_labels = labels[indices]
-            class_counts = Counter(user_labels)
-            for class_id, count in class_counts.items():
-                class_counts_per_user[user_id, class_id] = count
-                total_samples += count  # Increment total samples count
-
-        # Print total number of samples
-        print(f"Total number of samples: {total_samples}")
-
-        # Print detailed distribution
-        print("User ID | Total Samples | " + " | ".join(f"Class {i}" for i in range(n_classes)))
-        print("-" * (12 + 8 * n_classes))
-        for user_id, counts in enumerate(class_counts_per_user):
-            user_total_samples = np.sum(counts)
-            print(f"User {user_id:4d} | {user_total_samples:13d} | " + " | ".join(f"{count:6d}" for count in counts))
-
+        """Print the data distribution of each client."""
+        for client_id, assignments in enumerate(self.tr_assignments):
+            class_counts = defaultdict(int)
+            for idx in assignments:
+                label = self.data_handler.ytr[idx]
+                class_counts[label] += 1
+            print(f"Client {client_id}: {dict(class_counts)}")
