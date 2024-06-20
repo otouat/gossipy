@@ -945,13 +945,16 @@ def plot_class_distribution(simulator):
     
     return fig
 
+
+import numpy as np
+from collections import Counter
+
 class NEWCustomDataDispatcher(CustomDataDispatcher):
     def assign(self, seed: int = 42, alpha: float = 0.5) -> None:
         np.random.seed(seed)
         self.tr_assignments = [[] for _ in range(self.n)]
         self.te_assignments = [[] for _ in range(self.n)]
 
-        n_ex = self.data_handler.size()
         labels = self.data_handler.ytr  # Access training labels directly
         n_classes = len(np.unique(labels))
 
@@ -967,8 +970,7 @@ class NEWCustomDataDispatcher(CustomDataDispatcher):
 
         # Assign indices to users based on class proportions
         for c, indices in indices_by_class.items():
-            split_points = np.cumsum(class_proportions[c]) * len(indices)
-            split_points = np.array(split_points, dtype=int)  # Convert split points to integers
+            split_points = (np.cumsum(class_proportions[c]) * len(indices)).astype(int)
             split_indices = np.split(indices, split_points[:-1])  # Split at calculated points
 
             # Distribute split indices to users
@@ -989,7 +991,6 @@ class NEWCustomDataDispatcher(CustomDataDispatcher):
                 self.te_assignments[idx] = list(range(start_index, min(end_index, n_eval_ex)))
 
     def print_data_distribution(self):
-        from collections import Counter  # Ensure Counter is imported
         labels = self.data_handler.ytr  # Access training labels directly
         n_classes = len(np.unique(labels))
         class_counts_per_user = np.zeros((self.n, n_classes), dtype=int)
@@ -1011,3 +1012,4 @@ class NEWCustomDataDispatcher(CustomDataDispatcher):
         for user_id, counts in enumerate(class_counts_per_user):
             user_total_samples = np.sum(counts)
             print(f"User {user_id:4d} | {user_total_samples:13d} | " + " | ".join(f"{count:6d}" for count in counts))
+
