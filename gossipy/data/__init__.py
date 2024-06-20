@@ -579,7 +579,7 @@ class OLDCustomDataDispatcher(DataDispatcher):
 import numpy as np
 from collections import Counter
 
-class OLDCustomDataDispatcher(CustomDataDispatcher):
+class NEWCustomDataDispatcher(CustomDataDispatcher):
     def assign(self, seed: int = 42, alpha: float = 0.5) -> None:
         np.random.seed(seed)
         self.tr_assignments = [[] for _ in range(self.n)]
