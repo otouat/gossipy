@@ -576,6 +576,9 @@ class OLDCustomDataDispatcher(DataDispatcher):
                 end_index = start_index + eval_ex_x_user
                 self.te_assignments[idx] = list(range(start_index, min(end_index, n_eval_ex)))
 
+import numpy as np
+from collections import Counter
+
 class NEWCustomDataDispatcher(CustomDataDispatcher):
     def assign(self, seed: int = 42, alpha: float = 0.5) -> None:
         np.random.seed(seed)
@@ -598,7 +601,8 @@ class NEWCustomDataDispatcher(CustomDataDispatcher):
         
         # Assign indices to users based on class proportions
         for c, indices in indices_by_class.items():
-            split_indices = np.array_split(indices, np.cumsum(class_proportions[c][:-1]) * len(indices))
+            # Ensure split indices are integers
+            split_indices = np.array_split(indices, (np.cumsum(class_proportions[c][:-1]) * len(indices)).astype(int))
             for u, user_indices in enumerate(split_indices):
                 self.tr_assignments[u].extend(user_indices.tolist())
         
@@ -629,6 +633,11 @@ class NEWCustomDataDispatcher(CustomDataDispatcher):
         print("-" * (10 + 8 * n_classes))
         for user_id, counts in enumerate(class_counts_per_user):
             print(f"User {user_id:4d} | " + " | ".join(f"{count:6d}" for count in counts))
+
+# Example usage:
+# dispatcher = OLDCustomDataDispatcher(data_handler=my_data_handler, n=10, eval_on_user=True)
+# dispatcher.assign(seed=42, alpha=0.5)
+# dispatcher.print_data_distribution()
 
 class RecSysDataDispatcher(DataDispatcher):
     from .handler import RecSysDataHandler
