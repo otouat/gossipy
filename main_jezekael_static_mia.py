@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 from torchvision.transforms import Compose, Normalize
 from gossipy.core import AntiEntropyProtocol, CreateModelMode, ConstantDelay, StaticP2PNetwork
-from gossipy.data import CustomDataDispatcher, OLDCustomDataDispatcher
+from gossipy.data import CustomDataDispatcher, NEWCustomDataDispatcher, OLDCustomDataDispatcher
 from gossipy.data.handler import ClassificationDataHandler
 from gossipy.model.handler import TorchModelHandler
 from gossipy.node import AttackGossipNode
@@ -32,11 +32,11 @@ config = {
     "dataset": "CIFAR-10",
     "epochs": 250,
     "batch_size": 256,
-    "n_nodes": 36,
+    "n_nodes": 10,
     "n_local_epochs": 3,
-    "neigbors": 2,
+    "neigbors": 5,
     "test_size": 0.5,
-    "factors": 1,
+    "factors": 10,
     "beta": 0.99,
     "p_attacker": 0.3,
     "mia": True,
@@ -58,7 +58,9 @@ Xte, yte = transform(test_set[0]), test_set[1]
 
 data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=config["test_size"])
 
-data_dispatcher = OLDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=True)
+data_dispatcher = NEWCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=True)
+data_dispatcher.assign(seed=42, alpha=0.5)
+data_dispatcher.print_data_distribution()
 
 topology = StaticP2PNetwork(
     int(data_dispatcher.size() / config["factors"]),
