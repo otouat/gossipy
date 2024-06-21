@@ -850,18 +850,18 @@ def get_FEMNIST(path: str="./data") -> Tuple[Tuple[torch.Tensor, torch.Tensor, L
         te_assignment.append(list(range(sum_te, sum_te + nte)))
     return (Xtr, ytr, tr_assignment), (Xte, yte, te_assignment)
 
-class NonIIDCustomDataDispatcher(DataDispatcher):
-    def assign(self, seed: int = 42, alpha: float = 0.5) -> None:
-        """
-        Assigns data to clients in a non-IID manner using Dirichlet distribution.
+class NonIIDCustomDataDispatcher:
+    def __init__(self, data_handler, n, eval_on_user=True, auto_assign=True):
+        self.data_handler = data_handler
+        self.n = n
+        self.eval_on_user = eval_on_user
+        self.auto_assign = auto_assign
+        self.tr_assignments = None
+        self.te_assignments = None
+        if self.auto_assign:
+            self.assign()
 
-        Parameters
-        ----------
-        seed : int, default=42
-            The seed for the random number generator.
-        alpha : float, default=0.5
-            The parameter for the Dirichlet distribution.
-        """
+    def assign(self, seed=42, alpha=0.5):
         torch.manual_seed(seed)
         np.random.seed(seed)
 
@@ -869,7 +869,6 @@ class NonIIDCustomDataDispatcher(DataDispatcher):
         y = self.data_handler.ytr
         labels = torch.unique(y).numpy()
         n_classes = len(labels)
-        n_samples = len(y)
 
         # Dirichlet distribution
         proportions = dirichlet([alpha] * n_clients, n_classes)
@@ -897,24 +896,20 @@ class NonIIDCustomDataDispatcher(DataDispatcher):
                     self.te_assignments[client_idx].extend(data)
         else:
             self.te_assignments = [[] for _ in range(n_clients)]
-            
-    def print_distribution(self) -> None:
-            """
-            Prints the distribution of training and evaluation data among clients.
-            """
-            def count_classes(assignments):
-                y = self.data_handler.ytr
-                counts = [np.bincount(y[client_data], minlength=len(torch.unique(y))) for client_data in assignments]
-                return counts
 
-            train_counts = count_classes(self.tr_assignments)
-            eval_counts = count_classes(self.te_assignments)
+    def print_distribution(self):
+        def count_classes(assignments, y):
+            counts = [np.bincount(y[client_data], minlength=len(torch.unique(y))) for client_data in assignments]
+            return counts
 
-            print("Training Data Distribution:")
-            for i, counts in enumerate(train_counts):
+        train_counts = count_classes(self.tr_assignments, self.data_handler.ytr)
+        eval_counts = count_classes(self.te_assignments, self.data_handler.yte)
+
+        print("Training Data Distribution:")
+        for i, counts in enumerate(train_counts):
+            print(f"Client {i}: {counts}")
+
+        if self.eval_on_user:
+            print("\nEvaluation Data Distribution:")
+            for i, counts in enumerate(eval_counts):
                 print(f"Client {i}: {counts}")
-
-            if self.eval_on_user:
-                print("\nEvaluation Data Distribution:")
-                for i, counts in enumerate(eval_counts):
-                    print(f"Client {i}: {counts}")
