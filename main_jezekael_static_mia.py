@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 from torchvision.transforms import Compose, Normalize
 from gossipy.core import AntiEntropyProtocol, CreateModelMode, ConstantDelay, StaticP2PNetwork
-from gossipy.data import NonIIDCustomDataDispatcher, OLDCustomDataDispatcher
+from gossipy.data import AssignmentHandler, NonIIDCustomDataDispatcher, OLDCustomDataDispatcher
 from gossipy.data.handler import ClassificationDataHandler
 from gossipy.model.handler import TorchModelHandler
 from gossipy.node import AttackGossipNode
@@ -58,10 +58,17 @@ Xte, yte = transform(test_set[0]), test_set[1]
 
 data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=config["test_size"])
 
+assignment_handler = AssignmentHandler()
+assignments = assignment_handler.label_dirichlet_skew(ytr.numpy(), n=config["n_nodes"] * config["factors"], beta=config["beta"])
+data_dispatcher = NonIIDCustomDataDispatcher(data_handler, n=config["n_nodes"] * config["factors"], eval_on_user=True, auto_assign=False)
+data_dispatcher.set_assignments(assignments)
+
+'''
 #data_dispatcher = OLDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=True)
 data_dispatcher = NonIIDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=False)
 data_dispatcher.assign(seed=42, alpha=config["beta"], test_size=config["test_size"])
 data_dispatcher.print_distribution()
+'''
 
 topology = StaticP2PNetwork(
     int(data_dispatcher.size() / config["factors"]),
