@@ -850,6 +850,7 @@ def get_FEMNIST(path: str="./data") -> Tuple[Tuple[torch.Tensor, torch.Tensor, L
         te_assignment.append(list(range(sum_te, sum_te + nte)))
     return (Xtr, ytr, tr_assignment), (Xte, yte, te_assignment)
 
+
 class NonIIDCustomDataDispatcher:
     def __init__(self, data_handler, n, eval_on_user=True, auto_assign=True):
         self.data_handler = data_handler
@@ -871,7 +872,7 @@ class NonIIDCustomDataDispatcher:
         n_classes = len(labels)
 
         # Dirichlet distribution
-        proportions = dirichlet([alpha] * n_clients, n_classes)
+        proportions = [dirichlet(alpha, n_clients) for _ in range(n_classes)]
 
         # Shuffle and assign samples
         self.tr_assignments = [[] for _ in range(n_clients)]
@@ -885,7 +886,7 @@ class NonIIDCustomDataDispatcher:
 
         if self.eval_on_user:
             y_eval = self.data_handler.yte
-            proportions_eval = dirichlet([alpha] * n_clients, n_classes)
+            proportions_eval = [dirichlet(alpha, n_clients) for _ in range(n_classes)]
             self.te_assignments = [[] for _ in range(n_clients)]
             for k in range(n_classes):
                 idx_k = np.where(y_eval == k)[0]
@@ -896,6 +897,15 @@ class NonIIDCustomDataDispatcher:
                     self.te_assignments[client_idx].extend(data)
         else:
             self.te_assignments = [[] for _ in range(n_clients)]
+            
+    def dirichlet(alpha, n_classes):
+        proportions = np.random.dirichlet([alpha] * n_classes)
+        return proportions
+
+    def __getitem__(self, idx):
+        if idx < 0 or idx >= self.n:
+            raise IndexError("Index out of range")
+        return self.tr_assignments[idx], self.te_assignments[idx]
 
     def size(self):
         return self.n
