@@ -963,5 +963,3 @@ class NonIIDCustomDataDispatcher(DataDispatcher):
             print(f"Client {i} train data indices: {client_data[:10]}")  # Print the first 10 indices for each client
         for i, client_data in enumerate(self.te_assignments):
             print(f"Client {i} test data indices: {client_data[:10]}")  # Print the first 10 indices for each client
-
-# Assuming DataDispatcher is the parent class you have defined.
