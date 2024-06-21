@@ -60,6 +60,7 @@ data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=config["t
 
 #data_dispatcher = OLDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=True)
 data_dispatcher = NonIIDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=True)
+data_dispatcher.print_distribution()
 
 topology = StaticP2PNetwork(
     int(data_dispatcher.size() / config["factors"]),

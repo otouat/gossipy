@@ -897,3 +897,24 @@ class NonIIDCustomDataDispatcher(DataDispatcher):
                     self.te_assignments[client_idx].extend(data)
         else:
             self.te_assignments = [[] for _ in range(n_clients)]
+            
+    def print_distribution(self) -> None:
+            """
+            Prints the distribution of training and evaluation data among clients.
+            """
+            def count_classes(assignments):
+                y = self.data_handler.ytr
+                counts = [np.bincount(y[client_data], minlength=len(torch.unique(y))) for client_data in assignments]
+                return counts
+
+            train_counts = count_classes(self.tr_assignments)
+            eval_counts = count_classes(self.te_assignments)
+
+            print("Training Data Distribution:")
+            for i, counts in enumerate(train_counts):
+                print(f"Client {i}: {counts}")
+
+            if self.eval_on_user:
+                print("\nEvaluation Data Distribution:")
+                for i, counts in enumerate(eval_counts):
+                    print(f"Client {i}: {counts}")
