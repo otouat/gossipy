@@ -850,7 +850,6 @@ def get_FEMNIST(path: str="./data") -> Tuple[Tuple[torch.Tensor, torch.Tensor, L
         te_assignment.append(list(range(sum_te, sum_te + nte)))
     return (Xtr, ytr, tr_assignment), (Xte, yte, te_assignment)
 
-
 class NonIIDCustomDataDispatcher(DataDispatcher):
     def assign(self, seed: int = 42, alpha: float = 0.5, test_size: float = 0.5) -> None:
         """
@@ -886,6 +885,11 @@ class NonIIDCustomDataDispatcher(DataDispatcher):
         y_train = y[train_indices]
         y_test = y[test_indices]
 
+        # Debugging: check the sizes of splits
+        print(f"Total samples: {n_samples}")
+        print(f"Training samples: {len(train_indices)}")
+        print(f"Test samples: {len(test_indices)}")
+
         # Dirichlet distribution for train data
         proportions_train = dirichlet([alpha] * n_clients, n_classes)
         self.tr_assignments = [[] for _ in range(n_clients)]
@@ -907,6 +911,15 @@ class NonIIDCustomDataDispatcher(DataDispatcher):
             split_data_test = np.split(idx_k_test, split_idx_test)
             for client_idx, data in enumerate(split_data_test):
                 self.te_assignments[client_idx].extend(data)
+
+        # Debugging: ensure all indices are within bounds
+        max_train_idx = np.max([np.max(client_data) for client_data in self.tr_assignments if client_data])
+        max_test_idx = np.max([np.max(client_data) for client_data in self.te_assignments if client_data])
+
+        print(f"Max train index: {max_train_idx}")
+        print(f"Max test index: {max_test_idx}")
+        print(f"Train indices range: 0 to {len(y_train) - 1}")
+        print(f"Test indices range: 0 to {len(y_test) - 1}")
 
     def print_distribution(self) -> None:
         """
