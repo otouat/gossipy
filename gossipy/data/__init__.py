@@ -879,7 +879,7 @@ class NonIIDCustomDataDispatcher(DataDispatcher):
         np.random.shuffle(indices)
 
         # Split into train and test sets
-        split_point = int(n_samples * test_size)
+        split_point = int(n_samples * (1 - test_size))
         train_indices = indices[:split_point]
         test_indices = indices[split_point:]
 
@@ -929,3 +929,11 @@ class NonIIDCustomDataDispatcher(DataDispatcher):
         print("\nEvaluation Data Distribution:")
         for i, counts in enumerate(eval_counts):
             print(f"Client {i}: {counts}")
+
+        # Debugging output to verify the indices
+        print(f"y_train size: {len(y_train)}")
+        print(f"y_test size: {len(y_test)}")
+        for i, client_data in enumerate(self.tr_assignments):
+            print(f"Client {i} train data indices: {client_data[:10]}")  # Print the first 10 indices for each client
+        for i, client_data in enumerate(self.te_assignments):
+            print(f"Client {i} test data indices: {client_data[:10]}")  # Print the first 10 indices for each client
