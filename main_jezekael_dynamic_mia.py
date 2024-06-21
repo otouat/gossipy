@@ -16,9 +16,6 @@ import os
 
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:256'
 
-print(torch.version.cuda)
-print(torch.backends.cudnn.version())
-
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
 train_set, test_set = get_CIFAR10()
 
@@ -35,7 +32,7 @@ config = {
     "dataset": "CIFAR-10",
     "epochs": 250,
     "batch_size": 256,
-    "n_nodes": 36,
+    "n_nodes": 100,
     "n_local_epochs": 3,
     "neigbors": 5,
     "test_size": 0.5,
