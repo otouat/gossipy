@@ -851,18 +851,20 @@ def get_FEMNIST(path: str="./data") -> Tuple[Tuple[torch.Tensor, torch.Tensor, L
     return (Xtr, ytr, tr_assignment), (Xte, yte, te_assignment)
 
 
-class NonIIDCustomDataDispatcher:
-    def __init__(self, data_handler, n, eval_on_user=True, auto_assign=True):
-        self.data_handler = data_handler
-        self.n = n
-        self.eval_on_user = eval_on_user
-        self.auto_assign = auto_assign
-        self.tr_assignments = None
-        self.te_assignments = None
-        if self.auto_assign:
-            self.assign()
+class NonIIDCustomDataDispatcher(DataDispatcher):
+    def assign(self, seed: int = 42, alpha: float = 0.5, test_size: float = 0.5) -> None:
+        """
+        Assigns data to clients in a non-IID manner using Dirichlet distribution.
 
-    def assign(self, seed=42, alpha=0.5):
+        Parameters
+        ----------
+        seed : int, default=42
+            The seed for the random number generator.
+        alpha : float, default=0.5
+            The parameter for the Dirichlet distribution.
+        test_size : float, default=0.5
+            The proportion of the dataset to include in the test split.
+        """
         torch.manual_seed(seed)
         np.random.seed(seed)
 
@@ -870,59 +872,51 @@ class NonIIDCustomDataDispatcher:
         y = self.data_handler.ytr
         labels = torch.unique(y).numpy()
         n_classes = len(labels)
+        n_samples = len(y)
+
+        # Calculate the number of training and test samples
+        n_train_samples = int((1 - test_size) * n_samples)
+        n_test_samples = n_samples - n_train_samples
 
         # Dirichlet distribution
-        proportions = [dirichlet(alpha, n_clients) for _ in range(n_classes)]
+        proportions = dirichlet([alpha] * n_clients, n_classes)
 
-        # Shuffle and assign samples
+        # Shuffle and assign training samples
         self.tr_assignments = [[] for _ in range(n_clients)]
         for k in range(n_classes):
             idx_k = np.where(y == k)[0]
             np.random.shuffle(idx_k)
             split_idx = (np.cumsum(proportions[k]) * len(idx_k)).astype(int)[:-1]
-            split_data = np.split(idx_k, split_idx)
+            split_data = np.split(idx_k[:n_train_samples], split_idx)
             for client_idx, data in enumerate(split_data):
                 self.tr_assignments[client_idx].extend(data)
 
-        if self.eval_on_user:
-            y_eval = self.data_handler.yte
-            proportions_eval = [dirichlet(alpha, n_clients) for _ in range(n_classes)]
-            self.te_assignments = [[] for _ in range(n_clients)]
-            for k in range(n_classes):
-                idx_k = np.where(y_eval == k)[0]
-                np.random.shuffle(idx_k)
-                split_idx = (np.cumsum(proportions_eval[k]) * len(idx_k)).astype(int)[:-1]
-                split_data = np.split(idx_k, split_idx)
-                for client_idx, data in enumerate(split_data):
-                    self.te_assignments[client_idx].extend(data)
-        else:
-            self.te_assignments = [[] for _ in range(n_clients)]
-            
-    def dirichlet(alpha, n_classes):
-        proportions = np.random.dirichlet([alpha] * n_classes)
-        return proportions
+        # Shuffle and assign test samples
+        self.te_assignments = [[] for _ in range(n_clients)]
+        for k in range(n_classes):
+            idx_k = np.where(y == k)[0]
+            np.random.shuffle(idx_k)
+            split_idx = (np.cumsum(proportions[k]) * len(idx_k)).astype(int)[:-1]
+            split_data = np.split(idx_k[n_train_samples:], split_idx)
+            for client_idx, data in enumerate(split_data):
+                self.te_assignments[client_idx].extend(data)
 
-    def __getitem__(self, idx):
-        if idx < 0 or idx >= self.n:
-            raise IndexError("Index out of range")
-        return self.tr_assignments[idx], self.te_assignments[idx]
-
-    def size(self):
-        return self.n
-
-    def print_distribution(self):
-        def count_classes(assignments, y):
+    def print_distribution(self) -> None:
+        """
+        Prints the distribution of training and evaluation data among clients.
+        """
+        def count_classes(assignments):
+            y = self.data_handler.ytr
             counts = [np.bincount(y[client_data], minlength=len(torch.unique(y))) for client_data in assignments]
             return counts
 
-        train_counts = count_classes(self.tr_assignments, self.data_handler.ytr)
-        eval_counts = count_classes(self.te_assignments, self.data_handler.yte)
+        train_counts = count_classes(self.tr_assignments)
+        eval_counts = count_classes(self.te_assignments)
 
         print("Training Data Distribution:")
         for i, counts in enumerate(train_counts):
             print(f"Client {i}: {counts}")
 
-        if self.eval_on_user:
-            print("\nEvaluation Data Distribution:")
-            for i, counts in enumerate(eval_counts):
-                print(f"Client {i}: {counts}")
+        print("\nEvaluation Data Distribution:")
+        for i, counts in enumerate(eval_counts):
+            print(f"Client {i}: {counts}")

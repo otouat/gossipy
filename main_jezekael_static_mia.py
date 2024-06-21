@@ -59,7 +59,8 @@ Xte, yte = transform(test_set[0]), test_set[1]
 data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=config["test_size"])
 
 #data_dispatcher = OLDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=True)
-data_dispatcher = NonIIDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=True)
+data_dispatcher = NonIIDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=False)
+data_dispatcher.assign(seed=42, alpha=config["beta"], test_size=config["test_size"])
 data_dispatcher.print_distribution()
 
 topology = StaticP2PNetwork(
