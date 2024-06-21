@@ -513,47 +513,6 @@ class DataDispatcher():
         return "DataDispatcher(handler=%s, n=%d, eval_on_user=%s)" \
                 %(self.data_handler, self.n, self.eval_on_user)
 
-class CustomDataDispatcher(DataDispatcher):
-    def assign(self, seed: int = 42, method: str = 'uniform', **kwargs) -> None:
-        assign_handler = AssignmentHandler(seed)
-        if method == 'uniform':
-            self.tr_assignments = assign_handler.uniform(self.data_handler.ytr, self.n)
-            if self.eval_on_user:
-                self.te_assignments = assign_handler.uniform(self.data_handler.yte, self.n)
-            else:
-                self.te_assignments = [[] for _ in range(self.n)]
-        elif method == 'quantity_skew':
-            self.tr_assignments = assign_handler.quantity_skew(self.data_handler.ytr, self.n, **kwargs)
-            if self.eval_on_user:
-                self.te_assignments = assign_handler.quantity_skew(self.data_handler.yte, self.n, **kwargs)
-            else:
-                self.te_assignments = [[] for _ in range(self.n)]
-        elif method == 'classwise_quantity_skew':
-            self.tr_assignments = assign_handler.classwise_quantity_skew(self.data_handler.ytr, self.n, **kwargs)
-            if self.eval_on_user:
-                self.te_assignments = assign_handler.classwise_quantity_skew(self.data_handler.yte, self.n, **kwargs)
-            else:
-                self.te_assignments = [[] for _ in range(self.n)]
-        elif method == 'label_quantity_skew':
-            self.tr_assignments = assign_handler.label_quantity_skew(self.data_handler.ytr, self.n, **kwargs)
-            if self.eval_on_user:
-                self.te_assignments = assign_handler.label_quantity_skew(self.data_handler.yte, self.n, **kwargs)
-            else:
-                self.te_assignments = [[] for _ in range(self.n)]
-        elif method == 'label_dirichlet_skew':
-            self.tr_assignments = assign_handler.label_dirichlet_skew(self.data_handler.ytr, self.n, **kwargs)
-            if self.eval_on_user:
-                self.te_assignments = assign_handler.label_dirichlet_skew(self.data_handler.yte, self.n, **kwargs)
-            else:
-                self.te_assignments = [[] for _ in range(self.n)]
-        elif method == 'label_pathological_skew':
-            self.tr_assignments = assign_handler.label_pathological_skew(self.data_handler.ytr, self.n, **kwargs)
-            if self.eval_on_user:
-                self.te_assignments = assign_handler.label_pathological_skew(self.data_handler.yte, self.n, **kwargs)
-            else:
-                self.te_assignments = [[] for _ in range(self.n)]
-        else:
-            raise ValueError(f"Unknown method: {method}")
         
 class OLDCustomDataDispatcher(DataDispatcher):
     def assign(self, seed: int = 42) -> None:
@@ -891,154 +850,50 @@ def get_FEMNIST(path: str="./data") -> Tuple[Tuple[torch.Tensor, torch.Tensor, L
         te_assignment.append(list(range(sum_te, sum_te + nte)))
     return (Xtr, ytr, tr_assignment), (Xte, yte, te_assignment)
 
-def plot_class_distribution(simulator):
-    """
-    Plots the class distribution for each node in a federated learning setup.
-
-    Parameters:
-    -----------
-    simulator : MIAGossipSimulator
-        The simulator containing the nodes and their data.
-        
-    Returns:
-    --------
-    fig : matplotlib.figure.Figure
-        The figure containing the plot.
-    """
-    data_dispatcher = simulator.data_dispatcher
-    n_nodes = data_dispatcher.size()
-    n_classes = len(torch.unique(data_dispatcher.data_handler.ytr).numpy())
-    
-    node_class_distributions = []
-
-    for i in range(n_nodes):
-        train_data, _ = data_dispatcher[i]
-        node_classes = train_data[1]  # Get the labels
-        class_counts = torch.bincount(node_classes, minlength=n_classes).numpy()
-        node_class_distributions.append(class_counts)
-        #print(f"Node {i} class distribution: {class_counts}")
-
-    # Convert to numpy array for plotting
-    node_class_distributions = np.array(node_class_distributions)
-
-    # Plotting
-    fig, ax = plt.subplots(figsize=(10, 7))
-    im = ax.imshow(node_class_distributions, aspect='auto', cmap='viridis')
-
-    # Create colorbar
-    cbar = ax.figure.colorbar(im, ax=ax)
-    cbar.ax.set_ylabel('Class Count', rotation=-90, va="bottom")
-
-    # We want to show all ticks...
-    ax.set_xticks(np.arange(n_classes))
-    ax.set_yticks(np.arange(n_nodes))
-
-    # Label the axes
-    ax.set_xlabel('Class')
-    ax.set_ylabel('Node')
-
-    # Rotate the tick labels and set their alignment.
-    plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
-
-    # Title
-    ax.set_title("Class Distribution per Node")
-    
-    return fig
-
-import numpy as np
-from typing import List, Optional, Tuple, Any
-from collections import defaultdict
-
-class NEWCustomDataDispatcher(DataDispatcher):
+class NonIIDCustomDataDispatcher(DataDispatcher):
     def assign(self, seed: int = 42, alpha: float = 0.5) -> None:
-        """Assign data to clients with the same number of samples but different class distributions.
+        """
+        Assigns data to clients in a non-IID manner using Dirichlet distribution.
 
         Parameters
         ----------
         seed : int, default=42
             The seed for the random number generator.
         alpha : float, default=0.5
-            The concentration parameter for the Dirichlet distribution to generate class distributions.
+            The parameter for the Dirichlet distribution.
         """
+        torch.manual_seed(seed)
         np.random.seed(seed)
 
-        # Print the number of clients and total number of samples
-        print(f"Number of clients: {self.n}")
-        print(f"Total number of training samples: {len(self.data_handler.ytr)}")
-        print(f"Total number of test samples: {len(self.data_handler.yte)}")
+        n_clients = self.n
+        y = self.data_handler.ytr
+        labels = torch.unique(y).numpy()
+        n_classes = len(labels)
+        n_samples = len(y)
 
-        n_samples_per_client = len(self.data_handler.ytr) // self.n
-        n_classes = len(np.unique(self.data_handler.ytr))
+        # Dirichlet distribution
+        proportions = dirichlet([alpha] * n_clients, n_classes)
 
-        # Generate a different class distribution for each client using Dirichlet distribution
-        class_distributions = np.random.dirichlet([alpha] * n_classes, self.n)
+        # Shuffle and assign samples
+        self.tr_assignments = [[] for _ in range(n_clients)]
+        for k in range(n_classes):
+            idx_k = np.where(y == k)[0]
+            np.random.shuffle(idx_k)
+            split_idx = (np.cumsum(proportions[k]) * len(idx_k)).astype(int)[:-1]
+            split_data = np.split(idx_k, split_idx)
+            for client_idx, data in enumerate(split_data):
+                self.tr_assignments[client_idx].extend(data)
 
-        self.tr_assignments = [[] for _ in range(self.n)]
-        self.te_assignments = [[] for _ in range(self.n)]
-
-        # Collect indices of samples by class
-        indices_by_class_tr = defaultdict(list)
-        for idx, label in enumerate(self.data_handler.ytr):
-            indices_by_class_tr[label].append(idx)
-
-        indices_by_class_te = defaultdict(list)
-        for idx, label in enumerate(self.data_handler.yte):
-            indices_by_class_te[label].append(idx)
-
-        # Shuffle indices within each class
-        for label in indices_by_class_tr:
-            np.random.shuffle(indices_by_class_tr[label])
-
-        for label in indices_by_class_te:
-            np.random.shuffle(indices_by_class_te[label])
-
-        # Assign samples to clients based on the generated class distributions
-        for client_id in range(self.n):
-            print(f"Assigning samples to Client {client_id}...")
-
-            tr_samples = []
-            for class_id, proportion in enumerate(class_distributions[client_id]):
-                n_samples_class = int(proportion * n_samples_per_client)
-                n_samples_class = min(n_samples_class, len(indices_by_class_tr[class_id]))
-                tr_samples.extend(indices_by_class_tr[class_id][:n_samples_class])
-                indices_by_class_tr[class_id] = indices_by_class_tr[class_id][n_samples_class:]
-
-            np.random.shuffle(tr_samples)
-            self.tr_assignments[client_id] = tr_samples
-            print(f"Client {client_id} (Training): Assigned {len(tr_samples)} samples")
-
-            if self.eval_on_user:
-                te_samples = []
-                for class_id, proportion in enumerate(class_distributions[client_id]):
-                    n_samples_class = int(proportion * n_samples_per_client)
-                    n_samples_class = min(n_samples_class, len(indices_by_class_te[class_id]))
-                    te_samples.extend(indices_by_class_te[class_id][:n_samples_class])
-                    indices_by_class_te[class_id] = indices_by_class_te[class_id][n_samples_class:]
-
-                np.random.shuffle(te_samples)
-                self.te_assignments[client_id] = te_samples
-                print(f"Client {client_id} (Test): Assigned {len(te_samples)} samples")
-            else:
-                self.te_assignments[client_id] = []
-                print(f"Client {client_id} (Test): No test set assigned")
-
-        # Print data distribution for verification
-        self.print_data_distribution()
-
-    def print_data_distribution(self):
-        """Print the data distribution of each client."""
-        for client_id in range(self.n):
-            tr_distribution = defaultdict(int)
-            for idx in self.tr_assignments[client_id]:
-                label = self.data_handler.ytr[idx]
-                tr_distribution[label] += 1
-            print(f"Client {client_id} (Training): {dict(tr_distribution)}")
-
-            if self.eval_on_user:
-                te_distribution = defaultdict(int)
-                for idx in self.te_assignments[client_id]:
-                    label = self.data_handler.yte[idx]
-                    te_distribution[label] += 1
-                print(f"Client {client_id} (Test): {dict(te_distribution)}")
-            else:
-                print(f"Client {client_id} (Test): No test set assigned")
+        if self.eval_on_user:
+            y_eval = self.data_handler.yte
+            proportions_eval = dirichlet([alpha] * n_clients, n_classes)
+            self.te_assignments = [[] for _ in range(n_clients)]
+            for k in range(n_classes):
+                idx_k = np.where(y_eval == k)[0]
+                np.random.shuffle(idx_k)
+                split_idx = (np.cumsum(proportions_eval[k]) * len(idx_k)).astype(int)[:-1]
+                split_data = np.split(idx_k, split_idx)
+                for client_idx, data in enumerate(split_data):
+                    self.te_assignments[client_idx].extend(data)
+        else:
+            self.te_assignments = [[] for _ in range(n_clients)]
