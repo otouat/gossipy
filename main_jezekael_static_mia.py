@@ -58,7 +58,7 @@ Xte, yte = transform(test_set[0]), test_set[1]
 
 data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=config["test_size"])
 
-assignment_handler = AssignmentHandler()
+assignment_handler = AssignmentHandler(seed=42)
 assignments = assignment_handler.label_dirichlet_skew(ytr.numpy(), n=config["n_nodes"] * config["factors"], beta=config["beta"])
 data_dispatcher = NonIIDCustomDataDispatcher(data_handler, n=config["n_nodes"] * config["factors"], eval_on_user=True, auto_assign=False)
 data_dispatcher.set_assignments(assignments)
