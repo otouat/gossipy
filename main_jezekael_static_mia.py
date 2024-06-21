@@ -1,14 +1,14 @@
 import torch
 import torch.nn.functional as F
 from torchvision.transforms import Compose, Normalize
-from gossipy.core import AntiEntropyProtocol, CreateModelMode, StaticP2PNetwork
+from gossipy.core import AntiEntropyProtocol, CreateModelMode, ConstantDelay, StaticP2PNetwork
+from gossipy.data import AssignmentHandler, NonIIDCustomDataDispatcher, OLDCustomDataDispatcher
 from gossipy.data.handler import ClassificationDataHandler
 from gossipy.model.handler import TorchModelHandler
 from gossipy.node import AttackGossipNode
-from gossipy.simul import AttackGossipSimulator, AttackSimulationReport
+from gossipy.simul import AttackDynamicGossipSimulator, AttackGossipSimulator, AttackSimulationReport
 from gossipy.model.architecture import resnet20
 from gossipy.data import get_CIFAR10
-from gossipy.data.assignment import AssignmentHandler
 import networkx as nx
 from networkx.generators import random_regular_graph
 from gossipy.attacks.utils import log_results
@@ -27,17 +27,17 @@ config = {
     "learning_rate": 0.1,
     "momentum": 0.9,
     "weight_decay": 0.0005,
-    "optimizer": torch.optim.SGD,
+    "optimizer": "SGD",
     "architecture": "ResNet20",
     "dataset": "CIFAR-10",
     "epochs": 250,
     "batch_size": 256,
     "n_nodes": 36,
     "n_local_epochs": 3,
-    "neighbors": 5,
+    "neigbors": 5,
     "test_size": 0.5,
     "factors": 1,
-    "beta": 0.5,  # Adjust beta parameter for label_dirichlet_skew
+    "beta": 0.5,
     "p_attacker": 0.3,
     "mia": True,
     "mar": False,
@@ -51,7 +51,7 @@ optimizer_params = {
     "weight_decay": config["weight_decay"]
 }
 
-message = f"Experiment with {config['architecture']} on {config['dataset']} dataset (test size : {config['test_size']}, class distribution = {config['beta']}). | Attacks: N°Attackers: {int(config['n_nodes'] * config['p_attacker'])}, MIA: {config['mia']}, MAR: {config['mar']}, ECHO: {config['echo']} | Training: {config['n_nodes']} nodes, {config['n_local_epochs']} local epochs, batch size {config['batch_size']}, number of neighbors {config['neighbors']} | Model: Optimizer: {config['optimizer']}, lr {config['learning_rate']},  momentum: {config['momentum']}, weight_decay: {config['weight_decay']} "
+message = f"Experiment with {config['architecture']} on {config['dataset']} dataset (test size : {config['test_size']}, class distribution = {config['beta']}). | Attacks: N°Attackers: {int(config['n_nodes'] * config['p_attacker'])}, MIA: {config['mia']}, MAR: {config['mar']}, ECHO: {config['echo']} | Training: {config['n_nodes']} nodes, {config['n_local_epochs']} local epochs, batch size {config['batch_size']}, number of neigbors {config['neigbors']} | Model: Optimizer: {config['optimizer']}, lr {config['learning_rate']},  momentum: {config['momentum']}, weight_decay: {config['weight_decay']} "
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
 Xte, yte = transform(test_set[0]), test_set[1]
@@ -68,9 +68,16 @@ assignments = assignment_handler.label_dirichlet_skew(ytr_tensor, n=config["n_no
 data_dispatcher = NonIIDCustomDataDispatcher(data_handler, n=config["n_nodes"] * config["factors"], eval_on_user=True, auto_assign=False)
 data_dispatcher.set_assignments(assignments)
 
+'''
+#data_dispatcher = OLDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=True)
+data_dispatcher = NonIIDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=False)
+data_dispatcher.assign(seed=42, alpha=config["beta"], test_size=config["test_size"])
+data_dispatcher.print_distribution()
+'''
+
 topology = StaticP2PNetwork(
     int(data_dispatcher.size() / config["factors"]),
-    topology=nx.to_numpy_array(random_regular_graph(config["neighbors"], config["n_nodes"], seed=42))
+    topology=nx.to_numpy_array(random_regular_graph(config["neigbors"], config["n_nodes"], seed=42))
 )
 
 nodes = AttackGossipNode.generate(
@@ -78,7 +85,7 @@ nodes = AttackGossipNode.generate(
     p2p_net=topology,
     model_proto=TorchModelHandler(
         net=model,
-        optimizer=config["optimizer"],
+        optimizer=torch.optim.SGD,
         optimizer_params=optimizer_params,
         criterion=F.cross_entropy,
         create_model_mode=CreateModelMode.MERGE_UPDATE,
@@ -92,7 +99,7 @@ nodes = AttackGossipNode.generate(
 for i, node in enumerate(nodes):
     nodes[i].mia = config["mia"]
     nodes[i].mar = config["mar"]
-    if i % int(1 / (config["p_attacker"])) == 0:
+    if i % int(1/(config["p_attacker"])) == 0:
         nodes[i].echo = config["echo"]
         nodes[i].ra = config["ra"]
 
