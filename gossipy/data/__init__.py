@@ -934,6 +934,17 @@ class NonIIDCustomDataDispatcher(DataDispatcher):
         y_train = self.data_handler.ytr
         y_test = self.data_handler.yte
 
+        # Debugging: Print the ranges of the indices
+        max_train_idx = np.max([np.max(client_data) for client_data in self.tr_assignments if client_data])
+        max_test_idx = np.max([np.max(client_data) for client_data in self.te_assignments if client_data])
+
+        print(f"Max train index in assignments: {max_train_idx}")
+        print(f"Max test index in assignments: {max_test_idx}")
+
+        # Ensure the indices are within the correct range
+        assert max_train_idx < len(y_train), f"Train index out of bounds: {max_train_idx} >= {len(y_train)}"
+        assert max_test_idx < len(y_test), f"Test index out of bounds: {max_test_idx} >= {len(y_test)}"
+
         train_counts = count_classes(self.tr_assignments, y_train)
         eval_counts = count_classes(self.te_assignments, y_test)
 
@@ -952,3 +963,5 @@ class NonIIDCustomDataDispatcher(DataDispatcher):
             print(f"Client {i} train data indices: {client_data[:10]}")  # Print the first 10 indices for each client
         for i, client_data in enumerate(self.te_assignments):
             print(f"Client {i} test data indices: {client_data[:10]}")  # Print the first 10 indices for each client
+
+# Assuming DataDispatcher is the parent class you have defined.
