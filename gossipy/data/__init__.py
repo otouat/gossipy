@@ -897,6 +897,9 @@ class NonIIDCustomDataDispatcher:
         else:
             self.te_assignments = [[] for _ in range(n_clients)]
 
+    def size(self):
+        return self.n
+
     def print_distribution(self):
         def count_classes(assignments, y):
             counts = [np.bincount(y[client_data], minlength=len(torch.unique(y))) for client_data in assignments]
