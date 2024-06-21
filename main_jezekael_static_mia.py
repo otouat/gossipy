@@ -56,24 +56,11 @@ message = f"Experiment with {config['architecture']} on {config['dataset']} data
 Xtr, ytr = transform(train_set[0]), train_set[1]
 Xte, yte = transform(test_set[0]), test_set[1]
 
-# Convert ytr back to a PyTorch tensor
-ytr_tensor = torch.from_numpy(ytr.numpy())
+data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=config["test_size"])
 
-# Use ClassificationDataHandler to manage data
-data_handler = ClassificationDataHandler(Xtr, ytr_tensor, Xte, yte, test_size=config["test_size"])
-
-# Use AssignmentHandler.label_dirichlet_skew to assign data non-IID
-assignment_handler = AssignmentHandler(seed=42)  # Provide seed argument here
-assignments = assignment_handler.label_dirichlet_skew(ytr_tensor, n=config["n_nodes"] * config["factors"], beta=config["beta"])
-data_dispatcher = NonIIDCustomDataDispatcher(data_handler, n=config["n_nodes"] * config["factors"], eval_on_user=True, auto_assign=False)
-data_dispatcher.set_assignments(assignments)
-
-'''
 #data_dispatcher = OLDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=True)
-data_dispatcher = NonIIDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=False)
-data_dispatcher.assign(seed=42, alpha=config["beta"], test_size=config["test_size"])
+data_dispatcher = NonIIDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=True)
 data_dispatcher.print_distribution()
-'''
 
 topology = StaticP2PNetwork(
     int(data_dispatcher.size() / config["factors"]),

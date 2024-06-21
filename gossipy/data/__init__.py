@@ -853,7 +853,7 @@ def get_FEMNIST(path: str="./data") -> Tuple[Tuple[torch.Tensor, torch.Tensor, L
 from numpy.random import dirichlet
 
 class NonIIDCustomDataDispatcher(DataDispatcher):
-    def assign(self, seed: int = 42, alpha: float = 0.5, test_size: float = 0.5) -> None:
+    def assign(self, seed: int = 42, alpha: float = 0.5) -> None:
         """
         Assigns data to clients in a non-IID manner using Dirichlet distribution.
 
@@ -863,8 +863,6 @@ class NonIIDCustomDataDispatcher(DataDispatcher):
             The seed for the random number generator.
         alpha : float, default=0.5
             The parameter for the Dirichlet distribution.
-        test_size : float, default=0.5
-            The proportion of the dataset to include in the test split.
         """
         torch.manual_seed(seed)
         np.random.seed(seed)
@@ -873,93 +871,51 @@ class NonIIDCustomDataDispatcher(DataDispatcher):
         y = self.data_handler.ytr
         labels = torch.unique(y).numpy()
         n_classes = len(labels)
-        n_samples = len(y)
 
-        # Shuffle the data indices
-        indices = np.arange(n_samples)
-        np.random.shuffle(indices)
+        # Dirichlet distribution
+        proportions = dirichlet([alpha] * n_clients, n_classes)
 
-        # Split into train and test sets
-        split_point = int(n_samples * (1 - test_size))
-        train_indices = indices[:split_point]
-        test_indices = indices[split_point:]
-
-        y_train = y[train_indices]
-        y_test = y[test_indices]
-
-        # Debugging: check the sizes of splits
-        print(f"Total samples: {n_samples}")
-        print(f"Training samples: {len(train_indices)}")
-        print(f"Test samples: {len(test_indices)}")
-
-        # Dirichlet distribution for train data
-        proportions_train = dirichlet([alpha] * n_clients, n_classes)
+        # Shuffle and assign samples
         self.tr_assignments = [[] for _ in range(n_clients)]
         for k in range(n_classes):
-            idx_k_train = train_indices[y_train == k]
-            np.random.shuffle(idx_k_train)
-            split_idx_train = (np.cumsum(proportions_train[k]) * len(idx_k_train)).astype(int)[:-1]
-            split_data_train = np.split(idx_k_train, split_idx_train)
-            for client_idx, data in enumerate(split_data_train):
+            idx_k = np.where(y == k)[0]
+            np.random.shuffle(idx_k)
+            split_idx = (np.cumsum(proportions[k]) * len(idx_k)).astype(int)[:-1]
+            split_data = np.split(idx_k, split_idx)
+            for client_idx, data in enumerate(split_data):
                 self.tr_assignments[client_idx].extend(data)
 
-        # Dirichlet distribution for test data
-        proportions_test = dirichlet([alpha] * n_clients, n_classes)
-        self.te_assignments = [[] for _ in range(n_clients)]
-        for k in range(n_classes):
-            idx_k_test = test_indices[y_test == k]
-            np.random.shuffle(idx_k_test)
-            split_idx_test = (np.cumsum(proportions_test[k]) * len(idx_k_test)).astype(int)[:-1]
-            split_data_test = np.split(idx_k_test, split_idx_test)
-            for client_idx, data in enumerate(split_data_test):
-                self.te_assignments[client_idx].extend(data)
-
-        # Debugging: ensure all indices are within bounds
-        max_train_idx = np.max([np.max(client_data) for client_data in self.tr_assignments if client_data])
-        max_test_idx = np.max([np.max(client_data) for client_data in self.te_assignments if client_data])
-
-        print(f"Max train index: {max_train_idx}")
-        print(f"Max test index: {max_test_idx}")
-        print(f"Train indices range: 0 to {len(y_train) - 1}")
-        print(f"Test indices range: 0 to {len(y_test) - 1}")
+        if self.eval_on_user:
+            y_eval = self.data_handler.yte
+            proportions_eval = dirichlet([alpha] * n_clients, n_classes)
+            self.te_assignments = [[] for _ in range(n_clients)]
+            for k in range(n_classes):
+                idx_k = np.where(y_eval == k)[0]
+                np.random.shuffle(idx_k)
+                split_idx = (np.cumsum(proportions_eval[k]) * len(idx_k)).astype(int)[:-1]
+                split_data = np.split(idx_k, split_idx)
+                for client_idx, data in enumerate(split_data):
+                    self.te_assignments[client_idx].extend(data)
+        else:
+            self.te_assignments = [[] for _ in range(n_clients)]
 
     def print_distribution(self) -> None:
         """
         Prints the distribution of training and evaluation data among clients.
         """
-        def count_classes(assignments, y):
+        def count_classes(assignments):
+            y = self.data_handler.ytr
             counts = [np.bincount(y[client_data], minlength=len(torch.unique(y))) for client_data in assignments]
             return counts
 
-        y_train = self.data_handler.ytr
-        y_test = self.data_handler.yte
-
-        # Debugging: Print the ranges of the indices
-        max_train_idx = np.max([np.max(client_data) for client_data in self.tr_assignments if client_data])
-        max_test_idx = np.max([np.max(client_data) for client_data in self.te_assignments if client_data])
-
-        print(f"Max train index in assignments: {max_train_idx}")
-        print(f"Max test index in assignments: {max_test_idx}")
-
-        # Ensure the indices are within the correct range
-        assert max_train_idx < len(y_train), f"Train index out of bounds: {max_train_idx} >= {len(y_train)}"
-        assert max_test_idx < len(y_test), f"Test index out of bounds: {max_test_idx} >= {len(y_test)}"
-
-        train_counts = count_classes(self.tr_assignments, y_train)
-        eval_counts = count_classes(self.te_assignments, y_test)
+        train_counts = count_classes(self.tr_assignments)
+        eval_counts = count_classes(self.te_assignments)
 
         print("Training Data Distribution:")
         for i, counts in enumerate(train_counts):
             print(f"Client {i}: {counts}")
 
-        print("\nEvaluation Data Distribution:")
-        for i, counts in enumerate(eval_counts):
-            print(f"Client {i}: {counts}")
-
-        # Debugging output to verify the indices
-        print(f"y_train size: {len(y_train)}")
-        print(f"y_test size: {len(y_test)}")
-        for i, client_data in enumerate(self.tr_assignments):
-            print(f"Client {i} train data indices: {client_data[:10]}")  # Print the first 10 indices for each client
-        for i, client_data in enumerate(self.te_assignments):
-            print(f"Client {i} test data indices: {client_data[:10]}")  # Print the first 10 indices for each client
+        if self.eval_on_user:
+            print("\nEvaluation Data Distribution:")
+            for i, counts in enumerate(eval_counts):
+                print(f"Client {i}: {counts}")
