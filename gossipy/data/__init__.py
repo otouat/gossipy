@@ -850,6 +850,8 @@ def get_FEMNIST(path: str="./data") -> Tuple[Tuple[torch.Tensor, torch.Tensor, L
         te_assignment.append(list(range(sum_te, sum_te + nte)))
     return (Xtr, ytr, tr_assignment), (Xte, yte, te_assignment)
 
+from numpy.random import dirichlet
+
 class NonIIDCustomDataDispatcher(DataDispatcher):
     def assign(self, seed: int = 42, alpha: float = 0.5, test_size: float = 0.5) -> None:
         """
