@@ -64,9 +64,9 @@ data_handler = ClassificationDataHandler(Xtr, ytr_tensor, Xte, yte, test_size=co
 
 # Use AssignmentHandler.label_dirichlet_skew to assign data non-IID
 assignment_handler = AssignmentHandler(seed=42)  # Provide seed argument here
-assignments = assignment_handler.label_dirichlet_skew(ytr_tensor, n=config["n_nodes"] * config["factors"], beta=config["beta"])
+tr_assignments, te_assignments = assignment_handler.label_dirichlet_skew(ytr_tensor, n=config["n_nodes"] * config["factors"], beta=config["beta"])
 data_dispatcher = NonIIDCustomDataDispatcher(data_handler, n=config["n_nodes"] * config["factors"], eval_on_user=True, auto_assign=False)
-data_dispatcher.set_assignments(assignments)
+data_dispatcher.set_assignments(tr_assignments, te_assignments)
 
 '''
 #data_dispatcher = OLDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=True)
