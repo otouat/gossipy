@@ -6,7 +6,6 @@ import csv
 from typing import List, Dict
 import pandas as pd
 from gossipy import LOG
-from gossipy.data import plot_class_distribution
 
 def log_results(Simul, report, message=""):
     base_folder_path = os.path.join(os.getcwd(), "results")
@@ -92,11 +91,9 @@ def log_results(Simul, report, message=""):
     print("Generating diagrams...")
     fig = get_fig_evaluation([[ev for _, ev in report.get_evaluation(False)]], "Overall test results")
     fig2 = plot(combined_file_path)
-    fig3 = plot_class_distribution(Simul)
     diagrams = {
         'Overall_gossipy_results': fig,
         'Overall_test_results': fig2,
-        'Data_distribution': fig3,
     }
 
     for name, fig in diagrams.items():
