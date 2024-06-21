@@ -852,7 +852,7 @@ def get_FEMNIST(path: str="./data") -> Tuple[Tuple[torch.Tensor, torch.Tensor, L
 
 
 class NonIIDCustomDataDispatcher(DataDispatcher):
-    def assign(self, seed: int = 42, alpha: float = 0.5) -> None:
+    def assign(self, seed: int = 42, alpha: float = 0.5, test_size: float = 0.5) -> None:
         """
         Assigns data to clients in a non-IID manner using Dirichlet distribution.
 
@@ -862,6 +862,8 @@ class NonIIDCustomDataDispatcher(DataDispatcher):
             The seed for the random number generator.
         alpha : float, default=0.5
             The parameter for the Dirichlet distribution.
+        test_size : float, default=0.5
+            The proportion of the dataset to include in the test split.
         """
         torch.manual_seed(seed)
         np.random.seed(seed)
@@ -877,7 +879,7 @@ class NonIIDCustomDataDispatcher(DataDispatcher):
         np.random.shuffle(indices)
 
         # Split into train and test sets
-        split_point = int(n_samples * 0.5)
+        split_point = int(n_samples * test_size)
         train_indices = indices[:split_point]
         test_indices = indices[split_point:]
 
