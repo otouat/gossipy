@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 from torchvision.transforms import Compose, Normalize
 from gossipy.core import AntiEntropyProtocol, CreateModelMode, ConstantDelay, StaticP2PNetwork, UniformDynamicP2PNetwork
-from gossipy.data import NonIIDCustomDataDispatcher, OLDCustomDataDispatcher
+from gossipy.data import NonIIDCustomDataDispatcher, OLDCustomDataDispatcher, get_CIFAR100
 from gossipy.data.handler import ClassificationDataHandler
 from gossipy.model.handler import TorchModelHandler
 from gossipy.node import AttackGossipNode
@@ -17,7 +17,7 @@ import os
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:256'
 
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
-train_set, test_set = get_CIFAR10()
+train_set, test_set = get_CIFAR100()
 
 n_classes = max(train_set[1].max().item(), test_set[1].max().item()) + 1
 model = resnet20(n_classes)
@@ -32,7 +32,7 @@ config = {
     "dataset": "CIFAR-10",
     "epochs": 250,
     "batch_size": 256,
-    "n_nodes": 36,
+    "n_nodes": 100,
     "n_local_epochs": 3,
     "neigbors": 5,
     "test_size": 0.5,
@@ -59,9 +59,9 @@ Xte, yte = transform(test_set[0]), test_set[1]
 
 data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=config["test_size"])
 
-#data_dispatcher = OLDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=True)
-data_dispatcher = NonIIDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=True)
-data_dispatcher.print_distribution()
+data_dispatcher = OLDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=True)
+#data_dispatcher = NonIIDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=True)
+#data_dispatcher.print_distribution()
 
 topology =  UniformDynamicP2PNetwork(
     int(data_dispatcher.size() / config["factors"]),
