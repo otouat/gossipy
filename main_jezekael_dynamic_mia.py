@@ -37,7 +37,7 @@ config = {
     "neigbors": 5,
     "test_size": 0.5,
     "factors": 1,
-    "beta": 0.99,
+    "beta": 0.5,
     "p_attacker": 0.3,
     "mia": True,
     "mar": False,
@@ -59,9 +59,9 @@ Xte, yte = transform(test_set[0]), test_set[1]
 
 data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=config["test_size"])
 
-data_dispatcher = OLDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=True)
-#data_dispatcher = NonIIDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=True)
-#data_dispatcher.print_distribution()
+#data_dispatcher = OLDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=True)
+data_dispatcher = NonIIDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=True)
+data_dispatcher.print_distribution()
 
 topology =  UniformDynamicP2PNetwork(
     int(data_dispatcher.size() / config["factors"]),
@@ -109,6 +109,6 @@ simulator = AttackDynamicGossipSimulator(
 report = AttackSimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
-simulator.start(n_rounds=config["epochs"], wall_time_limit=18.5)
+simulator.start(n_rounds=config["epochs"], wall_time_limit=13.5)
 
 log_results(simulator, report, message)

@@ -1195,7 +1195,7 @@ class AttackGossipNode(GossipNode):
         self.final_agg = OrderedDict()
         self.gradient =  OrderedDict()
         self.mia = False
-        self.class_specific = False
+        self.class_specific = True
         self.mar = False
         self.ra = False
         self.echo = False
