@@ -32,7 +32,7 @@ config = {
     "dataset": "CIFAR-10",
     "epochs": 250,
     "batch_size": 256,
-    "n_nodes": 100,
+    "n_nodes": 36,
     "n_local_epochs": 3,
     "neigbors": 5,
     "test_size": 0.5,
@@ -41,7 +41,7 @@ config = {
     "p_attacker": 0.3,
     "mia": True,
     "mar": False,
-    "echo": True,
+    "echo": False,
     "ra": False,
     "peer_sampling_period": 1
 }
@@ -98,7 +98,7 @@ simulator = AttackDynamicGossipSimulator(
     protocol=AntiEntropyProtocol.PUSH,
     delay=ConstantDelay(0),
     online_prob=1,
-    drop_prob=0,
+    drop_prob=0.2,
     sampling_eval=0,
     peer_sampling_period=config["peer_sampling_period"],
     mia=config["mia"],
