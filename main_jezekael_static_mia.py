@@ -33,11 +33,11 @@ config = {
     "epochs": 250,
     "batch_size": 256,
     "n_nodes": 36,
-    "n_local_epochs": 3,
-    "neigbors": 5,
+    "n_local_epochs": 1,
+    "neigbors": 10,
     "test_size": 0.5,
     "factors": 1,
-    "beta": 0.5,
+    "beta": 0.99,
     "p_attacker": 0.3,
     "mia": True,
     "mar": False,
@@ -59,8 +59,8 @@ Xte, yte = transform(test_set[0]), test_set[1]
 data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=config["test_size"])
 
 data_dispatcher = OLDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=True)
-data_dispatcher = NonIIDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=True)
-data_dispatcher.print_distribution()
+#data_dispatcher = NonIIDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=True)
+#data_dispatcher.print_distribution()
 
 topology = StaticP2PNetwork(
     int(data_dispatcher.size() / config["factors"]),
