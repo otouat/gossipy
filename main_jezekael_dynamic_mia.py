@@ -17,7 +17,7 @@ import os
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:256'
 
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
-train_set, test_set = get_CIFAR100()
+train_set, test_set = get_CIFAR10()
 
 n_classes = max(train_set[1].max().item(), test_set[1].max().item()) + 1
 model = resnet20(n_classes)
@@ -37,11 +37,11 @@ config = {
     "neigbors": 5,
     "test_size": 0.5,
     "factors": 1,
-    "beta": 0.5,
+    "beta": 0.99,
     "p_attacker": 0.3,
     "mia": True,
     "mar": False,
-    "echo": False,
+    "echo": True,
     "ra": False,
     "peer_sampling_period": 1
 }
@@ -109,6 +109,6 @@ simulator = AttackDynamicGossipSimulator(
 report = AttackSimulationReport()
 simulator.add_receiver(report)
 simulator.init_nodes(seed=42)
-simulator.start(n_rounds=config["epochs"], wall_time_limit=19.5)
+simulator.start(n_rounds=config["epochs"], wall_time_limit=18.5)
 
 log_results(simulator, report, message)
