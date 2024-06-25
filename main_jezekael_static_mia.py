@@ -33,7 +33,7 @@ config = {
     "epochs": 250,
     "batch_size": 256,
     "n_nodes": 36,
-    "n_local_epochs": 1,
+    "n_local_epochs": 3,
     "neigbors": 5,
     "test_size": 0.5,
     "factors": 1,
@@ -51,14 +51,14 @@ optimizer_params = {
     "weight_decay": config["weight_decay"]
 }
 
-message = f"Experiment with (drop on) {config['architecture']} on {config['dataset']} dataset (test size : {config['test_size']}, class distribution = {config['beta']}). | Attacks: N°Attackers: {int(config['n_nodes'] * config['p_attacker'])}, MIA: {config['mia']}, MAR: {config['mar']}, ECHO: {config['echo']} | Training: {config['n_nodes']} nodes, {config['n_local_epochs']} local epochs, batch size {config['batch_size']}, number of neigbors {config['neigbors']} | Model: Optimizer: {config['optimizer']}, lr {config['learning_rate']},  momentum: {config['momentum']}, weight_decay: {config['weight_decay']} "
+message = f"Experiment with {config['architecture']} on {config['dataset']} dataset (test size : {config['test_size']}, class distribution = {config['beta']}). | Attacks: N°Attackers: {int(config['n_nodes'] * config['p_attacker'])}, MIA: {config['mia']}, MAR: {config['mar']}, ECHO: {config['echo']} | Training: {config['n_nodes']} nodes, {config['n_local_epochs']} local epochs, batch size {config['batch_size']}, number of neigbors {config['neigbors']} | Model: Optimizer: {config['optimizer']}, lr {config['learning_rate']},  momentum: {config['momentum']}, weight_decay: {config['weight_decay']} "
 
 Xtr, ytr = transform(train_set[0]), train_set[1]
 Xte, yte = transform(test_set[0]), test_set[1]
 
 data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=config["test_size"])
 
-#data_dispatcher = OLDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=True)
+data_dispatcher = OLDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=True)
 data_dispatcher = NonIIDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=True)
 data_dispatcher.print_distribution()
 
