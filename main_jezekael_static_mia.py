@@ -37,7 +37,7 @@ config = {
     "neigbors": 5,
     "test_size": 0.5,
     "factors": 1,
-    "beta": 0.99,
+    "beta": 0.75,
     "p_attacker": 0.3,
     "mia": True,
     "mar": False,

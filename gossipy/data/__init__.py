@@ -853,7 +853,7 @@ def get_FEMNIST(path: str="./data") -> Tuple[Tuple[torch.Tensor, torch.Tensor, L
 from numpy.random import dirichlet
 
 class NonIIDCustomDataDispatcher(DataDispatcher):
-    def assign(self, seed: int = 42, alpha: float = 0.9) -> None:
+    def assign(self, seed: int = 42, alpha: float = 0.75) -> None:
         """
         Assigns data to clients in a non-IID manner using Dirichlet distribution.
 
