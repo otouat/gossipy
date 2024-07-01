@@ -179,6 +179,11 @@ def black_box(input_tensor, size=10):
 
     return input_tensor
 
+def add_gaussian_noise(input_tensor, mean=0.0, std=0.1):
+    noise = torch.randn_like(input_tensor) * std + mean
+    noisy_tensor = input_tensor + noise
+    return noisy_tensor
+
 def visualize_images(original_img, modified_img):
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
     
@@ -201,7 +206,7 @@ def visualize_images(original_img, modified_img):
     
     plt.show()
 
-def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], log=False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], box=True, noise=False log=False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     x, y = data
     model = model.to(device)
     x, y = x.to(device), y.to(device)
