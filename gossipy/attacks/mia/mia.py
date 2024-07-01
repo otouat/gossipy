@@ -133,10 +133,8 @@ def mia_best_th_class(model, train_data, test_data, num_class, device, nt=200):
         return R.max(axis=1)
 
     model.eval()
-    print("-2")
     Ltrain, Ptrain, Ytrain = evaluate(model, device, train_data)
     Ltest, Ptest, Ytest = evaluate(model, device, test_data)
-    print("-1")
     model.train()
 
     # it takes a subset of results on test set with size equal to the one of the training test
@@ -194,46 +192,31 @@ def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], box=True, n
     losses = []
     preds = []
     labels = []
-    print("0")
+
     for idx in range(len(x)):
-        print("1")
         input_tensor = x[idx].unsqueeze(0)  # Ensure the input tensor has shape [1, channels, height, width]
         original = input_tensor.clone()
-        
         if noise:
-            print("2")
-            input_tensor = add_noise(input_tensor).to(device)  # Add Gaussian noise
+            input_tensor = add_noise(input_tensor).unsqueeze(0)  # Add Gaussian noise
         if box:
-            print("3")
-            input_tensor = add_random_black_box(input_tensor).to(device)  # Add random black box
-        
+            input_tensor = add_random_black_box(input_tensor).unsqueeze(0)  # Add random black box
+
         with torch.autocast(device_type="cuda"):
-            print("4")
-            scores = model(input_tensor)
-            loss = torch.nn.functional.cross_entropy(scores, y[idx].unsqueeze(0))
+            with torch.no_grad():
+                scores = model(input_tensor)
+                loss = torch.nn.functional.cross_entropy(scores, y[idx].unsqueeze(0))
 
-            prob_scores = torch.nn.functional.softmax(scores, dim=-1).cpu().numpy()
-            label = y[idx].cpu().numpy()
+                prob_scores = torch.nn.functional.softmax(scores, dim=-1).detach().cpu().numpy()  # Detach here
+                label = y[idx].cpu().numpy()
 
-            losses.append(loss.cpu().numpy())
-            preds.append(prob_scores.reshape(1, -1))  # Store probability scores
-            labels.append(label.reshape(1, -1))  # Ensure labels are added as arrays
-            
-            # Inside evaluate function, before the model evaluation
-            print(f"Noise applied: {noise}, Black box applied: {box}")
-            # Inside evaluate function, before visualization
-            print(f"Original tensor range: {original.min().item()} - {original.max().item()}")
-            print(f"Modified tensor range: {input_tensor.min().item()} - {input_tensor.max().item()}")
+                losses.append(loss.cpu().numpy())
+                preds.append(prob_scores.reshape(1, -1))  # Store probability scores
+                labels.append(label.reshape(1, -1))  # Ensure labels are added as arrays
 
-            # After the tensor manipulation, directly visualize before model evaluation
-            visualize_images(original, input_tensor.clone().cpu())
-        print("5")
     losses = np.array(losses)
     preds = np.concatenate(preds) if preds else np.array([])
     labels = np.concatenate(labels) if labels else np.array([])
     model = model.to("cpu")
-    print("6")
-    
     return losses, preds, labels
 
 def visualize_images(original_images, modified_images):
