@@ -177,7 +177,13 @@ def add_random_black_box(image, box_size=10):
     img[:, top_left_y:top_left_y + box_size, top_left_x:top_left_x + box_size] = 0  # Set the box area to black (0)
     return img
 
-def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], log=False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def add_noise(image, mean=0, std=0.1):
+    """Adds Gaussian noise to an image tensor."""
+    noise = torch.randn_like(image) * std + mean
+    noisy_image = image + noise
+    return noisy_image
+
+def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], box=False, noise=False, log=False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     x, y = data
     model = model.to(device)
     x, y = x.to(device), y.to(device)
@@ -188,8 +194,12 @@ def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], log=False) 
 
     for idx in range(len(x)):
         input_tensor = x[idx].unsqueeze(0)  # Ensure the input tensor has shape [1, channels, height, width]
-        input_tensor = add_random_black_box(input_tensor[0]).unsqueeze(0)  # Add random black box
-
+        orignal = input_tensor.clone()
+        if noise:
+            input_tensor = add_noise(input_tensor).unsqueeze(0)  # Add Gaussian noise
+        if box:
+            input_tensor = add_random_black_box(input_tensor[0]).unsqueeze(0)  # Add random black box
+        visualize_images(orignal, input_tensor.clone())
         with torch.autocast(device_type="cuda"):
             with torch.no_grad():
                 scores = model(input_tensor)
@@ -254,4 +264,19 @@ def check_model_initialization(original_model, marginalized_model):
         print("Error: Model state dictionaries do not match.")
     else:
         print("Model initialization successful. State dictionaries match.")
+
+def visualize_images(original_images, noisy_images):
+    num_images = len(original_images)
+    fig, axes = plt.subplots(num_images, 2, figsize=(8, 4*num_images))
+    for i in range(num_images):
+        axes[i, 0].imshow(original_images[i].permute(1, 2, 0).cpu())
+        axes[i, 0].set_title('Original Image')
+        axes[i, 0].axis('off')
+        
+        axes[i, 1].imshow(noisy_images[i].permute(1, 2, 0).cpu())
+        axes[i, 1].set_title('Noisy Image')
+        axes[i, 1].axis('off')
+        
+    plt.tight_layout()
+    plt.show()
 
