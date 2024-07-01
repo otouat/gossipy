@@ -221,7 +221,7 @@ def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], box=True, n
         if noise:
             input_tensor = add_gaussian_noise(input_tensor, mean=0.0, std=0.1)
         if box:
-            input_tensor = black_box(input_tensor, size=20)
+            input_tensor = black_box(input_tensor, size=10)
         modified_img = input_tensor.clone()
         visualize_images(original_img, modified_img)
 
