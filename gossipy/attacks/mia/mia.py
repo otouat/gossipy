@@ -266,16 +266,14 @@ def check_model_initialization(original_model, marginalized_model):
         print("Model initialization successful. State dictionaries match.")
 
 def visualize_images(original_images, noisy_images):
-    num_images = len(original_images)
-    fig, axes = plt.subplots(num_images, 2, figsize=(8, 4*num_images))
-    for i in range(num_images):
-        axes[i, 0].imshow(original_images[i].permute(1, 2, 0).cpu())
-        axes[i, 0].set_title('Original Image')
-        axes[i, 0].axis('off')
-        
-        axes[i, 1].imshow(noisy_images[i].permute(1, 2, 0).cpu())
-        axes[i, 1].set_title('Noisy Image')
-        axes[i, 1].axis('off')
+    fig, axes = plt.subplots(1, 2, figsize=(8, 4))
+    axes[0].imshow(original_images[0].permute(1, 2, 0).cpu())
+    axes[0].set_title('Original Image')
+    axes[0].axis('off')
+    
+    axes[1].imshow(noisy_images[0].permute(1, 2, 0).cpu())
+    axes[1].set_title('Noisy Image')
+    axes[1].axis('off')
         
     plt.tight_layout()
     plt.show()
