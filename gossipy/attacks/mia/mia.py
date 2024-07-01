@@ -206,7 +206,7 @@ def visualize_images(original_img, modified_img):
     
     plt.show()
 
-def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], box=True, noise=False log=False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], box=True, noise=True, log=False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     x, y = data
     model = model.to(device)
     x, y = x.to(device), y.to(device)
@@ -218,7 +218,10 @@ def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], box=True, n
     for idx in range(len(x)):
         input_tensor = x[idx].unsqueeze(0)  # Ensure the input tensor has shape [1, channels, height, width]
         original_img = input_tensor.clone()
-        input_tensor = black_box(input_tensor, size=20)
+        if noise:
+            input_tensor = add_gaussian_noise(input_tensor, mean=0.0, std=0.1)
+        if box:
+            input_tensor = black_box(input_tensor, size=20)
         modified_img = input_tensor.clone()
         visualize_images(original_img, modified_img)
 
