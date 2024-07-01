@@ -133,8 +133,10 @@ def mia_best_th_class(model, train_data, test_data, num_class, device, nt=200):
         return R.max(axis=1)
 
     model.eval()
+    print("-2")
     Ltrain, Ptrain, Ytrain = evaluate(model, device, train_data)
     Ltest, Ptest, Ytest = evaluate(model, device, test_data)
+    print("-1")
     model.train()
 
     # it takes a subset of results on test set with size equal to the one of the training test
@@ -168,22 +170,23 @@ def compute_modified_entropy(p, y, epsilon=0.00001):
 
     return entropy
 
-def add_random_black_box(image, box_size=10):
-    """Adds a random black box to a 32x32 image."""
-    img = image.clone()  # Clone the image to avoid in-place modification
-    _, height, width = img.shape
-    top_left_x = np.random.randint(0, width - box_size + 1)
-    top_left_y = np.random.randint(0, height - box_size + 1)
-    img[:, top_left_y:top_left_y + box_size, top_left_x:top_left_x + box_size] = 0  # Set the box area to black (0)
-    return img
+def add_random_black_box(image):
+    """Adds a random black box to an image tensor."""
+    h, w = image.shape[-2:]
+    box_h, box_w = 10, 10  # Size of the black box
+    x = np.random.randint(0, h - box_h)
+    y = np.random.randint(0, w - box_w)
+    image[:, x:x+box_h, y:y+box_w] = 0.0  # Set pixels in the black box to 0
+    return image
 
 def add_noise(image, mean=0, std=0.1):
     """Adds Gaussian noise to an image tensor."""
     noise = torch.randn_like(image) * std + mean
     noisy_image = image + noise
+    noisy_image = torch.clamp(noisy_image, min=0.0, max=1.0)  # Ensure values are in [0, 1] range
     return noisy_image
 
-def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], box=False, noise=False, log=False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], box=True, noise=True, log=False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     x, y = data
     model = model.to(device)
     x, y = x.to(device), y.to(device)
@@ -191,32 +194,68 @@ def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], box=False, 
     losses = []
     preds = []
     labels = []
-
+    print("0")
     for idx in range(len(x)):
+        print("1")
         input_tensor = x[idx].unsqueeze(0)  # Ensure the input tensor has shape [1, channels, height, width]
-        orignal = input_tensor.clone()
+        original = input_tensor.clone()
+        
         if noise:
-            input_tensor = add_noise(input_tensor).unsqueeze(0)  # Add Gaussian noise
+            print("2")
+            input_tensor = add_noise(input_tensor).to(device)  # Add Gaussian noise
         if box:
-            input_tensor = add_random_black_box(input_tensor[0]).unsqueeze(0)  # Add random black box
-        visualize_images(orignal, input_tensor.clone())
+            print("3")
+            input_tensor = add_random_black_box(input_tensor).to(device)  # Add random black box
+        
         with torch.autocast(device_type="cuda"):
-            with torch.no_grad():
-                scores = model(input_tensor)
-                loss = torch.nn.functional.cross_entropy(scores, y[idx].unsqueeze(0))
+            print("4")
+            scores = model(input_tensor)
+            loss = torch.nn.functional.cross_entropy(scores, y[idx].unsqueeze(0))
 
-                prob_scores = torch.nn.functional.softmax(scores, dim=-1).cpu().numpy()
-                label = y[idx].cpu().numpy()
+            prob_scores = torch.nn.functional.softmax(scores, dim=-1).cpu().numpy()
+            label = y[idx].cpu().numpy()
 
-                losses.append(loss.cpu().numpy())
-                preds.append(prob_scores.reshape(1, -1))  # Store probability scores
-                labels.append(label.reshape(1, -1))  # Ensure labels are added as arrays
-                
+            losses.append(loss.cpu().numpy())
+            preds.append(prob_scores.reshape(1, -1))  # Store probability scores
+            labels.append(label.reshape(1, -1))  # Ensure labels are added as arrays
+            
+            # Inside evaluate function, before the model evaluation
+            print(f"Noise applied: {noise}, Black box applied: {box}")
+            # Inside evaluate function, before visualization
+            print(f"Original tensor range: {original.min().item()} - {original.max().item()}")
+            print(f"Modified tensor range: {input_tensor.min().item()} - {input_tensor.max().item()}")
+
+            # After the tensor manipulation, directly visualize before model evaluation
+            visualize_images(original, input_tensor.clone().cpu())
+        print("5")
     losses = np.array(losses)
     preds = np.concatenate(preds) if preds else np.array([])
     labels = np.concatenate(labels) if labels else np.array([])
     model = model.to("cpu")
+    print("6")
+    
     return losses, preds, labels
+
+def visualize_images(original_images, modified_images):
+    num_images = original_images.size(0)
+    fig, axes = plt.subplots(num_images, 2, figsize=(8, 4*num_images))
+    
+    for i in range(num_images):
+        # Original image
+        original_img = original_images[i].permute(1, 2, 0).clamp(0, 1).cpu().numpy()  # Ensure [0, 1] range
+        axes[i, 0].imshow(original_img)
+        axes[i, 0].set_title('Original Image')
+        axes[i, 0].axis('off')
+        
+        # Modified image (noisy or with black box)
+        modified_img = modified_images[i].permute(1, 2, 0).clamp(0, 1).cpu().numpy()  # Ensure [0, 1] range
+        axes[i, 1].imshow(modified_img)
+        axes[i, 1].set_title('Modified Image')
+        axes[i, 1].axis('off')
+        
+    plt.tight_layout()
+    plt.show()
+
 
 def compute_consensus_distance(nodes) -> float:
     num_nodes = len(nodes)
@@ -264,17 +303,4 @@ def check_model_initialization(original_model, marginalized_model):
         print("Error: Model state dictionaries do not match.")
     else:
         print("Model initialization successful. State dictionaries match.")
-
-def visualize_images(original_images, noisy_images):
-    fig, axes = plt.subplots(1, 2, figsize=(8, 4))
-    axes[0].imshow(original_images[0].permute(1, 2, 0).cpu())
-    axes[0].set_title('Original Image')
-    axes[0].axis('off')
-    
-    axes[1].imshow(noisy_images[0].permute(1, 2, 0).cpu())
-    axes[1].set_title('Noisy Image')
-    axes[1].axis('off')
-        
-    plt.tight_layout()
-    plt.show()
 
