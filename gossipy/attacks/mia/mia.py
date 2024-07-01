@@ -1,3 +1,4 @@
+import random
 from sklearn.utils import resample
 import torch
 import torch.nn as nn
@@ -168,23 +169,29 @@ def compute_modified_entropy(p, y, epsilon=0.00001):
 
     return entropy
 
-def add_random_black_box(image):
-    """Adds a random black box to an image tensor."""
-    h, w = image.shape[-2:]
-    box_h, box_w = 10, 10  # Size of the black box
-    x = np.random.randint(0, h - box_h)
-    y = np.random.randint(0, w - box_w)
-    image[:, x:x+box_h, y:y+box_w] = 0.0  # Set pixels in the black box to 0
-    return image
+def black_box(input_tensor):
+        if input_tensor.size(2) == 32 and input_tensor.size(3) == 32:
+        # Generate random top-left corner coordinates
+        top = random.randint(0, 22)  # 32 (image size) - 10 (box size)
+        left = random.randint(0, 22)
+        # Apply black box
+        input_tensor[:, :, top:top+10, left:left+10] = 0.0
 
-def add_noise(image, mean=0, std=0.1):
-    """Adds Gaussian noise to an image tensor."""
-    noise = torch.randn_like(image) * std + mean
-    noisy_image = image + noise
-    noisy_image = torch.clamp(noisy_image, min=0.0, max=1.0)  # Ensure values are in [0, 1] range
-    return noisy_image
+import matplotlib.pyplot as plt
 
-def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], box=True, noise=True, log=False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def visualize_images(original_img, modified_img):
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+    axes[0].imshow(original_img.permute(1, 2, 0))  # Assuming original_img is a torch Tensor
+    axes[0].set_title('Original Image')
+    axes[0].axis('off')
+    
+    axes[1].imshow(modified_img.permute(1, 2, 0))  # Assuming modified_img is a torch Tensor
+    axes[1].set_title('Modified Image')
+    axes[1].axis('off')
+    
+    plt.show()
+
+def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], log=False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     x, y = data
     model = model.to(device)
     x, y = x.to(device), y.to(device)
@@ -195,50 +202,28 @@ def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], box=True, n
 
     for idx in range(len(x)):
         input_tensor = x[idx].unsqueeze(0)  # Ensure the input tensor has shape [1, channels, height, width]
-        original = input_tensor.clone()
-        if noise:
-            input_tensor = add_noise(input_tensor).unsqueeze(0)  # Add Gaussian noise
-        if box:
-            input_tensor = add_random_black_box(input_tensor).unsqueeze(0)  # Add random black box
+        original_img = input_tensor.clone()
+        input_tensor = black_box(input_tensor)
+        modified_img = input_tensor.clone()
+        visualize_images(original_img, modified_img)
 
         with torch.autocast(device_type="cuda"):
             with torch.no_grad():
                 scores = model(input_tensor)
                 loss = torch.nn.functional.cross_entropy(scores, y[idx].unsqueeze(0))
 
-                prob_scores = torch.nn.functional.softmax(scores, dim=-1).detach().cpu().numpy()  # Detach here
+                prob_scores = torch.nn.functional.softmax(scores, dim=-1).cpu().numpy()
                 label = y[idx].cpu().numpy()
 
                 losses.append(loss.cpu().numpy())
                 preds.append(prob_scores.reshape(1, -1))  # Store probability scores
                 labels.append(label.reshape(1, -1))  # Ensure labels are added as arrays
-
+                
     losses = np.array(losses)
     preds = np.concatenate(preds) if preds else np.array([])
     labels = np.concatenate(labels) if labels else np.array([])
     model = model.to("cpu")
     return losses, preds, labels
-
-def visualize_images(original_images, modified_images):
-    num_images = original_images.size(0)
-    fig, axes = plt.subplots(num_images, 2, figsize=(8, 4*num_images))
-    
-    for i in range(num_images):
-        # Original image
-        original_img = original_images[i].permute(1, 2, 0).clamp(0, 1).cpu().numpy()  # Ensure [0, 1] range
-        axes[i, 0].imshow(original_img)
-        axes[i, 0].set_title('Original Image')
-        axes[i, 0].axis('off')
-        
-        # Modified image (noisy or with black box)
-        modified_img = modified_images[i].permute(1, 2, 0).clamp(0, 1).cpu().numpy()  # Ensure [0, 1] range
-        axes[i, 1].imshow(modified_img)
-        axes[i, 1].set_title('Modified Image')
-        axes[i, 1].axis('off')
-        
-    plt.tight_layout()
-    plt.show()
-
 
 def compute_consensus_distance(nodes) -> float:
     num_nodes = len(nodes)
