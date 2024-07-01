@@ -171,11 +171,13 @@ def compute_modified_entropy(p, y, epsilon=0.00001):
 
 def black_box(input_tensor):
         if input_tensor.size(2) == 32 and input_tensor.size(3) == 32:
-        # Generate random top-left corner coordinates
-        top = random.randint(0, 22)  # 32 (image size) - 10 (box size)
-        left = random.randint(0, 22)
-        # Apply black box
-        input_tensor[:, :, top:top+10, left:left+10] = 0.0
+            # Generate random top-left corner coordinates
+            top = random.randint(0, 22)  # 32 (image size) - 10 (box size)
+            left = random.randint(0, 22)
+            # Apply black box
+            input_tensor[:, :, top:top+10, left:left+10] = 0.0
+
+        return input_tensor
 
 import matplotlib.pyplot as plt
 
