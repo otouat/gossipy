@@ -168,8 +168,16 @@ def compute_modified_entropy(p, y, epsilon=0.00001):
 
     return entropy
 
-def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], log = False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def add_random_black_box(image, box_size=10):
+    """Adds a random black box to a 32x32 image."""
+    img = image.clone()  # Clone the image to avoid in-place modification
+    _, height, width = img.shape
+    top_left_x = np.random.randint(0, width - box_size + 1)
+    top_left_y = np.random.randint(0, height - box_size + 1)
+    img[:, top_left_y:top_left_y + box_size, top_left_x:top_left_x + box_size] = 0  # Set the box area to black (0)
+    return img
 
+def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], log=False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     x, y = data
     model = model.to(device)
     x, y = x.to(device), y.to(device)
@@ -180,35 +188,20 @@ def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], log = False
 
     for idx in range(len(x)):
         input_tensor = x[idx].unsqueeze(0)  # Ensure the input tensor has shape [1, channels, height, width]
-        #if log:
-            #print(f"Input tensor shape: {input_tensor.shape}")
-        #with profile(activities=[ProfilerActivity.CUDA], profile_memory=True, record_shapes=True) as prof:
+        input_tensor = add_random_black_box(input_tensor[0]).unsqueeze(0)  # Add random black box
+
         with torch.autocast(device_type="cuda"):
             with torch.no_grad():
-                """if log:
-                    summary(model, input_size=(1, *x[0].shape))
-                    model.eval()
-                    with torch.no_grad():
-                        test_input = x[0].unsqueeze(0).to(device)
-                        test_output = model(test_input)
-                        print("Test output:", test_output)"""
                 scores = model(input_tensor)
                 loss = torch.nn.functional.cross_entropy(scores, y[idx].unsqueeze(0))
-                #if log:
-                    #print(f"scores: {scores.shape}, Value: {scores}")
-                    #print(f"loss: {loss.item()}")
-                              # Detect NaNs in scores and loss
-                if torch.isnan(scores).any() and False:
-                    print("NaN detected in scores")
-                if torch.isnan(loss).any() and False:
-                    print("NaN detected in loss")
-                # Collect probability scores instead of class predictions
+
                 prob_scores = torch.nn.functional.softmax(scores, dim=-1).cpu().numpy()
                 label = y[idx].cpu().numpy()
 
                 losses.append(loss.cpu().numpy())
                 preds.append(prob_scores.reshape(1, -1))  # Store probability scores
                 labels.append(label.reshape(1, -1))  # Ensure labels are added as arrays
+                
     losses = np.array(losses)
     preds = np.concatenate(preds) if preds else np.array([])
     labels = np.concatenate(labels) if labels else np.array([])
