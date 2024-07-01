@@ -170,24 +170,32 @@ def compute_modified_entropy(p, y, epsilon=0.00001):
     return entropy
 
 def black_box(input_tensor):
-        if input_tensor.size(2) == 32 and input_tensor.size(3) == 32:
-            # Generate random top-left corner coordinates
-            top = random.randint(0, 22)  # 32 (image size) - 10 (box size)
-            left = random.randint(0, 22)
-            # Apply black box
-            input_tensor[:, :, top:top+10, left:left+10] = 0.0
+    if input_tensor.size(2) == 32 and input_tensor.size(3) == 32:
+        # Generate random top-left corner coordinates
+        top = random.randint(0, 22)  # 32 (image size) - 10 (box size)
+        left = random.randint(0, 22)
+        # Apply black box
+        input_tensor[:, :, top:top+10, left:left+10] = 0.0
 
-        return input_tensor
-
-import matplotlib.pyplot as plt
+    return input_tensor
 
 def visualize_images(original_img, modified_img):
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
-    axes[0].imshow(original_img.permute(1, 2, 0))  # Assuming original_img is a torch Tensor
+    
+    # Assuming original_img and modified_img are torch Tensors
+    if original_img.dim() == 4:  # If the tensor has 4 dimensions (batch size, channels, height, width)
+        axes[0].imshow(original_img.squeeze().permute(1, 2, 0).cpu())  # Permute dimensions and convert to CPU
+    else:  # If the tensor has 3 dimensions (channels, height, width)
+        axes[0].imshow(original_img.permute(1, 2, 0).cpu())
+
     axes[0].set_title('Original Image')
     axes[0].axis('off')
     
-    axes[1].imshow(modified_img.permute(1, 2, 0))  # Assuming modified_img is a torch Tensor
+    if modified_img.dim() == 4:
+        axes[1].imshow(modified_img.squeeze().permute(1, 2, 0).cpu())
+    else:
+        axes[1].imshow(modified_img.permute(1, 2, 0).cpu())
+        
     axes[1].set_title('Modified Image')
     axes[1].axis('off')
     
