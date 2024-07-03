@@ -217,13 +217,13 @@ def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], box=True, n
 
     for idx in range(len(x)):
         input_tensor = x[idx].unsqueeze(0)  # Ensure the input tensor has shape [1, channels, height, width]
-        original_img = input_tensor.clone()
+        #original_img = input_tensor.clone()
         if noise:
             input_tensor = add_gaussian_noise(input_tensor, mean=0.0, std=0.1)
         if box:
             input_tensor = black_box(input_tensor, size=15)
-        modified_img = input_tensor.clone()
-        visualize_images(original_img, modified_img)
+        #modified_img = input_tensor.clone()
+        #visualize_images(original_img, modified_img)
 
         with torch.autocast(device_type="cuda"):
             with torch.no_grad():
