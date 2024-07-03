@@ -206,7 +206,7 @@ def visualize_images(original_img, modified_img):
     
     plt.show()
 
-def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], box=True, noise=False, log=False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], box=False, noise=True, log=False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     x, y = data
     model = model.to(device)
     x, y = x.to(device), y.to(device)
