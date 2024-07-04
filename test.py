@@ -101,5 +101,7 @@ def get_NICO(path: str = "./data", as_tensor: bool = True) -> Union[Tuple[Tuple[
 
     return (X_train, y_train, c_train), (X_test, y_test)
 
+# Uncomment this line to test the function in a real environment where the dataset is available
+# print(get_NICO())
 
 print(get_NICO())
