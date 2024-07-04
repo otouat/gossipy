@@ -24,7 +24,7 @@ CLASSES = {
 # Define the contexts
 CONTEXTS = ["autumn", "dim", "grass", "outdoor", "rock", "water"]
 
-def load_images_from_folder(folder_path, class_mapping):
+def load_images_from_folder(folder_path, class_mapping, img_size=(224, 224)):
     images = []
     labels = []
     contexts = []
@@ -41,6 +41,7 @@ def load_images_from_folder(folder_path, class_mapping):
                     img_path = os.path.join(subdir_path, filename)
                     try:
                         img = Image.open(img_path).convert('RGB')
+                        img = img.resize(img_size)  # Resize image
                         images.append(np.array(img))
                         labels.append(class_label)
                         contexts.append(class_name)  # Using class_name as context for simplicity
