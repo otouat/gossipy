@@ -33,64 +33,39 @@ def print_directory_structure(folder_path, indent=0):
         else:
             print("  " * indent + f"File: {item}")
 
-def load_images_from_folder(folder_path, class_mapping, img_size=(224, 224)):
+def load_images_from_folder(folder_path, class_mapping, img_size=(224, 224), fraction=1.0):
     images = []
     labels = []
     contexts = []
     total_files = sum([len(files) for r, d, files in os.walk(folder_path)])
     processed_files = 0
 
-    # Determine if context directories exist
-    has_contexts = any(os.path.isdir(os.path.join(folder_path, context)) for context in CONTEXTS)
-
     for root, dirs, files in os.walk(folder_path):
-        if has_contexts:
-            # Extract context from the path
-            context = os.path.basename(root)
-            if context in CONTEXTS:
-                for class_name in dirs:
-                    class_path = os.path.join(root, class_name)
-                    if class_name.lower() in class_mapping:
-                        class_label = class_mapping[class_name.lower()]
-                        print(f"Processing class: {class_name} with label: {class_label}")
-                        for filename in os.listdir(class_path):
-                            img_path = os.path.join(class_path, filename)
-                            try:
-                                img = Image.open(img_path).convert('RGB')
-                                img = img.resize(img_size)  # Resize image
-                                images.append(np.array(img))
-                                labels.append(class_label)
-                                contexts.append(context)  # Using context as context for simplicity
-                            except Exception as e:
-                                print(f"Error loading image: {img_path}, {e}")
-                            processed_files += 1
-                            if processed_files % 100 == 0:
-                                print(f"Processed {processed_files}/{total_files} files.")
-                    else:
-                        print(f"Class {class_name} not found in class_mapping.")
-        else:
-            for class_name in dirs:
-                class_path = os.path.join(root, class_name)
-                if class_name.lower() in class_mapping:
-                    class_label = class_mapping[class_name.lower()]
-                    print(f"Processing class: {class_name} with label: {class_label}")
-                    for filename in os.listdir(class_path):
-                        img_path = os.path.join(class_path, filename)
-                        try:
-                            img = Image.open(img_path).convert('RGB')
-                            img = img.resize(img_size)  # Resize image
-                            images.append(np.array(img))
-                            labels.append(class_label)
-                            contexts.append("")  # No context for test data
-                        except Exception as e:
-                            print(f"Error loading image: {img_path}, {e}")
-                        processed_files += 1
-                        if processed_files % 100 == 0:
-                            print(f"Processed {processed_files}/{total_files} files.")
+        for class_name in dirs:
+            class_path = os.path.join(root, class_name)
+            if class_name.lower() in class_mapping:
+                class_label = class_mapping[class_name.lower()]
+                print(f"Processing class: {class_name} with label: {class_label}")
+                class_files = os.listdir(class_path)
+                num_files_to_load = int(len(class_files) * fraction)
+                selected_files = np.random.choice(class_files, num_files_to_load, replace=False)
+                for filename in selected_files:
+                    img_path = os.path.join(class_path, filename)
+                    try:
+                        img = Image.open(img_path).convert('RGB')
+                        img = img.resize(img_size)  # Resize image
+                        images.append(np.array(img))
+                        labels.append(class_label)
+                        contexts.append("")  # No context for test data
+                    except Exception as e:
+                        print(f"Error loading image: {img_path}, {e}")
+                    processed_files += 1
+                    if processed_files % 100 == 0:
+                        print(f"Processed {processed_files}/{total_files} files.")
 
     return images, labels, contexts
 
-def get_NICO(path: str = "./data", as_tensor: bool = True) -> Union[Tuple[Tuple[np.ndarray, list, list], Tuple[np.ndarray, list]], Tuple[Tuple[torch.Tensor, torch.Tensor, torch.Tensor], Tuple[torch.Tensor, torch.Tensor]]]:
+def get_NICO(path: str = "./data", as_tensor: bool = True, train_fraction: float = 1.0, test_fraction: float = 1.0) -> Union[Tuple[Tuple[np.ndarray, list, list], Tuple[np.ndarray, list]], Tuple[Tuple[torch.Tensor, torch.Tensor, torch.Tensor], Tuple[torch.Tensor, torch.Tensor]]]:
     """Returns the NICO++ dataset.
 
     Parameters
@@ -99,6 +74,10 @@ def get_NICO(path: str = "./data", as_tensor: bool = True) -> Union[Tuple[Tuple[
         Path to the root folder of NICO++ dataset.
     as_tensor : bool, default=True
         If True, returns data as PyTorch tensors, otherwise as numpy arrays.
+    train_fraction : float, default=1.0
+        Fraction of training data to load (1.0 means all data).
+    test_fraction : float, default=1.0
+        Fraction of test data to load (1.0 means all data).
 
     Returns
     -------
@@ -118,11 +97,11 @@ def get_NICO(path: str = "./data", as_tensor: bool = True) -> Union[Tuple[Tuple[
 
     # Load training data
     print("Loading training data...")
-    X_train, y_train, c_train = load_images_from_folder(train_folder, CLASSES)
+    X_train, y_train, c_train = load_images_from_folder(train_folder, CLASSES, fraction=train_fraction)
 
     # Load test data (without contexts since they are not provided in the test set)
     print("Loading test data...")
-    X_test, y_test, _ = load_images_from_folder(test_folder, CLASSES)
+    X_test, y_test, _ = load_images_from_folder(test_folder, CLASSES, fraction=test_fraction)
 
     # Convert lists to numpy arrays
     X_train = np.array(X_train)
@@ -151,4 +130,5 @@ def get_NICO(path: str = "./data", as_tensor: bool = True) -> Union[Tuple[Tuple[
 
     return (X_train, y_train, c_train), (X_test, y_test)
 
-print(get_NICO())
+# Example usage: Load 10% of training data and 20% of test data
+print(get_NICO(train_fraction=0.1, test_fraction=0.2))
