@@ -1061,6 +1061,12 @@ class OLDCustomDataDispatcher2:
                 end_index = start_index + eval_ex_x_user
                 self.te_assignments[idx] = list(range(start_index, min(end_index, n_eval_ex)))
 
+    def size(self) -> int:
+        return self.data_handler.size()  # Assuming data_handler has a size method
+
+    def eval_size(self) -> int:
+        return self.data_handler.eval_size()  # Assuming data_handler has an eval_size method
+
 from sklearn.model_selection import train_test_split
 
 class ClassificationDataHandler2:
