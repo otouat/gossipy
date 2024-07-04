@@ -1,148 +1,104 @@
-import wandb
-import torch
-import torch.nn.functional as F
-from torchvision.transforms import Compose, Normalize
-from gossipy.core import AntiEntropyProtocol, CreateModelMode, ConstantDelay, StaticP2PNetwork
-from gossipy.data import CustomDataDispatcher, OLDCustomDataDispatcher
-from gossipy.data.handler import ClassificationDataHandler
-from gossipy.model.handler import TorchModelHandler
-from gossipy.node import GossipNode, FederatedGossipNode, AttackGossipNode
-from gossipy.simul import AttackGossipSimulator, AttackSimulationReport
-from gossipy.model.architecture import *
-from gossipy.model.resnet import *
-from gossipy.data import get_CIFAR10, get_CIFAR100
-from gossipy.topology import create_torus_topology, create_federated_topology, CustomP2PNetwork
-from gossipy.attacks.utils import log_results
-import networkx as nx
-from networkx.generators import random_regular_graph
 import os
-os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:256'
+from typing import Tuple, Union
+import numpy as np
+from PIL import Image
+import torch
+from torchvision import transforms
 
-wandb.init(
-    project="my-awesome-project",
-    config={
-        "learning_rate": 0.1,
-        "momentum": 0.9,
-        "weight_decay": 0.0005,
-        "optimizer": "SGD",
-        "architecture": "ResNet20",
-        "dataset": "CIFAR-10",
-        "epochs": 250,
-        "batch_size": 64,
-        "n_nodes": 4,
-        "n_local_epochs": 3,
-        "neigbors": 3,
-        "test_size": 0.5,
-        "factors": 10,
-        "beta": 0.99,
-        "p_attacker": 0.3,
-        "mia": True,
-        "mar": True,
-        "echo": True,
-        "ra": False
-    }
-)
-
-from torchvision import datasets, transforms
-
-transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-])
-
-from torch import Tensor, tensor
-from torchvision import datasets
-
-train_set = datasets.STL10(root='./data', split='train', download=True)
-test_set = datasets.STL10(root='./data', split='test', download=True)
-
-train_set = tensor(train_set.data).float().permute(0,1,3,2) / 255.,\
-                tensor(train_set.labels)
-test_set = tensor(test_set.data).float().permute(0,1,3,2) / 255.,\
-            tensor(test_set.labels)
-
-n_classes = max(train_set[1].max().item(), test_set[1].max().item())+1
-model = resnet20(n_classes)
-wdb = wandb.config
-
-optimizer_params = {
-    "lr":  wdb.learning_rate,
-    "momentum": wdb.momentum,
-    "weight_decay": wdb.weight_decay
+# Define the classes and contexts
+CLASSES = {
+    "car": 0, "flower": 1, "penguin": 2, "camel": 3, "chair": 4,
+    "monitor": 5, "truck": 6, "wheat": 7, "sword": 8, "seal": 9,
+    "lion": 10, "fish": 11, "dolphin": 12, "lifeboat": 13, "tank": 14,
+    "fishing rod": 15, "sunflower": 16, "cow": 17, "bird": 18, "airplane": 19,
+    "shark": 20, "rabbit": 21, "snake": 22, "hot air balloon": 23, "hat": 24,
+    "spider": 25, "motorcycle": 26, "tortoise": 27, "dog": 28, "elephant": 29,
+    "chicken": 30, "bee": 31, "gun": 32, "fox": 33, "phone": 34, "bus": 35,
+    "cat": 36, "sailboat": 37, "cactus": 38, "pumpkin": 39, "train": 40,
+    "dragonfly": 41, "ship": 42, "helicopter": 43, "bicycle": 44, "squirrel": 45,
+    "bear": 46, "mailbox": 47, "horse": 48, "banana": 49, "mushroom": 50,
+    "cauliflower": 51, "whale": 52, "camera": 53, "beetle": 54, "monkey": 55,
+    "lemon": 56, "pepper": 57, "sheep": 58, "umbrella": 59
 }
 
-message = f"Experiment with {wdb.architecture} on {wdb.dataset} dataset (test size : {wdb.test_size}, class distribution = {wdb.beta}). | Attacks: N°Attackers: {int(wdb.n_nodes * wdb.p_attacker)}, MIA: {wdb.mia}, MAR: {wdb.mar}, ECHO: {wdb.echo} | Training: {wdb.n_nodes} nodes, {wdb.n_local_epochs} local epochs, batch size {wdb.batch_size}, number of neigbors {wdb.neigbors} | Model: Optimizer: {wdb.optimizer}, lr {wdb.learning_rate},  momentum: {wdb.momentum}, weight_decay: {wdb.weight_decay} "
+# Define the contexts
+CONTEXTS = ["autumn", "dim", "grass", "outdoor", "rock", "water"]
 
-Xtr, ytr = ((train_set[0])), ((train_set[1]))
-Xte, yte =( (test_set[0])), ((test_set[1]))
+def load_images_from_folder(folder_path, class_mapping):
+    images = []
+    labels = []
+    contexts = []
+    total_files = sum([len(files) for r, d, files in os.walk(folder_path)])
+    processed_files = 0
 
-data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size= wdb.test_size)
+    for subdir in os.listdir(folder_path):
+        if os.path.isdir(os.path.join(folder_path, subdir)):
+            class_name = subdir.lower()
+            if class_name in class_mapping:
+                class_label = class_mapping[class_name]
+                subdir_path = os.path.join(folder_path, subdir)
+                for filename in os.listdir(subdir_path):
+                    img_path = os.path.join(subdir_path, filename)
+                    try:
+                        img = Image.open(img_path).convert('RGB')
+                        images.append(np.array(img))
+                        labels.append(class_label)
+                        contexts.append(class_name)  # Using class_name as context for simplicity
+                    except Exception as e:
+                        print(f"Error loading image: {img_path}, {e}")
+                    processed_files += 1
+                    if processed_files % 100 == 0:
+                        print(f"Processed {processed_files}/{total_files} files.")
 
-'''
-assignment_method = 'label_dirichlet_skew'
-assignment_params = {
-    'beta': wdb.beta
-}
+    return images, labels, contexts
 
-data_dispatcher = CustomDataDispatcher(
-    data_handler,
-    n=wdb.n_nodes * wdb.factors,
-    eval_on_user=True,
-    auto_assign=False
-)
+def get_NICO(path: str = "./data", as_tensor: bool = True) -> Union[Tuple[Tuple[np.ndarray, list, list], Tuple[np.ndarray, list]], Tuple[Tuple[torch.Tensor, torch.Tensor, torch.Tensor], Tuple[torch.Tensor, torch.Tensor]]]:
+    """Returns the NICO++ dataset.
 
-# Assign data using the specified method
-data_dispatcher.assign(seed=42, method=assignment_method, **assignment_params)
-'''
+    Parameters
+    ----------
+    path : str, default="./data"
+        Path to the root folder of NICO++ dataset.
+    as_tensor : bool, default=True
+        If True, returns data as PyTorch tensors, otherwise as numpy arrays.
 
-data_dispatcher = OLDCustomDataDispatcher(data_handler, n=wdb.n_nodes*wdb.factors, eval_on_user=True, auto_assign=True)
+    Returns
+    -------
+    Tuple[Tuple[np.ndarray, list, list], Tuple[np.ndarray, list]] or Tuple[Tuple[torch.Tensor, torch.Tensor, torch.Tensor], Tuple[torch.Tensor, torch.Tensor]]
+        Tuple of training and test sets: (X_train, y_train, c_train), (X_test, y_test).
+        Here, c_train denotes the context for each image in the training set.
+    """
+    # Paths to training and test data
+    train_folder = os.path.join(path, "NICO++", "track_1", "track_1", "public_dg_0416", "train")
+    test_folder = os.path.join(path, "NICO++", "track_2", "track_2", "public_ood_0412_nodomainlabel", "train")
 
-topology = StaticP2PNetwork(
-    int(data_dispatcher.size() / wdb.factors),
-    topology=nx.to_numpy_array(random_regular_graph(wdb.neigbors, wdb.n_nodes, seed=42))
-)
-nodes = AttackGossipNode.generate(
-    data_dispatcher=data_dispatcher,
-    p2p_net=topology,
-    model_proto=TorchModelHandler(
-        net=model,
-        optimizer=torch.optim.SGD,
-        optimizer_params=optimizer_params,
-        criterion=F.cross_entropy,
-        create_model_mode=CreateModelMode.MERGE_UPDATE,
-        batch_size=wdb.batch_size,
-        local_epochs=wdb.n_local_epochs),
-    round_len=100,
-    sync=False)
+    # Load training data
+    print("Loading training data...")
+    X_train, y_train, c_train = load_images_from_folder(train_folder, CLASSES)
 
-print(f"Number of nodes generated: {len(nodes)}")
-for i, node in enumerate(nodes):
-    print(f"Node {i} created")
+    # Load test data (without contexts since they are not provided in the test set)
+    print("Loading test data...")
+    X_test, y_test, _ = load_images_from_folder(test_folder, CLASSES)
 
-for i, node in enumerate(nodes):
-    nodes[i].mia = wdb.mia
-    nodes[i].mar = wdb.mar
-    if i % int(1/(wdb.p_attacker)) == 0:
-        nodes[i].echo = wdb.echo
-        nodes[i].ra = wdb.ra
+    # Convert lists to numpy arrays
+    X_train = np.array(X_train)
+    y_train = np.array(y_train)
+    X_test = np.array(X_test)
+    y_test = np.array(y_test)
 
-simulator = AttackGossipSimulator(
-    nodes=nodes,
-    data_dispatcher=data_dispatcher,
-    delta=100,
-    protocol=AntiEntropyProtocol.PUSH,
-    online_prob=1,
-    drop_prob=0,
-    sampling_eval=0,
-    mia=wdb.mia,
-    mar=wdb.mar,
-    ra=wdb.ra
-)
+    if as_tensor:
+        # Convert numpy arrays to PyTorch tensors
+        X_train = torch.tensor(X_train).float().permute(0, 3, 1, 2) / 255.
+        y_train = torch.tensor(y_train)
+        c_train = torch.tensor([CONTEXTS.index(c) for c in c_train])
+        
+        X_test = torch.tensor(X_test).float().permute(0, 3, 1, 2) / 255.
+        y_test = torch.tensor(y_test)
+    else:
+        # Leave as numpy arrays
+        c_train = [CONTEXTS.index(c) for c in c_train]
 
-report = AttackSimulationReport()
-simulator.add_receiver(report)
-simulator.init_nodes(seed=42)
-simulator.start(n_rounds=wdb.epochs, wall_time_limit=10.5)
+    return (X_train, y_train, c_train), (X_test, y_test)
 
-log_results(simulator, report, wandb, message)
-wandb.finish()
+
+print(get_NICO())
