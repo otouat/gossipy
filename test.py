@@ -23,6 +23,16 @@ CLASSES = {
 # Define the contexts
 CONTEXTS = ["autumn", "dim", "grass", "outdoor", "rock", "water"]
 
+def print_directory_structure(folder_path, indent=0):
+    """Helper function to print the directory structure for debugging."""
+    for item in os.listdir(folder_path):
+        item_path = os.path.join(folder_path, item)
+        if os.path.isdir(item_path):
+            print("  " * indent + f"Directory: {item}")
+            print_directory_structure(item_path, indent + 1)
+        else:
+            print("  " * indent + f"File: {item}")
+
 def load_images_from_folder(folder_path, class_mapping, img_size=(224, 224)):
     images = []
     labels = []
@@ -77,6 +87,12 @@ def get_NICO(path: str = "./data", as_tensor: bool = True) -> Union[Tuple[Tuple[
     train_folder = os.path.join(path, "NICO++", "track_1", "track_1", "public_dg_0416", "train")
     test_folder = os.path.join(path, "NICO++", "track_2", "track_2", "public_ood_0412_nodomainlabel", "train")
 
+    # Print directory structure for debugging
+    print("Training data directory structure:")
+    print_directory_structure(train_folder)
+    print("Test data directory structure:")
+    print_directory_structure(test_folder)
+
     # Load training data
     print("Loading training data...")
     X_train, y_train, c_train = load_images_from_folder(train_folder, CLASSES)
@@ -111,6 +127,5 @@ def get_NICO(path: str = "./data", as_tensor: bool = True) -> Union[Tuple[Tuple[
         c_train = [CONTEXTS.index(c) for c in c_train]
 
     return (X_train, y_train, c_train), (X_test, y_test)
-
 
 print(get_NICO())
