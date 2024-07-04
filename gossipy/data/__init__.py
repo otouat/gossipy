@@ -2,7 +2,6 @@
 
 import os
 from abc import ABC, abstractmethod
-from tkinter import Image
 from typing import Any, Tuple, Union, Dict, List, Optional
 import shutil
 import numpy as np
@@ -852,6 +851,11 @@ def get_FEMNIST(path: str="./data") -> Tuple[Tuple[torch.Tensor, torch.Tensor, L
     return (Xtr, ytr, tr_assignment), (Xte, yte, te_assignment)
 
 from numpy.random import dirichlet
+import os
+from typing import Tuple, Union
+import numpy as np
+from PIL import Image
+import torch
 
 class NonIIDCustomDataDispatcher(DataDispatcher):
     def assign(self, seed: int = 42, alpha: float = 0.75) -> None:
