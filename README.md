@@ -1,87 +1,229 @@
-[travis-img]: https://img.shields.io/travis/com/makgyver/gossipy?style=for-the-badge
-[travis-url]: https://app.travis-ci.com/github/makgyver/gossipy
+# Getting started
 
-[language]: https://img.shields.io/github/languages/top/makgyver/gossipy?style=for-the-badge
-[issues]: https://img.shields.io/github/issues/makgyver/gossipy?style=for-the-badge
-[license]: https://img.shields.io/github/license/makgyver/gossipy?style=for-the-badge
-[version]: https://img.shields.io/badge/python-3.7|3.8|3.9-blue?style=for-the-badge
-
-[![python](https://img.shields.io/badge/PYTHON-blue?style=for-the-badge&logo=python&logoColor=yellow)](https://www.python.org/)
-[![vscode](https://img.shields.io/badge/VSCODE-white?style=for-the-badge&logo=visualstudiocode&logoColor=blue)](https://code.visualstudio.com/)
-[![macos](https://img.shields.io/badge/macOS-grey?style=for-the-badge&logo=apple)](https://code.visualstudio.com/)
-[![open-source](https://img.shields.io/badge/open%20source-blue?style=for-the-badge&logo=github&color=123456)](https://github.com/makgyver/gossipy/)
-![license]
-
-[![Build Status][travis-img]][travis-url]
-[![Coverage Status](https://img.shields.io/coveralls/makgyver/gossipy?style=for-the-badge)](https://coveralls.io/github/makgyver/gossipy?branch=main)
-![version] ![issues]
-[![GitHub latest commit](https://img.shields.io/github/last-commit/makgyver/gossipy?style=for-the-badge)](https://github.com/makgyver/gossipy/commit/)
-
-
-# gossipy 
-Python module for simulating gossip learning and decentralized federated learning.
-
-## Install
-**gossipy** is available as a [PyPI](https://pypi.org) module and it can be installed using `pip`:
+## USAGE
 
 ```console
-$ pip install gossipy-dfl
+!git clone https://github.com/Jezekael/gossipy.git
+%cd gossipy
+!pip install -r requirements.txt
 ```
 
+## Introduction
+
+**gossipy** is a python module created for research purposes and designed to be used by researchers
+and developers. It is thought to be easy-to-use and easy-to-extend.
+
+This framework provides a set of tools for simulating gossip learning and decentralized 
+federated learning algorithms. 
+
+## Features
+
+- [x] Loss/Enthropy Threshold based Membership Inference Attack
+- [x] Classed specific Threshold
+- [x] Marginalized Membership Inference Attack
+- [x] Echo Attack
+- [x] Decentralized Federated Learning
+- [x] non i.i.d DataDispatcher
+
 ## TODOs
+- [ ] Echo Attack with Marginalized Model
+- [ ] Reconstruction Attack
+- [ ] Implementation of NICO++
 
-### Features
+### Gossip Learning
 
-- [ ] Models cache[[Ormandi 2013]](#1) [[Giaretta 2019]](#4) (partially implemented)
-- [ ] Perfect matching [[Ormandi 2013]](#1)
-- [ ] More realistic online behaviour (currently it is a worst case scenario)
-- [ ] DFL [[Liu 2022]](#12)
-- [ ] Segmented GL [[Hu 2019]](#5)
-- [ ] CMFL [[Che 2021]](#11)
-- [ ] MATCHA [[Wang 2019]](#6)
-- [ ] Add training stopping criterion
-- [x] GPU support (quick fix)
+Gossip Learning (GL) is a distributed (machine) learning methodology based on the idea of spreading
+information to other nodes without the need of a centralized server. The name *gossip* is a reference
+to the gossiping mechanism used in ad-hoc networks.
 
-### Extras
+The goal of GL is to train a machine learning model on a data set distributed across several nodes
+in a network while keeping the local data private.
 
-- [ ] Add 'Weights and Biases' support
+In its simplest form, that we call here *vanilla*, the gossip learning framework can be summarized
+as in the following algorithm:
+
+```{figure} ./imgs/gl_framework_small.png
+:height: 260px
+:name: gossip_learning_alg
+
+The *vanilla* Gossip Learning algorithm.
+```
+
+The algorithm shows what happen on a single node, and we can highlight three important macro steps:
+1.  **model initialization**: (line 1-2) the model is initialized and (potentially) trained on the
+local data. This is a one time procedure;
+2.  **gossiping**: (line 3-6) the model is repeatedly gossiped to other, usually selected at random,
+nodes;
+3.  **model update**: (line 7-9) given a just received model, the model is trained on the local data
+and set as the new model. Usually, the model update is done by merging the local model with the
+received model (merge-update). However, in it simplest form, the model update is done by replacing
+the local model with the received model (replace-update).
+
+## Setting up a simulation
+
+**gossipy** allows to define a gossip learning simulation easily and quickly. The four main
+components that needs to be set up are:
+- a [DataHandler](): this is the object responsible to handle the dataset.
+After the dataset is loaded in memory, the data handler manages the splitting of the dataset
+into training and test sets:
+- a [DataDispatcher](): this is the object responsible to dispatch the data across
+the clients (i.e., the nodes of the network).
+- [GossipNodes](): these are the nodes participating in the simulation. Each node own a model
+that is created starting from a [ModelHandler]() prototype. The [ModelHandler]() is the object
+responsible to handle the model training and evaluation.
+- a [GossipSimulation](): this is the main object that runs the gossip learning
+simulation. 
 
 
-## References (Implemented or partially implemented approaches)
+The following code snippets show how to set up a gossip learning simulation.
 
-<a id="1">[Ormandi 2013]</a>
-Ormándi, Róbert, István Hegedüs, and Márk Jelasity. 'Gossip Learning with Linear Models on Fully Distributed Data'. Concurrency and Computation: Practice and Experience 25, no. 4 (February 2013): 556–571. https://doi.org/10.1002/cpe.2858.
+```{note}
+The following example tries to reproduce one of the experiments reported in the paper
 
-<a id="2">[Berta 2014]</a>
-Arpad Berta, Istvan Hegedus, and Robert Ormandi. 'Lightning Fast Asynchronous Distributed K-Means Clustering', 22th European Symposium on Artificial Neural Networks, (ESANN) 2014, Bruges, Belgium, April 23-25, 2014.
+Ormándi, Róbert, István Hegedüs, and Márk Jelasity. ['Gossip Learning with Linear Models on
+Fully Distributed Data'](https://doi.org/10.1002/cpe.2858). Concurrency and Computation:
+Practice and Experience 25, no. 4 (February 2013): 556–571.
+```
 
-<a id="3">[Danner 2018]</a>
-G. Danner and M. Jelasity, 'Token Account Algorithms: The Best of the Proactive and Reactive Worlds'. In 2018 IEEE 38th International Conference on Distributed Computing Systems (ICDCS), 2018, pp. 885-895. https://doi.org/10.1109/ICDCS.2018.00090.
+Let's start by loading the dataset.
 
-<a id="4">[Giaretta 2019]</a>
-Giaretta, Lodovico, and Sarunas Girdzijauskas. 'Gossip Learning: Off the Beaten Path'. In 2019 IEEE International Conference on Big Data (Big Data), 1117–1124. Los Angeles, CA, USA: IEEE, 2019. https://doi.org/10.1109/BigData47090.2019.9006216.
+```python
+from gossipy.data import AssignmentHandler, NonIIDCustomDataDispatcher, OLDCustomDataDispatcher, get_CIFAR10
+from gossipy.data.handler import ClassificationDataHandler
 
-<a id="5">[Hu 2019]</a> 
-Chenghao Hu, Jingyan Jiang and Zhi Wang. 'Decentralized Federated Learning: A Segmented Gossip Approach'. https://arxiv.org/pdf/1908.07782.pdf
+transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
+train_set, test_set = get_CIFAR10()
+```
 
-<a id="6">[Wang 2019]</a> 
-Jianyu Wang, Anit Kumar Sahu, Zhouyi Yang, Gauri Joshi, Soummya Kar. 'MATCHA: Speeding Up Decentralized SGD via Matching Decomposition Sampling'. https://arxiv.org/pdf/1905.09435.pdf
+Here, we loaded `CIFAR10` dataset as PyTorch tensors. Now, we need a `DataHandler` and a
+`DataDispatcher` to manage the distribution of the dataset across the nodes.
 
-<a id="7">[Hegedus 2020]</a>
-Hegedűs, István, Gábor Danner, Peggy Cellier and Márk Jelasity. 'Decentralized Recommendation Based on Matrix Factorization: A Comparison of Gossip and Federated Learning'. In 2020 Joint European Conference on Machine Learning and Knowledge Discovery in Databases, 2020, pp. 317-332. https://doi.org/10.1007/978-3-030-43823-4_27.
+```python
+data_handler = ClassificationDataHandler(Xtr, ytr, Xte, yte, test_size=0.5)
 
-<a id="8">[Koloskova 2020]</a>
-Anastasia Koloskova, Nicolas Loizou, Sadra Boreiri, Martin Jaggi, and Sebastian U. Stich. 'A unified theory of decentralized SGD with changing topology and local updates'. In Proceedings of the 37th International Conference on Machine Learning, pp. 5381–5393, 2020.
+data_dispatcher = OLDCustomDataDispatcher(data_handler, n=10, eval_on_user=True, auto_assign=True)
+```
 
-<a id="9">[Hegedus 2021]</a>
-Hegedűs, István, Gábor Danner, and Márk Jelasity. 'Decentralized Learning Works: An Empirical Comparison of Gossip Learning and Federated Learning'. Journal of Parallel and Distributed Computing 148 (February 2021): 109–124. https://doi.org/10.1016/j.jpdc.2020.10.006.
+We fixed the test size to 10% of the dataset and we perform global evaluation on a separate test 
+set, i.e., the nodes do not have local test sets. The number of nodes in the network is 100.
+The `auto_assign` parameter is set to `True` because we want just to compute the random
+assignment of the dataset to the nodes.
 
-<a id="10">[Onoszko 2021]</a>
-Noa Onoszko, Gustav Karlsson Olof Mogren, and Edvin Listo Zec. 'Decentralized federated learning of deep neural networks on non-iid data'. International Workshop on Federated Learning for User Privacy and Data Confidentiality in Conjunction with ICML 2021 (FL-ICML'21). https://fl-icml.github.io/2021/papers/FL-ICML21_paper_3.pdf
+Gossip learning is based on peer-to-peer communication. Therefore, we need a to define the topology 
+of the network. In this case, we use a fully connected network, thus a clique topology.
 
-<a id="11">[Che 2021]</a>
-Chunjiang Che, Xiaoli Li, Chuan Chen, Xiaoyu He, and Zibin Zheng. 'A Decentralized Federated Learning Framework via Committee Mechanism with Convergence Guarantee'. https://arxiv.org/pdf/2108.00365.pdf
+```python
+topology = StaticP2PNetwork(num_nodes=data_dispatcher.size(), topology=None)
+```
 
-<a id="12">[Liu 2022]</a>
-Wei Liu, Li Chen and Wenyi Zhang. 'Decentralized Federated Learning: Balancing Communication and Computing Costs'. https://arxiv.org/pdf/2107.12048.pdf
+It is called *static* because the topology is fixed throughout the simulation. 
 
+```python
+topology =  UniformDynamicP2PNetwork(data_dispatcher.size(), topology=nx.to_numpy_array(random_regular_graph(config["neigbors"], config["n_nodes"], seed=42)))
+```
+It is called *Dynamic* because the topology moves throughout the simulation depending on peer_sampling_period. 
+
+
+## Nodes
+The AttackGossipNode class extends the GossipNode class to include functionalities 
+specifically designed for performing membership inference attacks in a peer-to-peer (P2P) network. 
+The nodes holds the model and the data.
+Here’s an overview of how it works and what it does:
+1. Model Initialization
+2. Peer Selection
+3. Sending and Receiving Messages
+4. Calls Model Evaluation
+ 
+
+```python
+
+nodes = AttackGossipNode.generate(
+    data_dispatcher=data_dispatcher,
+    p2p_net=topology,
+    model_proto=TorchModelHandler(
+        net=model,
+        optimizer=torch.optim.SGD,
+        optimizer_params=optimizer_params,
+        criterion=F.cross_entropy,
+        create_model_mode=CreateModelMode.MERGE_UPDATE,
+        batch_size=config["batch_size"],
+        local_epochs=config["n_local_epochs"]
+    ),
+    round_len=100,
+    sync=False
+)
+```
+
+AttackGossipNode are created using the [GossipNode.generate()]() method which 
+generates a number of nodes (corresponding to the size of the network/assignment of the dispatcher)
+starting from a prototype. The prototype is actually the model handler that represents the crucial
+information of the node. Nodes are created with an incremental id starting from 0. The `sync` 
+paramenter controls whether the nodes are synchronized or not. Synchronized nodes participate
+exactly once every each round.
+
+Now, we can set up the simulation: we set a round length of 100 time units, a PUSH propocol (i.e.,
+nodes only send their model to other nodes), and we set to 10% the number of nodes considered during
+each evaluation.
+
+```python
+simulator = AttackGossipSimulator(
+    nodes=nodes,
+    data_dispatcher=data_dispatcher,
+    delta=100,
+    protocol=AntiEntropyProtocol.PUSH,
+    online_prob=1,
+    drop_prob=0.2,
+    sampling_eval=0,
+    mia=config["mia"],
+    mar=config["mar"],
+    ra=config["ra"]
+)
+```
+
+## Simulation
+The Attacksimulation class coordinates all the different branches together. To keep track of the progress of the simulation, we use a
+[ AttackSimulationReport]() object that is attached to the simulation. A `SimulationReport` collects the
+results and some useful information about the simulation (e.g., number of sent messages,
+number of failed messages, and the attacks results...).
+
+```python
+report = AttackSimulationReport()
+simulator.add_receiver(report)
+simulator.init_nodes(seed=42)
+simulator.start(n_rounds=100, wall_time_limit=18.5)
+```
+
+Once the simulation is finished, we can access the report object and, for example, plot the 
+results.
+
+```python
+plot_evaluation([[ev for _, ev in report.get_evaluation(False)]], "Overall test results")
+```
+
+## Membership Inference Attack
+
+Overview
+The Membership Inference Attack (MIA) is a privacy attack where the adversary aims to determine
+whether a particular data point was part of the training dataset of a model. This attack leverages
+the differences in the model's behavior on training versus unseen data points. 
+In the context of the gossipy framework, MIA is implemented to evaluate the privacy risks 
+associated with the models trained in a gossip learning setting.
+
+
+```python
+mia_for_each_nn(simulation, attackerNode)
+```
+This function is called every round with 3 possible states:
+- standart mia:
+- class-based mia: This function evaluates the class-specific
+performance for the membership inference attack, providing thresholds for each class.
+ (more efficient and precise, usefull for non i.i.d setting)
+- marganlized mia: the attack isolates the model of its victim from the local updates of all its neighboors
+
+
+```python
+def mia_best_th(model, train_data, test_data, device, nt=200)
+```
+This function computes the best threshold for membership inference based on loss and entropy,
+with nt representing the number of points on linear space to test the differents threshold 
+between the minimum loss and maximim loss
