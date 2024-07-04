@@ -17,7 +17,7 @@ import os
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:256'
 
 transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
-train_set, test_set = get_NICO(train_fraction=0.1, test_fraction=0.2)
+train_set, test_set = get_NICO(train_fraction=0.1, test_fraction=0.1)
 
 n_classes = max(train_set[1].max().item(), test_set[1].max().item()) + 1
 model = resnet20(n_classes)
@@ -32,9 +32,9 @@ config = {
     "dataset": "CIFAR-10",
     "epochs": 250,
     "batch_size": 256,
-    "n_nodes": 10,
+    "n_nodes": 4,
     "n_local_epochs": 1,
-    "neigbors": 5,
+    "neigbors": 2,
     "test_size": 0.5,
     "factors": 1,
     "beta": 0.75,
