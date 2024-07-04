@@ -31,11 +31,12 @@ def load_images_from_folder(folder_path, class_mapping, img_size=(224, 224)):
     processed_files = 0
 
     for subdir in os.listdir(folder_path):
-        if os.path.isdir(os.path.join(folder_path, subdir)):
+        subdir_path = os.path.join(folder_path, subdir)
+        if os.path.isdir(subdir_path):
             class_name = subdir.lower()
             if class_name in class_mapping:
                 class_label = class_mapping[class_name]
-                subdir_path = os.path.join(folder_path, subdir)
+                print(f"Processing class: {class_name} with label: {class_label}")
                 for filename in os.listdir(subdir_path):
                     img_path = os.path.join(subdir_path, filename)
                     try:
@@ -49,6 +50,10 @@ def load_images_from_folder(folder_path, class_mapping, img_size=(224, 224)):
                     processed_files += 1
                     if processed_files % 100 == 0:
                         print(f"Processed {processed_files}/{total_files} files.")
+            else:
+                print(f"Class {class_name} not found in class_mapping.")
+        else:
+            print(f"Skipping non-directory {subdir_path}")
 
     return images, labels, contexts
 
@@ -89,6 +94,10 @@ def get_NICO(path: str = "./data", as_tensor: bool = True) -> Union[Tuple[Tuple[
     print(f"X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
     print(f"X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
 
+    if X_train.size == 0:
+        print("No training data found. Please check the training data folder.")
+        return None
+
     if as_tensor:
         # Convert numpy arrays to PyTorch tensors
         X_train = torch.tensor(X_train).float().permute(0, 3, 1, 2) / 255.
@@ -102,5 +111,6 @@ def get_NICO(path: str = "./data", as_tensor: bool = True) -> Union[Tuple[Tuple[
         c_train = [CONTEXTS.index(c) for c in c_train]
 
     return (X_train, y_train, c_train), (X_test, y_test)
+
 
 print(get_NICO())
