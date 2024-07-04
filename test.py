@@ -3,7 +3,6 @@ from typing import Tuple, Union
 import numpy as np
 from PIL import Image
 import torch
-from torchvision import transforms
 
 # Define the classes and contexts
 CLASSES = {
@@ -87,6 +86,9 @@ def get_NICO(path: str = "./data", as_tensor: bool = True) -> Union[Tuple[Tuple[
     X_test = np.array(X_test)
     y_test = np.array(y_test)
 
+    print(f"X_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
+    print(f"X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
+
     if as_tensor:
         # Convert numpy arrays to PyTorch tensors
         X_train = torch.tensor(X_train).float().permute(0, 3, 1, 2) / 255.
@@ -100,8 +102,5 @@ def get_NICO(path: str = "./data", as_tensor: bool = True) -> Union[Tuple[Tuple[
         c_train = [CONTEXTS.index(c) for c in c_train]
 
     return (X_train, y_train, c_train), (X_test, y_test)
-
-# Uncomment this line to test the function in a real environment where the dataset is available
-# print(get_NICO())
 
 print(get_NICO())
