@@ -18,9 +18,9 @@ mia_entropy_static = []
 gen_errors_dynamic = []
 mia_entropy_dynamic = []
 
-parameter = "Number of nodes"
-paramA = "100 nodes"
-paramB = "36 nodes or less"
+parameter = "Total Nodes:"
+paramA = "Total Nodes: 36"
+paramB = "Total Nodes: 100"
 
 def get_marker(parameter):
     marker_dict = {
@@ -30,32 +30,44 @@ def get_marker(parameter):
     }
     return marker_dict.get(parameter, 'o')  # Default to 'o' if parameter is not found
 
-# Loop through each experiment from 1 to 160
+# Loop through each experiment from 1 to 500
 for exp_num in range(1, 500):
-    #logging.info(f"Processing experiment #{exp_num}")
-    
     # Define the paths for the CSV and parameter files
     mia_results_path = os.path.join(base_dir, f"Exp_n#{exp_num}", "mia_results.csv")
     param_file_path = os.path.join(base_dir, f"Exp_n#{exp_num}", "simulation_params.log")
     
     # Check if the files exist
-    if not os.path.exists(mia_results_path):
-        #logging.warning(f"mia_results.csv not found for experiment #{exp_num}")
-        continue
-    if not os.path.exists(param_file_path):
-        #logging.warning(f"simulation_params.log not found for experiment #{exp_num}")
+    if not os.path.exists(mia_results_path) or not os.path.exists(param_file_path):
         continue
     
     # Read the MIA results CSV file
     try:
         df = pd.read_csv(mia_results_path)
     except Exception as e:
-        #logging.error(f"Error reading mia_results.csv for experiment #{exp_num}: {e}")
+        # Handle read error if necessary
         continue
     
     # Limit to rounds after the 50th round
     df = df[df['Round'] > 50]
     
+    # Initialize peer_sampling_period
+    peer_sampling_period = None
+    
+    # Read simulation_params.log to find peer_sampling_period
+    try:
+        with open(param_file_path, 'r') as param_file:
+            lines = param_file.readlines()
+            for line in lines:
+                if 'peer_sampling_period' in line:
+                    peer_sampling_period = int(line.split(':')[-1].strip())
+                    break
+    except Exception as e:
+        # Handle read error if necessary
+        continue
+    
+    # Check if peer_sampling_period is not None and different than 5
+    if peer_sampling_period is not None and peer_sampling_period != 5:
+        print(f"Experiment #{exp_num}: peer_sampling_period = {peer_sampling_period}")
     # Determine if the experiment is federated, static, or dynamic from the parameter file
     try:
         with open(param_file_path, 'r') as param_file:
@@ -93,7 +105,7 @@ for exp_num in range(1, 500):
         continue
     if is_federated:
         print(f"Experiment #{exp_num} is federated")
-    if 0.6 <= max_mia_entropy <= 0.8 and 0.2 <= max_gen_error <= 0.6:
+    if 0.1 <= max_mia_entropy <= 1.0 and 0.8 <= max_gen_error <= 0.9:
         print(f"Experiment #{exp_num} has max MIA entropy {max_mia_entropy:.2f} and gen_error {max_gen_error:.2f}")
 
     # Store the results in the appropriate lists
@@ -119,6 +131,8 @@ try:
     def plot_with_marker(data, values, color, label):
         for (gen_error, marker), mia_entropy in zip(data, values):
             parameter_name = paramA if marker == 'x' else paramB  # Get parameter name based on marker
+            if marker == 'x':
+                print(f"Exp num: {exp_num} is different")
             plt.scatter(gen_error, mia_entropy, color=color, marker=marker, label=f'{label}: {parameter_name}')
     
     plot_with_marker(gen_errors_federated, mia_entropy_federated, 'C1', 'Federated')

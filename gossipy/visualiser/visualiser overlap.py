@@ -2,8 +2,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Read the CSV files for both experiments
-df1 = pd.read_csv(r"C:\Users\jezek\OneDrive\Documents\Python\Djack\gossipy\results\Exp_n#108\mia_results.csv")
-df2 = pd.read_csv(r"C:\Users\jezek\OneDrive\Documents\Python\Djack\gossipy\results\Exp_n#137\mia_results.csv")  # Update the path for the second experiment
+df1 = pd.read_csv(r"C:\Users\jezek\OneDrive\Documents\Python\Djack\gossipy\results\Exp_n#76\mia_results.csv")
+df2 = pd.read_csv(r"C:\Users\jezek\OneDrive\Documents\Python\Djack\gossipy\results\Exp_n#75\mia_results.csv")  # Update the path for the second experiment
 
 # Extract unique nodes for both experiments
 nodes1 = df1['Node'].unique()

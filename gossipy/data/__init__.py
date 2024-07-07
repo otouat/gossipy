@@ -1032,7 +1032,7 @@ def get_NICO(path: str = "./data", as_tensor: bool = True, train_fraction: float
     return (X_train, y_train, c_train), (X_test, y_test)
 
 
-class OLDCustomDataDispatcher2:
+class NICOCustomDataDispatcher:
     def __init__(self, data_handler, n: int, eval_on_user=True, auto_assign=True):
         self.data_handler = data_handler
         self.n = n
@@ -1069,7 +1069,7 @@ class OLDCustomDataDispatcher2:
 
 from sklearn.model_selection import train_test_split
 
-class ClassificationDataHandler2:
+class NICOClassificationDataHandler:
     def __init__(self,
                  X: Union[np.ndarray, torch.Tensor],
                  y: Union[np.ndarray, torch.Tensor],

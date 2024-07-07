@@ -18,12 +18,12 @@ mia_entropy_static = []
 gen_errors_dynamic = []
 mia_entropy_dynamic = []
 
-exp_to_check = [17, 19, 21, 22, 23, 180]
+exp_to_check = [53, 54]
 #exp_to_check = range (16, 21)
-parameter = "Number of local epochs"
-paramA = "1 local epochs"
-paramB = "3 local epochs"
-paramC = "5 local epochs"
+parameter = "peer sampling period"
+paramA = "peer sampling period: 1"
+paramB = "peer sampling period: 3"
+paramC = "peer sampling period: 5"
 
 def get_marker(parameter):
     marker_dict = {
