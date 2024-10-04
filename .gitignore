@@ -137,3 +137,4 @@ main.py
 wandb/
 results/
 data/
+view_size_experiment

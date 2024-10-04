@@ -1398,7 +1398,7 @@ class AttackDynamicGossipSimulator(GossipSimulator):
                  mia: bool = False,
                  mar: bool = False,
                  ra: bool = False):
-        assert 0 < peer_sampling_period <= delta
+        #assert 0 < peer_sampling_period <= delta
         super().__init__(nodes, data_dispatcher, delta, protocol, drop_prob, online_prob, delay,
                          sampling_eval)
         self.peer_sampling_period = peer_sampling_period
@@ -1440,14 +1440,11 @@ class AttackDynamicGossipSimulator(GossipSimulator):
                 self.n_rounds = int(round(t, -2)/100)
                 if t % self.delta == 0:
                     shuffle(node_ids)
-
                 for i in node_ids:
                     node = self.nodes[i]
                     if node.timed_out(t):
                         if isinstance(node.p2p_net, UniformDynamicP2PNetwork) and t % self.peer_sampling_period == 0:
-                            node.p2p_net.compute_graph_statistics()
                             node.p2p_net.update_view(node_id=i)
-                            node.p2p_net.compute_graph_statistics()
                         peer = node.get_peer()
                         if peer is None:
                             break

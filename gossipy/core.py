@@ -378,7 +378,10 @@ class P2PNetwork(ABC):
         self.graph = self._create_graph_from_topology()
         """Computes statistics on the static network topology graph."""
         if self.graph.number_of_edges() > 0:
-            avg_shortest_path = nx.average_shortest_path_length(self.graph)
+            if nx.is_strongly_connected(self.graph):
+                avg_shortest_path = nx.average_shortest_path_length(self.graph)
+            else:
+                avg_shortest_path = 1000000
             clustering_coeff = nx.average_clustering(self.graph)
             print(f"Static Network: Avg. Shortest Path = {avg_shortest_path}, Clustering Coefficient = {clustering_coeff}")
 
