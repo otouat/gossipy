@@ -31,7 +31,7 @@ config = {
     "architecture": "ResNet20",
     "dataset": "CIFAR-10",
     "epochs": 250,
-    "batch_size": 256,
+    "batch_size": 512,
     "n_nodes": 36,
     "n_local_epochs": 1,
     "neigbors": 5,
@@ -68,6 +68,8 @@ topology =  UniformDynamicP2PNetwork(
     topology=nx.to_numpy_array(random_regular_graph(config["neigbors"], config["n_nodes"], seed=42))
 )
 
+topology.compute_graph_statistics()
+
 nodes = AttackGossipNode.generate(
     data_dispatcher=data_dispatcher,
     p2p_net=topology,
@@ -84,6 +86,7 @@ nodes = AttackGossipNode.generate(
     sync=False
 )
 
+nodes[0].p2p_net.compute_graph_statistics()
 for i, node in enumerate(nodes):
     nodes[i].mia = config["mia"]
     nodes[i].mar = config["mar"]
@@ -98,7 +101,7 @@ simulator = AttackDynamicGossipSimulator(
     protocol=AntiEntropyProtocol.PUSH,
     delay=ConstantDelay(0),
     online_prob=1,
-    drop_prob=0.2,
+    drop_prob=0,
     sampling_eval=0,
     peer_sampling_period=config["peer_sampling_period"],
     mia=config["mia"],

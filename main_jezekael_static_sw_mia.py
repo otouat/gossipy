@@ -31,7 +31,7 @@ config = {
     "architecture": "ResNet20",
     "dataset": "CIFAR-10",
     "epochs": 250,
-    "batch_size": 512,
+    "batch_size": 256,
     "n_nodes": 36,
     "n_local_epochs": 1,
     "neigbors": 5,
@@ -62,10 +62,12 @@ data_dispatcher = OLDCustomDataDispatcher(data_handler, n=config["n_nodes"]*conf
 #data_dispatcher = NonIIDCustomDataDispatcher(data_handler, n=config["n_nodes"]*config["factors"], eval_on_user=True, auto_assign=True)
 #data_dispatcher.print_distribution()
 
+# try k = 5 and p = 0.12241181110972084
 topology = StaticP2PNetwork(
     int(data_dispatcher.size() / config["factors"]),
-    topology=nx.to_numpy_array(random_regular_graph(config["neigbors"], config["n_nodes"], seed=42))
+    topology=nx.to_numpy_array(nx.watts_strogatz_graph(config["n_nodes"], config["neigbors"], 0.12241181110972084, seed=42))
 )
+
 topology.compute_graph_statistics()
 
 nodes = AttackGossipNode.generate(

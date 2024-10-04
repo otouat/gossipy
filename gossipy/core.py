@@ -6,6 +6,7 @@ import numpy as np
 from scipy.sparse import csr_matrix
 from random import choice, sample, shuffle
 import math
+import networkx as nx
 
 from . import Sizeable
 
@@ -354,12 +355,32 @@ class P2PNetwork(ABC):
         else:
             self._topology = {i: [j for j in range(num_nodes) if j != i] for i in range(num_nodes)}
             # self._topology = defaultdict(lambda: range(num_nodes))
+        
+        self.graph = self._create_graph_from_topology()
+
 
     # docstr-coverage:inherited
     def size(self, node: Optional[int] = None) -> int:
         if node:
             return len(self._topology[node]) if self._topology[node] else self._num_nodes - 1
         return self._num_nodes
+
+    def _create_graph_from_topology(self):
+            """Converts the adjacency matrix to a networkx graph."""
+            if isinstance(self._topology, dict):
+                # Convert sparse matrix to dense for simplicity, or use nx.from_scipy_sparse_matrix()
+                G = nx.from_dict_of_lists(self._topology, create_using= nx.DiGraph)
+            else:
+                G = nx.from_numpy_array(self._topology, create_using= nx.DiGraph)
+            return G 
+    
+    def compute_graph_statistics(self):
+        self.graph = self._create_graph_from_topology()
+        """Computes statistics on the static network topology graph."""
+        if self.graph.number_of_edges() > 0:
+            avg_shortest_path = nx.average_shortest_path_length(self.graph)
+            clustering_coeff = nx.average_clustering(self.graph)
+            print(f"Static Network: Avg. Shortest Path = {avg_shortest_path}, Clustering Coefficient = {clustering_coeff}")
 
     @abstractmethod
     def get_peers(self, node_id: int):
@@ -388,8 +409,8 @@ class StaticP2PNetwork(P2PNetwork):
             The adjacency matrix of the network topology. If None, the network is considered
             to be a fully connected network.
         """
-        super().__init__(num_nodes, topology)
-
+        super().__init__(num_nodes, topology)    
+    
     def get_peers(self, node_id: int) -> List[int]:
         """Returns the peers of a node according to the static network topology.
 
@@ -458,36 +479,58 @@ class UniformDynamicP2PNetwork(DynamicP2PNetwork):
 
     def update_view(self, node_id: int):
         degree = len(self._topology[node_id])
-        nb_nodes_to_exchange = math.ceil(self._shuffle_ratio * degree)
-        id_nodes_to_exchange = sample(population=self._topology[node_id],
-                                      k=nb_nodes_to_exchange)
-        node_jd = choice(id_nodes_to_exchange)
+        # When shuffle_ratio is 1, exchange the entire neighborhood between node_id and node_jd
+        if self._shuffle_ratio == 1:
+            # Select a random neighbor (node_jd) of node_id to exchange neighborhoods with
+            node_jd = choice(self._topology[node_id])
+            
+            # Exchange neighborhoods (excluding the nodes themselves)
+            new_node_id_neighbors = [node for node in self._topology[node_jd] if node != node_id and node != node_jd]
+            new_node_jd_neighbors = [node for node in self._topology[node_id] if node != node_id and node != node_jd]
+            
+            # Update the topologies
+            self._topology[node_id] = new_node_id_neighbors
+            self._topology[node_jd] = new_node_jd_neighbors
 
-        self._topology[node_id] = [node for node in self._topology[node_id] if
-                                   node not in id_nodes_to_exchange]
+            # Add each node to the other's neighborhood to maintain bidirectional connections
+            if node_id not in self._topology[node_jd]:
+                self._topology[node_jd].append(node_id)
+            if node_jd not in self._topology[node_id]:
+                self._topology[node_id].append(node_jd)
+        
+        else:
+            # For shuffle_ratio < 1, proceed with partial neighborhood exchange
+            nb_nodes_to_exchange = math.ceil(self._shuffle_ratio * degree)
+            id_nodes_to_exchange = sample(population=self._topology[node_id],
+                                        k=nb_nodes_to_exchange)
+            node_jd = choice(id_nodes_to_exchange)
 
-        jd_nodes_to_exchange = sample(population=[node for node in self._topology[node_jd] if node != node_id],
-                                      k=nb_nodes_to_exchange)
+            self._topology[node_id] = [node for node in self._topology[node_id] if
+                                    node not in id_nodes_to_exchange]
 
-        self._topology[node_jd] = list(set([node for node in self._topology[node_jd] if
-                                            node not in jd_nodes_to_exchange] + id_nodes_to_exchange + [node_id]))
-        self._topology[node_jd].remove(node_jd)
+            jd_nodes_to_exchange = sample(population=[node for node in self._topology[node_jd] if node != node_id],
+                                        k=nb_nodes_to_exchange)
 
-        self._topology[node_id] = list(set(self._topology[node_id] + jd_nodes_to_exchange))
+            self._topology[node_jd] = list(set([node for node in self._topology[node_jd] if
+                                                node not in jd_nodes_to_exchange] + id_nodes_to_exchange + [node_id]))
+            self._topology[node_jd].remove(node_jd)
 
-        while len(self._topology[node_id]) < degree:
-            chosen = choice(id_nodes_to_exchange)
-            while chosen in self._topology[node_id]:
+            self._topology[node_id] = list(set(self._topology[node_id] + jd_nodes_to_exchange))
+
+            while len(self._topology[node_id]) < degree:
                 chosen = choice(id_nodes_to_exchange)
-            id_nodes_to_exchange.remove(chosen)
-            self._topology[node_id].append(chosen)
+                while chosen in self._topology[node_id]:
+                    chosen = choice(id_nodes_to_exchange)
+                id_nodes_to_exchange.remove(chosen)
+                self._topology[node_id].append(chosen)
 
-        while len(self._topology[node_jd]) < degree:
-            chosen = choice(jd_nodes_to_exchange)
-            while chosen in self._topology[node_jd]:
+            while len(self._topology[node_jd]) < degree:
                 chosen = choice(jd_nodes_to_exchange)
-            jd_nodes_to_exchange.remove(chosen)
-            self._topology[node_jd].append(chosen)
+                while chosen in self._topology[node_jd]:
+                    chosen = choice(jd_nodes_to_exchange)
+                jd_nodes_to_exchange.remove(chosen)
+                self._topology[node_jd].append(chosen)
+
 
 
 class MixingMatrix:

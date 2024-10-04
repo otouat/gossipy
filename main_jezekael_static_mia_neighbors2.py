@@ -34,7 +34,7 @@ config = {
     "batch_size": 512,
     "n_nodes": 36,
     "n_local_epochs": 1,
-    "neigbors": 5,
+    "neigbors": 2,
     "test_size": 0.5,
     "factors": 1,
     "beta": 0.75,

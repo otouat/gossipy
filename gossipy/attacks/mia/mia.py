@@ -208,39 +208,33 @@ def visualize_images(original_img, modified_img):
 
 def evaluate(model, device, data: Tuple[torch.Tensor, torch.Tensor], box=False, noise=True, log=False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     x, y = data
-    model = model.to(device)
-    x, y = x.to(device), y.to(device)
+    x, y = x.to(device), y.to(device)  # Send inputs and labels to device once.
 
     losses = []
     preds = []
     labels = []
 
-    for idx in range(len(x)):
-        input_tensor = x[idx].unsqueeze(0)  # Ensure the input tensor has shape [1, channels, height, width]
-        #original_img = input_tensor.clone()
-        if noise:
-            input_tensor = add_gaussian_noise(input_tensor, mean=0.0, std=0.1)
-        if box:
-            input_tensor = black_box(input_tensor, size=15)
-        #modified_img = input_tensor.clone()
-        #visualize_images(original_img, modified_img)
+    input_tensor = x
+    if noise:
+        input_tensor = add_gaussian_noise(input_tensor, mean=0.0, std=0.1)
+    if box:
+        input_tensor = black_box(input_tensor, size=15)
 
-        with torch.autocast(device_type="cuda"):
-            with torch.no_grad():
-                scores = model(input_tensor)
-                loss = torch.nn.functional.cross_entropy(scores, y[idx].unsqueeze(0))
+    # Assuming the model stays on the device, no need to move it back and forth
+    model = model.to(device)
 
-                prob_scores = torch.nn.functional.softmax(scores, dim=-1).cpu().numpy()
-                label = y[idx].cpu().numpy()
+    # Use torch.no_grad to prevent gradient calculation for inference
+    with torch.no_grad():
+        # Use model inference
+        scores = model(input_tensor)
+        losses = torch.nn.functional.cross_entropy(scores, y, reduction='none')  # Calculate losses directly
+        preds = torch.nn.functional.softmax(scores, dim=1)  # Apply softmax on the logits
 
-                losses.append(loss.cpu().numpy())
-                preds.append(prob_scores.reshape(1, -1))  # Store probability scores
-                labels.append(label.reshape(1, -1))  # Ensure labels are added as arrays
-                
-    losses = np.array(losses)
-    preds = np.concatenate(preds) if preds else np.array([])
-    labels = np.concatenate(labels) if labels else np.array([])
-    model = model.to("cpu")
+    # Convert tensors to CPU and numpy at the end, reducing CPU-GPU transfers
+    losses = losses.cpu().numpy()
+    preds = preds.cpu().numpy()
+    labels = y.cpu().numpy()
+    torch.cuda.empty_cache()
     return losses, preds, labels
 
 def compute_consensus_distance(nodes) -> float:

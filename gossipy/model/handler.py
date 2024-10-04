@@ -379,6 +379,7 @@ class TorchModelHandler(ModelHandler):
                 res["auc"] = 0.5
                 LOG.warning("# of classes != 2. AUC is set to 0.5.")
         self.model = self.model.to("cpu")
+        torch.cuda.empty_cache()
         return res
 
 class AdaLineHandler(ModelHandler):

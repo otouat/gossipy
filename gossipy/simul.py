@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 import numpy as np
 from numpy.random import shuffle, random, choice
+import torch
 from typing import Callable, DefaultDict, Optional, Dict, List, Tuple, Union, Iterable
 from rich.progress import track
 import dill
@@ -1366,12 +1367,18 @@ class AttackGossipSimulator(GossipSimulator):
                                 })
                             for er in self._receivers:
                                 er.update_accuracy(self.n_rounds, False, accuracy)
+                    torch.cuda.empty_cache()
+                
 
                 self.notify_timestep(t)
-
+            # Last graph view compute
+            node_z = self.nodes[0]
+            node_z.p2p_net.compute_graph_statistics()
         except KeyboardInterrupt:
             #log_results(self, self._receivers[0], "")
             LOG.warning("Simulation interrupted by user.")
+
+        
 
         pbar.close()
         self.notify_end()
@@ -1438,7 +1445,9 @@ class AttackDynamicGossipSimulator(GossipSimulator):
                     node = self.nodes[i]
                     if node.timed_out(t):
                         if isinstance(node.p2p_net, UniformDynamicP2PNetwork) and t % self.peer_sampling_period == 0:
+                            node.p2p_net.compute_graph_statistics()
                             node.p2p_net.update_view(node_id=i)
+                            node.p2p_net.compute_graph_statistics()
                         peer = node.get_peer()
                         if peer is None:
                             break
@@ -1518,11 +1527,16 @@ class AttackDynamicGossipSimulator(GossipSimulator):
                                 })
                             for er in self._receivers:
                                 er.update_accuracy(self.n_rounds, False, accuracy)
+                torch.cuda.empty_cache()
                 self.notify_timestep(t)
 
         except KeyboardInterrupt:
             #log_results(self, self._receivers[0], "")
             LOG.warning("Simulation interrupted by user.")
+
+        # Last graph view compute
+        node_z = self.nodes[0]
+        node_z.p2p_net.compute_graph_statistics()
 
         pbar.close()
         self.notify_end()

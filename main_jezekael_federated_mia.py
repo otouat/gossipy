@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torchvision.transforms import Compose, Normalize
 import wandb
 from gossipy.core import AntiEntropyProtocol, CreateModelMode, ConstantDelay, StaticP2PNetwork
-from gossipy.data import CustomDataDispatcher, OLDCustomDataDispatcher
+from gossipy.data import OLDCustomDataDispatcher
 from gossipy.data.handler import ClassificationDataHandler
 from gossipy.model.handler import TorchModelHandler
 from gossipy.node import FederatedAttackGossipNode, GossipNode, FederatedGossipNode

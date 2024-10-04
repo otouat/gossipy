@@ -8,8 +8,6 @@ from gossipy import LOG
 import pandas as pd
 from matplotlib.lines import Line2D
 
-from gossipy.data import plot_class_distribution
-
 def log_results(Simul, report, wandb, message=""):
     base_folder_path = os.path.join(os.getcwd(), "results")
     exp_tracker_file = os.path.join(base_folder_path, "exp_number.txt")
@@ -107,11 +105,9 @@ def log_results(Simul, report, wandb, message=""):
     print("Generating diagrams...")
     fig = get_fig_evaluation([[ev for _, ev in report.get_evaluation(False)]], "Overall test results")
     fig2 = plot(combined_file_path)
-    fig3 = plot_class_distribution(Simul)
     diagrams = {
         'Overall_gossipy_results': fig,
         'Overall_test_results': fig2,
-        'Data_distribution': fig3,
     }
 
     for name, fig in diagrams.items():
