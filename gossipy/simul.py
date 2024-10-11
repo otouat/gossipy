@@ -1442,9 +1442,11 @@ class AttackDynamicGossipSimulator(GossipSimulator):
                     shuffle(node_ids)
                 for i in node_ids:
                     node = self.nodes[i]
+                    # Perform peer sampling at the right node timing (rate from the nodes pov)
+                    if isinstance(node.p2p_net, UniformDynamicP2PNetwork) and node.peer_sampling_ready(t,self.peer_sampling_period):
+                        node.p2p_net.update_view(node_id=i)
+                    # Perform gossip protocol
                     if node.timed_out(t):
-                        if isinstance(node.p2p_net, UniformDynamicP2PNetwork) and t % self.peer_sampling_period == 0:
-                            node.p2p_net.update_view(node_id=i)
                         peer = node.get_peer()
                         if peer is None:
                             break

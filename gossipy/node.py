@@ -123,8 +123,24 @@ class GossipNode():
         bool
             Whether the node has timed out.
         """
-
+        
         return ((t % self.round_len) == self.delta) if self.sync else ((t % self.delta) == 0)
+    
+    def peer_sampling_ready(self, t: int, peer_sampling_period: int) -> bool:
+        """Checks whether the node is ready for peer sampling.
+        
+        Parameters
+        ----------
+        t : int
+            The current timestamp.
+        
+        Returns
+        -------
+        bool
+            Whether the node has timed out.
+        """
+        
+        return t % (self.delta * peer_sampling_period) == 0
 
     def send(self,
              t: int,
