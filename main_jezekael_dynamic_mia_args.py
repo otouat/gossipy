@@ -16,7 +16,7 @@ from gossipy.core import (
 )
 from gossipy.data import OLDCustomDataDispatcher, get_CIFAR10
 from gossipy.data.handler import ClassificationDataHandler
-from gossipy.model.architecture import resnet20
+from gossipy.model.improved_resnet import resnet20
 from gossipy.model.handler import TorchModelHandler
 from gossipy.node import AttackGossipNode
 from gossipy.simul import AttackDynamicGossipSimulator, AttackSimulationReport
@@ -36,7 +36,7 @@ def parse_args():
     parser.add_argument(
         "--weight_decay",
         type=float,
-        default=0.0005,
+        default=0.0001,
         help="Weight decay for the optimizer",
     )
     parser.add_argument("--optimizer", type=str, default="SGD", help="Optimizer to use")
@@ -49,7 +49,7 @@ def parse_args():
         "--dataset", type=str, default="CIFAR-10", help="Dataset to use"
     )
     parser.add_argument("--epochs", type=int, default=250, help="Number of epochs")
-    parser.add_argument("--batch_size", type=int, default=512, help="Batch size")
+    parser.add_argument("--batch_size", type=int, default=128, help="Batch size")
     parser.add_argument("--n_nodes", type=int, default=36, help="Number of nodes")
     parser.add_argument(
         "--n_local_epochs", type=int, default=1, help="Number of local epochs"
@@ -73,6 +73,7 @@ def parse_args():
         "--p_attacker", type=float, default=0.3, help="Proportion of attackers"
     )
 
+    parser.add_argument("--send_to_all", action="store_true", help="Enable a node to send its model to all its neighbors")
     # Attack parameters
     parser.add_argument("--mia", action="store_true", help="Enable MIA attack")
     parser.add_argument("--mar", action="store_true", help="Enable MAR attack")
@@ -81,7 +82,7 @@ def parse_args():
 
     # Simulation settings
     parser.add_argument(
-        "--peer_sampling_period", type=int, default=10, help="Peer sampling period"
+        "--peer_sampling_period", type=int, default=1, help="Peer sampling period"
     )
 
     args = parser.parse_args()
@@ -168,6 +169,7 @@ def main():
         online_prob=1,
         drop_prob=0,
         sampling_eval=0,
+        send_to_all=args.send_to_all,
         peer_sampling_period=args.peer_sampling_period,
         mia=args.mia,
         mar=args.mar,

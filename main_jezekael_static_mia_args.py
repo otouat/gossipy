@@ -7,7 +7,7 @@ from gossipy.data.handler import ClassificationDataHandler
 from gossipy.model.handler import TorchModelHandler
 from gossipy.node import AttackGossipNode
 from gossipy.simul import AttackGossipSimulator, AttackSimulationReport
-from gossipy.model.architecture import resnet20
+from gossipy.model.improved_resnet import resnet20
 import networkx as nx
 from networkx.generators import random_regular_graph
 from gossipy.attacks.utils import log_results
@@ -21,21 +21,22 @@ def parse_args():
     # Model and optimization parameters
     parser.add_argument('--learning_rate', type=float, default=0.1, help='Learning rate')
     parser.add_argument('--momentum', type=float, default=0.9, help='Momentum for the optimizer')
-    parser.add_argument('--weight_decay', type=float, default=0.0005, help='Weight decay for the optimizer')
+    parser.add_argument('--weight_decay', type=float, default=0.0001, help='Weight decay for the optimizer')
     parser.add_argument('--optimizer', type=str, default='SGD', help='Optimizer to use')
     parser.add_argument('--architecture', type=str, default='ResNet20', help='Model architecture')
     
     # Dataset and simulation parameters
     parser.add_argument('--dataset', type=str, default='CIFAR-10', help='Dataset to use')
     parser.add_argument('--epochs', type=int, default=250, help='Number of epochs')
-    parser.add_argument('--batch_size', type=int, default=512, help='Batch size')
+    parser.add_argument('--batch_size', type=int, default=128, help='Batch size')
     parser.add_argument('--n_nodes', type=int, default=36, help='Number of nodes')
-    parser.add_argument('--n_local_epochs', type=int, default=1, help='Number of local epochs')
+    parser.add_argument('--n_local_epochs', type=int, default=3, help='Number of local epochs')
     parser.add_argument('--neighbors', type=int, default=5, help='Number of neighbors in the network')
     parser.add_argument('--test_size', type=float, default=0.5, help='Test set size fraction')
     parser.add_argument('--factors', type=int, default=1, help='Factor to multiply nodes count for the dispatcher')
     parser.add_argument('--beta', type=float, default=0.75, help='Class distribution parameter')
     parser.add_argument('--p_attacker', type=float, default=0.3, help='Proportion of attackers')
+    parser.add_argument('--send_to_all', action='store_true', default=False, help='Enable node to send its model to all his neighbors')
     
     # Attack parameters
     parser.add_argument('--mia', action='store_true', help='Enable MIA attack')
@@ -50,14 +51,14 @@ def main():
     args = parse_args()
 
     os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:256'
-
+    torch.backends.cudnn.benchmark = True
     # Setup transformations
     transform = Compose([Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
     train_set, test_set = get_CIFAR10()
 
     # Determine number of classes
     n_classes = max(train_set[1].max().item(), test_set[1].max().item()) + 1
-    model = resnet20(n_classes)
+    model = resnet20()
 
     optimizer_params = {
         "lr": args.learning_rate,
@@ -119,6 +120,7 @@ def main():
         online_prob=1,
         drop_prob=0,
         sampling_eval=0,
+        send_to_all=args.send_to_all,
         mia=args.mia,
         mar=args.mar,
         ra=args.ra

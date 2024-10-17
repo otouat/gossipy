@@ -1250,9 +1250,11 @@ class AttackGossipSimulator(GossipSimulator):
                  online_prob: float = 1.,
                  delay: Delay = ConstantDelay(0), 
                  sampling_eval: float = 0.,
+                 send_to_all: bool = False,
                  mia: bool = False,
                  mar: bool = False,
                  ra: bool = False):
+            self.send_to_all = send_to_all
             self.mia = mia
             self.mar = mar
             self.ra = ra
@@ -1283,17 +1285,22 @@ class AttackGossipSimulator(GossipSimulator):
                 for i in node_ids:
                     node = self.nodes[i]
                     if node.timed_out(t):
-                        peer = node.get_peer()
-                        if peer is None:
-                            break
-                        msg = node.send(t, peer, self.protocol)
-                        self.notify_message(False, msg)
-                        if msg:
-                            if random() >= self.drop_prob:
-                                d = self.delay.get(msg)
-                                msg_queues[t + d].append(msg)
-                            else:
-                                self.notify_message(True)
+                        if self.send_to_all:
+                            peers = node.get_all_peer()
+                        else:
+                            peers = [node.get_peer()]
+
+                        for peer in peers:
+                            if peer is None:
+                                break
+                            msg = node.send(t, peer, self.protocol)
+                            self.notify_message(False, msg)
+                            if msg:
+                                if random() >= self.drop_prob:
+                                    d = self.delay.get(msg)
+                                    msg_queues[t + d].append(msg)
+                                else:
+                                    self.notify_message(True)
 
                 is_online = random(self.n_nodes) <= self.online_prob
                 for msg in msg_queues[t]:
@@ -1395,6 +1402,7 @@ class AttackDynamicGossipSimulator(GossipSimulator):
                  delay: Delay = ConstantDelay(0),
                  sampling_eval: float = 0.,  # [0, 1] - percentage of nodes to evaluate
                  peer_sampling_period: int = 0,  # peer_sampling period
+                 send_to_all: bool = False,
                  mia: bool = False,
                  mar: bool = False,
                  ra: bool = False):
@@ -1402,6 +1410,7 @@ class AttackDynamicGossipSimulator(GossipSimulator):
         super().__init__(nodes, data_dispatcher, delta, protocol, drop_prob, online_prob, delay,
                          sampling_eval)
         self.peer_sampling_period = peer_sampling_period
+        self.send_to_all = send_to_all
         self.mia = mia
         self.mar = mar
         self.ra = ra
@@ -1447,17 +1456,23 @@ class AttackDynamicGossipSimulator(GossipSimulator):
                         node.p2p_net.update_view(node_id=i)
                     # Perform gossip protocol
                     if node.timed_out(t):
-                        peer = node.get_peer()
-                        if peer is None:
-                            break
-                        msg = node.send(t, peer, self.protocol)
-                        self.notify_message(False, msg)
-                        if msg:
-                            if random() >= self.drop_prob:
-                                d = self.delay.get(msg)
-                                msg_queues[t + d].append(msg)
-                            else:
-                                self.notify_message(True)
+                        # Choose whether the node send its model to all its neighbor peers or keep the gossiping protocol
+                        if self.send_to_all:
+                            peers = node.get_all_peer()
+                        else:
+                            peers = [node.get_peer()]
+
+                        for peer in peers:
+                            if peer is None:
+                                break
+                            msg = node.send(t, peer, self.protocol)
+                            self.notify_message(False, msg)
+                            if msg:
+                                if random() >= self.drop_prob:
+                                    d = self.delay.get(msg)
+                                    msg_queues[t + d].append(msg)
+                                else:
+                                    self.notify_message(True)
 
                 is_online = random(self.n_nodes) <= self.online_prob
                 for msg in msg_queues[t]:

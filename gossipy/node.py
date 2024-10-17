@@ -5,7 +5,7 @@ import numpy as np
 from numpy.random import randint, normal, rand
 from numpy import ndarray
 from torch import Tensor
-from typing import Any, Optional, Union, Dict, Tuple, Iterable
+from typing import Any, List, Optional, Union, Dict, Tuple, Iterable
 from gossipy.data import DataDispatcher
 from . import CACHE, LOG
 from .core import AntiEntropyProtocol, CreateModelMode, MessageType, Message, P2PNetwork
@@ -109,7 +109,22 @@ class GossipNode():
             LOG.warning("Node %d has no peers.", self.idx)
             return None
         return random.choice(peers) if peers else choice_not_n(0, self.p2p_net.size(), self.idx)
-        
+    
+    def get_all_peer(self) -> List[int]:
+        """Return all reachable nodes
+
+        Returns
+        -------
+        int
+            The index of the randomly selected peer.
+        """
+
+        peers = self.p2p_net.get_peers(self.idx)
+        if not peers:
+            LOG.warning("Node %d has no peers.", self.idx)
+            return None
+        return peers
+    
     def timed_out(self, t: int) -> bool:
         """Checks whether the node has timed out.
         
